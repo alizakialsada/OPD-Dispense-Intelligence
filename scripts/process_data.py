@@ -31,6 +31,17 @@ def main():
  chunks=[]
  for i in range(0,len(patients),750):
   name=f"patients-{i//750:02d}.json";(DATA/name).write_text(json.dumps(patients[i:i+750],ensure_ascii=False,separators=(",",":")),encoding="utf-8");chunks.append(name)
+ # Lazy medication demand data: loaded only when Drug Demand is opened.
+ demand_dir=DATA/"demand";demand_dir.mkdir(exist_ok=True)
+ for old in demand_dir.glob("demand-*.json"):old.unlink()
+ demand=[]
+ for pid,meds in by.items():
+  counts=Counter(m["last"] for m in meds);dom=max(d for d,cnt in counts.items() if cnt==max(counts.values()));p=max(meds,key=lambda x:x["last"])
+  demand.append({"id":pid,"name":p["name"],"speciality":p["speciality"],"base_last":dom,"items":[{"drug":m["drug"],"qty":m["qty"],"last":m["last"]} for m in meds]})
+ demand_chunks=[]
+ for i in range(0,len(demand),700):
+  name=f"demand-{i//700:02d}.json";(demand_dir/name).write_text(json.dumps(demand[i:i+700],ensure_ascii=False,separators=(",",":")),encoding="utf-8");demand_chunks.append(f"data/demand/{name}")
+ (DATA/"demand-meta.json").write_text(json.dumps({"patients":len(demand),"chunks":demand_chunks},ensure_ascii=False,separators=(",",":")),encoding="utf-8")
  meta={"generated_at":datetime.now().isoformat(timespec="seconds"),"source_file":files[-1].name,"raw_records":raw,"valid_records":valid,"unique_patients":len(patients),"patient_medication_records":len(latest),"chunks":chunks,"default_interval":25}
  (DATA/"meta.json").write_text(json.dumps(meta,ensure_ascii=False,separators=(",",":")),encoding="utf-8")
 if __name__=="__main__":main()
