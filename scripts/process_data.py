@@ -30,13 +30,13 @@ def main():
             if key not in latest or rec["disp"]>latest[key]["disp"]: latest[key]=rec
     by=defaultdict(list)
     for rec in latest.values(): by[rec["pid"]].append(rec)
-    patients=[]; details={}; drug_stats=defaultdict(lambda:{"patients":set(),"specialities":Counter(),"locations":Counter(),"due_dates":Counter()})
+    patients=[]; details={}; drug_stats=defaultdict(lambda:{"patients":set(),"specialities":Counter(),"locations":Counter(),"due_dates":Counter(),"qty_by_date":Counter()})
     for pid,meds in by.items():
         counts=Counter(m["disp"] for m in meds); mx=max(counts.values()); dominant=max(d for d,cnt in counts.items() if cnt==mx); primary=max(meds,key=lambda x:x["disp"]); bucket=hashlib.md5(pid.encode()).hexdigest()[:2]
         sm={"id":pid,"name":primary["name"],"last":dominant,"next":(datetime.fromisoformat(dominant).date()+timedelta(days=INTERVAL)).isoformat(),"meds":len(meds),"aligned":sum(m["disp"]==dominant for m in meds),"exceptions":sum(m["disp"]!=dominant for m in meds),"speciality":primary["speciality"],"location":primary["location"],"gender":primary["gender"],"age":primary["age"],"drug_text":" | ".join(sorted({m["drug"] for m in meds})[:12]),"bucket":bucket}
         patients.append(sm); details[pid]={"summary":sm,"medications":sorted(meds,key=lambda x:(x["disp"],x["drug"]),reverse=True),"history":sorted(hist[pid],key=lambda x:(x["disp"],x["drug"]))[-80:]}
         for m in meds:
-            dsx=drug_stats[m["drug"]]; dsx["patients"].add(pid); dsx["specialities"][m["speciality"] or "Unknown"]+=1; dsx["locations"][m["location"] or "Unknown"]+=1; dsx["due_dates"][m["next"]]+=1
+            dsx=drug_stats[m["drug"]]; dsx["patients"].add(pid); dsx["specialities"][m["speciality"] or "Unknown"]+=1; dsx["locations"][m["location"] or "Unknown"]+=1; dsx["due_dates"][m["next"]]+=1; dsx["qty_by_date"][m["next"]]+=float(m.get("disp_qty") or 0)
     patients.sort(key=lambda x:(x["next"],x["name"],x["id"]))
     for f in DATA.glob("patients-*.json"): f.unlink()
     if DETAILS.exists(): shutil.rmtree(DETAILS)
@@ -48,7 +48,7 @@ def main():
     for pid,payload in details.items(): buckets[payload["summary"]["bucket"]][pid]=payload
     for b,payload in buckets.items(): (DETAILS/f"{b}.json").write_text(json.dumps(payload,ensure_ascii=False,separators=(",",":")),encoding="utf-8")
     drugs=[]
-    for drug,x in drug_stats.items(): drugs.append({"drug":drug,"patients":len(x["patients"]),"top_specialities":x["specialities"].most_common(8),"top_locations":x["locations"].most_common(8),"due_dates":dict(x["due_dates"])})
+    for drug,x in drug_stats.items(): drugs.append({"drug":drug,"patients":len(x["patients"]),"top_specialities":x["specialities"].most_common(8),"top_locations":x["locations"].most_common(8),"due_dates":dict(x["due_dates"]),"qty_by_date":dict(x["qty_by_date"])})
     drugs.sort(key=lambda x:(-x["patients"],x["drug"])); (DATA/"drugs.json").write_text(json.dumps(drugs,ensure_ascii=False,separators=(",",":")),encoding="utf-8")
     meta={"generated_at":datetime.now().isoformat(timespec="seconds"),"source_file":files[-1].name,"source_latest_dispense":max((x["disp"] for x in latest.values()),default=""),"raw_records":raw,"valid_records":valid,"unique_patients":len(patients),"patient_medication_records":len(latest),"date_exceptions":sum(p["exceptions"]>0 for p in patients),"duplicate_or_historical":valid-len(latest),"chunks":chunks}
     (DATA/"meta.json").write_text(json.dumps(meta,ensure_ascii=False,separators=(",",":")),encoding="utf-8")

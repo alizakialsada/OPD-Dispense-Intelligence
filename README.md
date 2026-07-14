@@ -1,3 +1,3 @@
-# Dispense Intelligence Platform — Final Release
+# Dispense Intelligence Platform v3
 
-Includes Command Center, Work Queue, Patient Center, Smart Calendar, Drug Intelligence, Progress Engine, and automated GitHub processing.
+Adds Daily Drug Demand, Drug Preparation Center, and Pharmacy Control Tower. Required quantity is based on the latest Disp Qty for each Patient ID + Drug Name.
