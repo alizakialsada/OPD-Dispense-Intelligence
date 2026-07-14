@@ -1,16 +1,13 @@
-# Dispense Intelligence Platform v5 — Team Workflow
+# Dispense Intelligence Lite v1.3 — Today's Team Import
 
-Added:
-- Pharmacist selection on workstation startup.
-- Three configured pharmacists:
-  - Bassemah H. Al Faraj
-  - Batool S. T. Alfaraj
-  - Ghada A. Alqudaihi
-- Start Patient / In Progress assignment.
-- Status colors: in progress, dispensed, called, unavailable, deferred.
-- Dispensed records automatically attributed to the selected pharmacist.
-- Team Performance page and daily leaderboard.
-- End-of-day report includes pharmacist name.
+Work date: 2026-07-14
 
-Important limitation:
-This release stores team activity in the current browser. It does not synchronize between different computers. Live multi-device locking and shared counts require a secure shared backend/database.
+- Submitted rows: 277
+- Unique MRNs: 275
+- Matched and marked Dispensed: 267
+- Not found: 8
+- Duplicate rows removed: 2
+
+Matched records appear as Today's Team Import and count toward the total only.
+For Supabase shared mode, run:
+supabase-setup/05-import-todays-team-work.sql

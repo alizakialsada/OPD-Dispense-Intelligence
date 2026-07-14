@@ -1,490 +1,314 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#06111e">
-<title>Dispense Intelligence Platform</title>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#07111d"><title>Dispense Intelligence Lite</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script>
 <style>
-:root{
- --bg:#06111e;--panel:#0b1c2c;--panel2:#10283c;--line:#1c364c;
- --text:#f5f9fc;--muted:#8ca4b8;--cyan:#58e7ff;--blue:#5d82ff;
- --green:#45e6aa;--orange:#ffb85f;--red:#ff687f;--violet:#ad86ff;
- --shadow:0 26px 90px rgba(0,0,0,.32)
-}
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{
- margin:0;min-height:100vh;color:var(--text);
- font-family:Inter,Segoe UI,Arial,sans-serif;font-size:16px;
- background:
- radial-gradient(circle at 83% -10%,rgba(76,126,255,.28),transparent 34%),
- radial-gradient(circle at 12% 110%,rgba(0,226,199,.14),transparent 30%),
- var(--bg)
-}
-button,input,select{font:inherit}button{cursor:pointer}
-.app{display:grid;grid-template-columns:286px 1fr;min-height:100vh}
-.sidebar{
- position:sticky;top:0;height:100vh;padding:28px 20px;border-right:1px solid var(--line);
- background:linear-gradient(180deg,rgba(7,18,31,.99),rgba(4,12,22,.99));
- display:flex;flex-direction:column;z-index:5
-}
-.brand{display:flex;align-items:center;gap:14px;margin-bottom:36px}
-.logo{width:54px;height:54px;border-radius:18px;background:linear-gradient(135deg,var(--cyan),var(--blue));display:grid;place-items:center;color:#04111c;font-weight:900;font-size:20px;box-shadow:0 12px 38px rgba(88,231,255,.22)}
-.brand-title{font-size:17px;font-weight:900}.brand-sub{font-size:11px;color:var(--muted);margin-top:4px}
-.nav{width:100%;border:0;background:transparent;color:var(--muted);padding:15px 16px;border-radius:14px;text-align:left;font-weight:800;margin:4px 0}
-.nav.active,.nav:hover{background:linear-gradient(90deg,rgba(88,231,255,.12),rgba(93,130,255,.06));color:#fff;box-shadow:inset 3px 0 var(--cyan)}
-.sync{margin-top:auto;border:1px solid var(--line);background:#0a1a2a;border-radius:16px;padding:15px;display:flex;gap:11px;align-items:center}
-.sync-dot{width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 18px var(--green)}
-.sync b{display:block;font-size:13px}.sync small{display:block;color:var(--muted);font-size:11px;margin-top:3px}
-.credit{font-size:10px;color:#4f6c83;margin-top:14px;line-height:1.5}
-.main{padding:0 38px 50px;min-width:0}
-.topbar{height:112px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);margin-bottom:30px}
-.eyebrow{font-size:11px;letter-spacing:.18em;color:var(--cyan);font-weight:900;margin-bottom:8px}
-h1,h2,h3,h4{margin:0}h1{font-size:34px}h2{font-size:30px}h3{font-size:18px}
-.actions{display:flex;gap:10px;align-items:center}.actions input,.actions button,.filters input,.filters select{border:1px solid var(--line);background:#0b1c2c;color:#fff;border-radius:13px;padding:13px 14px;outline:none}
-.primary{border:0!important;background:linear-gradient(135deg,var(--cyan),var(--blue))!important;color:#05111b!important;font-weight:900}
-.view{display:none}.view.active{display:block}
-.hero{border:1px solid rgba(88,231,255,.22);border-radius:28px;min-height:330px;padding:44px 48px;background:linear-gradient(120deg,rgba(18,53,76,.96),rgba(8,23,39,.97));box-shadow:var(--shadow);display:flex;justify-content:space-between;align-items:center;position:relative;overflow:hidden}
-.hero:after{content:"";position:absolute;right:-150px;bottom:-230px;width:430px;height:430px;border-radius:50%;background:radial-gradient(circle,var(--cyan),transparent 68%);opacity:.1}
-.hero h2{font-size:32px}.hero-sub{font-size:18px;color:#c8d7e3;margin-top:8px}.hero-count{font-size:92px;font-weight:900;letter-spacing:-.05em;margin:16px 0 2px}.hero-label{color:var(--muted)}
-.start{margin-top:28px;border:0;border-radius:14px;background:#fff;color:#06111c;padding:16px 22px;font-weight:900}
-.orbit{width:235px;height:235px;position:relative;display:grid;place-items:center;margin-right:24px}.ring{position:absolute;inset:0;border:1px solid rgba(88,231,255,.35);border-radius:50%;animation:spin 18s linear infinite}.ring.two{inset:30px;border-style:dashed;animation-direction:reverse;animation-duration:12s}.orbit-core{width:130px;height:130px;border-radius:50%;background:radial-gradient(circle,#173d59,#0a1b2b);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2;box-shadow:0 0 50px rgba(88,231,255,.18)}.orbit-core b{font-size:36px}.orbit-core small{color:var(--muted)}
-@keyframes spin{to{transform:rotate(360deg)}}
-.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin:20px 0}.kpi{border:1px solid var(--line);border-radius:19px;background:linear-gradient(180deg,rgba(16,38,57,.94),rgba(8,22,35,.97));padding:22px;transition:.2s}.kpi:hover{transform:translateY(-3px);border-color:rgba(88,231,255,.28)}.kpi span{font-size:13px;color:var(--muted)}.kpi b{display:block;font-size:36px;margin:9px 0 3px}.kpi small{font-size:11px;color:#5c758a}
-.red b{color:var(--red)}.green b{color:var(--green)}.orange b{color:var(--orange)}.cyan b{color:var(--cyan)}.violet b{color:var(--violet)}
-.grid{display:grid;grid-template-columns:1.45fr 1fr;gap:16px}.panel{border:1px solid var(--line);border-radius:21px;background:linear-gradient(180deg,rgba(14,33,50,.95),rgba(7,20,32,.98));padding:22px;box-shadow:0 16px 48px rgba(0,0,0,.16)}.panel-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px}
-.bars{height:270px;display:flex;align-items:flex-end;gap:6px;padding:20px 2px 28px}.bar{flex:1;background:linear-gradient(var(--cyan),var(--blue));border-radius:6px 6px 2px 2px;min-height:3px;position:relative}.bar label{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);font-size:9px;color:#688197;white-space:nowrap}
-.rank{display:flex;flex-direction:column;gap:12px}.rankrow{display:grid;grid-template-columns:1fr 110px 46px;gap:12px;align-items:center;font-size:13px}.track{height:9px;background:#142a3b;border-radius:999px;overflow:hidden}.fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:999px}
-.section-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px}.section-head p{color:var(--muted);margin:7px 0 0}.filters{display:flex;gap:9px}.filters input{width:360px}
-.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}.summary div{border:1px solid var(--line);background:#0b1c2c;border-radius:15px;padding:17px}.summary span{display:block;color:var(--muted);font-size:12px}.summary b{font-size:27px;display:block;margin-top:5px}
-.progress-shell{height:14px;background:#142a3b;border-radius:999px;overflow:hidden;margin:14px 0 22px}.progress-bar{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));width:0%;transition:.3s}
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.card{border:1px solid var(--line);border-radius:18px;background:#0b1c2c;padding:18px;transition:.2s}.card:hover{transform:translateY(-3px);border-color:rgba(88,231,255,.25)}.card h4{font-size:17px;margin:9px 0 4px}.card small{color:var(--muted)}.drug{margin:14px 0;color:#c2d1dd;min-height:42px;font-size:13px;line-height:1.4}.card-actions{display:flex;gap:7px}.card-actions button{flex:1;border:1px solid var(--line);background:#10263a;color:#fff;border-radius:9px;padding:9px;font-size:11px}
-.tablebox{border:1px solid var(--line);border-radius:19px;overflow:auto;background:#081725}table{width:100%;border-collapse:collapse;min-width:980px}th,td{padding:15px 16px;border-bottom:1px solid #142c3f;text-align:left;font-size:13px}th{font-size:10px;color:#7a94aa;background:#0b1c2c;text-transform:uppercase;letter-spacing:.08em}tbody tr:hover{background:#0d2235}
-.badge{display:inline-flex;padding:6px 9px;border-radius:999px;font-size:10px;font-weight:900}.overdue{color:var(--red);background:#ff667d18}.today{color:var(--green);background:#43e5a818}.tomorrow{color:var(--orange);background:#ffb65a18}.week{color:var(--cyan);background:#55e6ff18}.future{color:#91a8b9;background:#142a3c}.exception{color:var(--orange);font-size:10px;font-weight:900}.pager{display:flex;justify-content:space-between;padding:15px;color:var(--muted);font-size:12px}.pager button{border:1px solid var(--line);background:#0d2133;color:#fff;border-radius:8px;padding:8px 11px}
-.calendar-layout{display:grid;grid-template-columns:1.4fr .65fr;gap:16px}.calendar,.day-panel{border:1px solid var(--line);background:#0b1c2c;border-radius:20px;padding:20px}.cal-head{display:flex;justify-content:space-between;align-items:center}.cal-head button{border:1px solid var(--line);background:#10263a;color:#fff;border-radius:9px;padding:8px 11px}.weekdays,.days{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}.weekdays span{text-align:center;color:var(--muted);font-size:11px;padding:14px 0 8px}.day{min-height:92px;border:1px solid var(--line);border-radius:13px;background:#0d2134;color:#fff;text-align:left;padding:10px}.day.dim{opacity:.3}.day:hover,.day.selected{border-color:var(--cyan)}.day b{display:block}.day span{display:block;color:var(--cyan);font-size:10px;margin-top:18px}.day-count{font-size:64px;font-weight:900;margin-top:14px}.day-list{margin-top:18px;display:flex;flex-direction:column;gap:8px;max-height:480px;overflow:auto}.day-list button{text-align:left;border:1px solid var(--line);background:#0e2336;color:#fff;border-radius:10px;padding:10px}
-.drug-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px}.drug-list{border:1px solid var(--line);background:#0b1c2c;border-radius:20px;overflow:hidden}.drug-search{padding:14px;border-bottom:1px solid var(--line)}.drug-search input{width:100%;border:1px solid var(--line);background:#0d2234;color:#fff;border-radius:11px;padding:12px}.drug-rows{max-height:620px;overflow:auto}.drug-row{display:flex;justify-content:space-between;padding:13px 15px;border-bottom:1px solid #142c3f}.drug-row:hover{background:#0e2336}.drug-detail{border:1px solid var(--line);background:#0b1c2c;border-radius:20px;padding:20px}.drug-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}.drug-kpis div{border:1px solid var(--line);background:#0d2234;border-radius:12px;padding:13px}.drug-kpis span{display:block;color:var(--muted);font-size:10px}.drug-kpis b{font-size:24px}
-.modal{position:fixed;inset:0;background:#02080ed9;backdrop-filter:blur(14px);display:grid;place-items:center;z-index:50}.hidden{display:none!important}.modalbox{width:min(980px,94vw);max-height:90vh;overflow:auto;background:#091a2a;border:1px solid #24465f;border-radius:22px;padding:26px;position:relative}.close{position:absolute;right:16px;top:12px;border:0;background:transparent;color:#fff;font-size:26px}.profile-head{display:flex;justify-content:space-between;align-items:flex-start}.profile-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:20px 0}.profile-grid div{border:1px solid var(--line);background:#0d2234;border-radius:12px;padding:13px}.profile-grid span{display:block;color:var(--muted);font-size:10px}.profile-grid b{display:block;margin-top:5px}.warning{border:1px solid #ffb65a55;background:#ffb65a12;color:#ffd4a0;padding:12px;border-radius:11px;margin:14px 0}.med-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:14px}.med-card{border:1px solid var(--line);background:#0d2234;border-radius:14px;padding:15px}.med-card h4{font-size:15px;margin-bottom:10px}.med-meta{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.med-meta div{background:#0a1a2a;border-radius:9px;padding:9px}.med-meta span{display:block;color:var(--muted);font-size:9px}.timeline{border-left:1px solid #29475f;margin:24px 0 0 6px;padding-left:20px}.event{position:relative;margin-bottom:18px}.event:before{content:"";position:absolute;left:-25px;top:3px;width:9px;height:9px;background:var(--cyan);border-radius:50%;box-shadow:0 0 12px var(--cyan)}.event span{display:block;color:var(--muted);font-size:11px;margin-top:4px}
+:root{--bg:#07111d;--p:#0c1c2b;--p2:#10273a;--line:#1d374b;--t:#f5f9fc;--m:#8ea6b9;--c:#58e7ff;--b:#6283ff;--g:#45e6aa;--o:#ffb85f;--r:#ff687f;--v:#ad86ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 85% 0,#12314e 0,transparent 32%),var(--bg);color:var(--t);font:15px Segoe UI,Arial,sans-serif}button,input,select{font:inherit}button{cursor:pointer}.shell{display:grid;grid-template-columns:230px 1fr;min-height:100vh}.side{padding:22px 14px;border-right:1px solid var(--line);background:#071421;display:flex;flex-direction:column}.brand{display:flex;gap:11px;align-items:center;margin-bottom:26px}.logo{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,var(--c),var(--b));display:grid;place-items:center;color:#04111c;font-weight:900}.brand b{display:block}.brand small{color:var(--m);font-size:10px}.nav{border:0;background:transparent;color:var(--m);padding:12px;border-radius:11px;text-align:left;font-weight:800;margin:3px 0}.nav.active,.nav:hover{background:#10263a;color:#fff;box-shadow:inset 3px 0 var(--c)}.sidefoot{margin-top:auto;font-size:10px;color:#547086}.main{padding:0 26px 36px;min-width:0}.top{height:88px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}.ey{color:var(--c);font-size:9px;letter-spacing:.17em;font-weight:900;margin-bottom:6px}h1,h2,h3,h4{margin:0}h1{font-size:27px}h2{font-size:25px}.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.actions input,.actions select,.actions button,.search{border:1px solid var(--line);background:var(--p);color:#fff;border-radius:10px;padding:10px 11px}.user{border:1px solid var(--line);background:var(--p);border-radius:10px;padding:8px 10px;font-size:11px}.user small{display:block;color:var(--m);font-size:8px}.live{display:flex;gap:7px;align-items:center}.dot{width:8px;height:8px;border-radius:50%;background:var(--o)}.live.on .dot{background:var(--g);box-shadow:0 0 12px var(--g)}.view{display:none}.view.active{display:block}.hero{border:1px solid #234762;background:linear-gradient(120deg,#12364c,#081a2a);border-radius:22px;padding:28px 30px;display:flex;justify-content:space-between;align-items:center}.hero .num{font-size:62px;font-weight:900;margin:9px 0}.hero p{color:var(--m);margin:6px 0}.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:14px 0}.kpi,.panel{border:1px solid var(--line);background:var(--p);border-radius:15px;padding:15px}.kpi span{color:var(--m);font-size:10px}.kpi b{display:block;font-size:26px;margin-top:5px}.green b{color:var(--g)}.red b{color:var(--r)}.orange b{color:var(--o)}.cyan b{color:var(--c)}.section{display:flex;justify-content:space-between;align-items:end;margin-bottom:15px}.section p{color:var(--m);margin:5px 0 0}.toolbar{display:flex;gap:8px;flex-wrap:wrap}.search{width:310px}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}.summary div{border:1px solid var(--line);background:var(--p);border-radius:13px;padding:12px}.summary span{display:block;color:var(--m);font-size:9px}.summary b{font-size:22px}.progress{height:10px;background:#142b3c;border-radius:999px;overflow:hidden;margin-bottom:14px}.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--g),var(--c));width:0}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.card{border:1px solid var(--line);background:var(--p);border-radius:15px;padding:14px}.card.in_progress{border-color:var(--b);background:#102840}.card.dispensed{border-color:var(--g);background:#0c3029}.card.unavailable{border-color:var(--r);background:#321923}.card.deferred{border-color:var(--v);background:#281d3d}.badge{display:inline-flex;padding:5px 7px;border-radius:999px;font-size:9px;font-weight:900;background:#142a3c;color:#b9cddd}.badge.today{color:var(--g);background:#45e6aa18}.badge.overdue{color:var(--r);background:#ff687f18}.badge.tomorrow{color:var(--o);background:#ffb85f18}.card h4{font-size:15px;margin:8px 0 3px}.copy{border:1px solid #58e7ff44;background:#58e7ff12;color:var(--c);border-radius:8px;padding:6px 8px;font-size:10px;font-weight:900}.staff{margin:9px 0;padding:8px 9px;background:#ffffff08;border-radius:9px;font-size:10px}.drugs{color:#c3d2dd;font-size:11px;line-height:1.4;min-height:32px}.btns{display:flex;gap:6px;margin-top:10px}.btns button{flex:1;border:1px solid var(--line);background:#10263a;color:#fff;border-radius:8px;padding:8px;font-size:10px}.btns .primary{background:linear-gradient(135deg,var(--c),var(--b));color:#04111c;border:0;font-weight:900}.tablebox{border:1px solid var(--line);border-radius:14px;overflow:auto;background:#081725}table{width:100%;border-collapse:collapse;min-width:860px}th,td{padding:11px;border-bottom:1px solid #142c3f;text-align:left;font-size:11px}th{font-size:9px;color:#7992a6;background:var(--p);text-transform:uppercase}.pager{display:flex;justify-content:space-between;padding:11px;color:var(--m);font-size:10px}.team{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.teamcard{border:1px solid var(--line);background:var(--p);border-radius:14px;padding:14px}.teamcard strong{font-size:12px}.teamcard .score{font-size:30px;font-weight:900;margin:8px 0}.settings{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.setting{border:1px solid var(--line);background:var(--p);border-radius:14px;padding:14px}.toast{position:fixed;right:20px;bottom:20px;background:#0d2538;border:1px solid #45e6aa55;border-radius:11px;padding:11px 14px;opacity:0;transform:translateY(8px);transition:.2s;z-index:30}.toast.show{opacity:1;transform:none}.login{position:fixed;inset:0;background:#030a11ee;backdrop-filter:blur(12px);display:grid;place-items:center;z-index:50}.login.hidden{display:none}.loginbox{width:min(520px,92vw);border:1px solid #27485f;background:#091a2a;border-radius:20px;padding:22px}.staffoptions{display:grid;gap:9px;margin-top:16px}.staffoptions button{border:1px solid var(--line);background:#0e2336;color:#fff;border-radius:12px;padding:13px;text-align:left}.hidden{display:none!important}
+@media(max-width:1000px){.kpis{grid-template-columns:repeat(3,1fr)}.cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:720px){.shell{grid-template-columns:64px 1fr}.side{padding:13px 7px}.brand div:not(.logo),.nav span,.sidefoot{display:none}.main{padding:0 11px 26px}.top{height:auto;padding:15px 0;align-items:flex-start}.hero{padding:20px}.hero .num{font-size:52px}.kpis{grid-template-columns:repeat(2,1fr)}.cards,.team,.settings{grid-template-columns:1fr}.summary{grid-template-columns:repeat(2,1fr)}.section{align-items:flex-start;flex-direction:column;gap:10px}.search{width:100%}}
 
-.admin-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:16px}.admin-card{border:1px solid var(--line);background:#0b1c2c;border-radius:20px;padding:24px}.admin-options{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}.interval-option{border:1px solid var(--line);background:#0e2336;color:#fff;border-radius:14px;padding:18px 10px;font-weight:900;font-size:20px}.interval-option.active,.interval-option:hover{border-color:var(--cyan);background:linear-gradient(135deg,rgba(88,231,255,.15),rgba(93,130,255,.14));color:var(--cyan)}.custom-row{display:flex;gap:10px;margin-top:14px}.custom-row input{flex:1;border:1px solid var(--line);background:#0d2234;color:#fff;border-radius:12px;padding:13px}.setting-summary{display:grid;gap:10px;margin-top:18px}.setting-summary div{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:12px 0}.setting-summary span{color:var(--muted)}.admin-note{border:1px solid rgba(88,231,255,.2);background:rgba(88,231,255,.06);padding:14px;border-radius:12px;color:#ccebf2;line-height:1.6;margin-top:18px}.success-note{margin-top:14px;color:var(--green);font-weight:800;min-height:22px}
-@media(max-width:1120px){.kpis{grid-template-columns:repeat(3,1fr)}.cards{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:820px){.app{grid-template-columns:78px 1fr}.sidebar{padding:18px 10px}.brand>div:not(.logo),.nav span,.sync div,.credit{display:none}.brand{justify-content:center}.main{padding:0 15px 34px}.topbar{height:auto;padding:20px 0;align-items:flex-start}.actions{flex-wrap:wrap;justify-content:flex-end}.orbit{display:none}.hero{padding:30px}.hero h2{font-size:25px}.hero-count{font-size:72px}.kpis{grid-template-columns:repeat(2,1fr)}.grid,.calendar-layout,.drug-layout,.admin-grid{grid-template-columns:1fr}.cards{grid-template-columns:1fr}.section-head{align-items:flex-start;flex-direction:column;gap:14px}.filters{width:100%;flex-direction:column}.filters input{width:100%}.summary{grid-template-columns:repeat(2,1fr)}.profile-grid,.med-grid{grid-template-columns:1fr 1fr}}
-
-.demand-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}.demand-card{border:1px solid var(--line);background:#0b1c2c;border-radius:18px;padding:18px}.demand-card span{color:var(--muted);font-size:12px}.demand-card b{display:block;font-size:30px;margin-top:7px}.prep-list{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.prep-item{border:1px solid var(--line);background:#0b1c2c;border-radius:18px;padding:18px;transition:.2s}.prep-item:hover{transform:translateY(-2px);border-color:rgba(88,231,255,.25)}.prep-item.done{opacity:.48}.prep-top{display:flex;justify-content:space-between;gap:16px}.prep-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}.prep-meta div{background:#0e2336;border-radius:10px;padding:10px}.prep-meta span{display:block;color:var(--muted);font-size:10px}.prep-meta b{font-size:18px}.prep-actions{display:flex;gap:8px}.prep-actions button{border:1px solid var(--line);background:#10263a;color:#fff;border-radius:9px;padding:9px 11px}.tower{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}.tower-panel{border:1px solid var(--line);background:#0b1c2c;border-radius:20px;padding:20px}.tower-big{font-size:58px;font-weight:900}.demand-search{width:360px}.qty-accent{color:var(--cyan)}
-
-.admin-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:16px}.admin-card{border:1px solid var(--line);background:#0b1c2c;border-radius:20px;padding:24px}.admin-options{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}.interval-option{border:1px solid var(--line);background:#0e2336;color:#fff;border-radius:14px;padding:18px 10px;font-weight:900;font-size:20px}.interval-option.active,.interval-option:hover{border-color:var(--cyan);background:linear-gradient(135deg,rgba(88,231,255,.15),rgba(93,130,255,.14));color:var(--cyan)}.custom-row{display:flex;gap:10px;margin-top:14px}.custom-row input{flex:1;border:1px solid var(--line);background:#0d2234;color:#fff;border-radius:12px;padding:13px}.setting-summary{display:grid;gap:10px;margin-top:18px}.setting-summary div{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:12px 0}.setting-summary span{color:var(--muted)}.admin-note{border:1px solid rgba(88,231,255,.2);background:rgba(88,231,255,.06);padding:14px;border-radius:12px;color:#ccebf2;line-height:1.6;margin-top:18px}.success-note{margin-top:14px;color:var(--green);font-weight:800;min-height:22px}
-@media(max-width:1120px){.prep-list{grid-template-columns:1fr 1fr}.demand-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:820px){.prep-list,.tower{grid-template-columns:1fr}.demand-grid{grid-template-columns:repeat(2,1fr)}}
-
-.copy-mrn{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(88,231,255,.28);background:rgba(88,231,255,.08);color:var(--cyan);border-radius:10px;padding:7px 10px;font-weight:900;font-size:11px;cursor:pointer}
-.copy-mrn:hover{background:rgba(88,231,255,.16);transform:translateY(-1px)}
-.mrn-click{display:inline-flex;align-items:center;gap:7px;color:var(--cyan);font-weight:900;cursor:pointer}
-.mrn-click:hover{text-decoration:underline}
-.toast{position:fixed;right:28px;bottom:28px;z-index:100;background:#0d2538;border:1px solid rgba(69,230,170,.35);color:#dffff2;padding:14px 18px;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.35);font-weight:800;opacity:0;transform:translateY(12px);pointer-events:none;transition:.22s}
-.toast.show{opacity:1;transform:translateY(0)}
-.reason-select,.note-input{width:100%;border:1px solid var(--line);background:#0d2234;color:#fff;border-radius:10px;padding:9px 10px;margin-top:8px;font-size:11px}
-.report-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
-.report-card{border:1px solid var(--line);background:#0b1c2c;border-radius:18px;padding:18px}
-.report-card span{display:block;color:var(--muted);font-size:11px}.report-card b{display:block;font-size:30px;margin-top:7px}
-.quality-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.quality-card{border:1px solid var(--line);background:#0b1c2c;border-radius:18px;padding:18px}
-.quality-card span{display:block;color:var(--muted);font-size:11px}.quality-card b{display:block;font-size:28px;margin-top:7px}
-.local-warning{border:1px solid rgba(255,184,95,.3);background:rgba(255,184,95,.08);color:#ffd8a6;border-radius:13px;padding:13px 15px;margin-bottom:18px;line-height:1.5}
-.action-chip{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:9px;font-weight:900;background:#142a3c;color:#b9ccda}
-@media(max-width:820px){.report-grid,.quality-grid{grid-template-columns:repeat(2,1fr)}.toast{left:15px;right:15px;bottom:15px;text-align:center}}
+.auth-screen{position:fixed;inset:0;z-index:100;background:#030a12f2;backdrop-filter:blur(15px);display:grid;place-items:center}
+.auth-screen.hidden{display:none}
+.auth-box{width:min(460px,92vw);border:1px solid #274960;background:#091a2a;border-radius:22px;padding:26px;box-shadow:0 30px 100px #0008}
+.auth-box input,.auth-box select{width:100%;border:1px solid var(--line);background:#0d2234;color:#fff;border-radius:11px;padding:12px;margin-top:9px}
+.auth-box button{width:100%;border:0;border-radius:11px;padding:12px;margin-top:12px;background:linear-gradient(135deg,var(--c),var(--b));color:#04111c;font-weight:900}
+.auth-msg{min-height:20px;color:var(--o);font-size:11px;margin-top:10px}
+.account-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.account-card{border:1px solid var(--line);background:var(--p);border-radius:14px;padding:15px}
+.account-card label{display:block;color:var(--m);font-size:10px;margin-top:9px}
+.account-card input,.account-card select{width:100%;border:1px solid var(--line);background:#0d2234;color:#fff;border-radius:10px;padding:10px;margin-top:5px}
+.user-table{width:100%;border-collapse:collapse}.user-table th,.user-table td{padding:11px;border-bottom:1px solid var(--line);font-size:11px}
+.role-admin{color:var(--o);font-weight:900}.role-pharmacist{color:var(--c);font-weight:900}.role-supervisor{color:var(--v);font-weight:900}
+.logout-btn{border:1px solid var(--line)!important;background:#0b1c2c!important;color:#fff!important}
+.admin-only{display:none}.admin-only.visible{display:block}
+@media(max-width:720px){.account-grid{grid-template-columns:1fr}}
 
 
-.user-pill{display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:#0b1c2c;border-radius:13px;padding:9px 12px}
-.user-pill b{font-size:12px}.user-pill small{display:block;color:var(--muted);font-size:9px}
-.user-pill button{border:0;background:transparent;color:var(--cyan);font-size:10px;font-weight:900;padding:0}
-.card.status-in_progress{border-color:rgba(93,130,255,.58);background:linear-gradient(180deg,rgba(24,51,78,.98),rgba(10,28,45,.98));box-shadow:0 0 0 1px rgba(93,130,255,.1),0 18px 42px rgba(24,55,110,.18)}
-.card.status-dispensed{border-color:rgba(69,230,170,.55);background:linear-gradient(180deg,rgba(18,68,57,.96),rgba(8,34,31,.98));opacity:.92}
-.card.status-called{border-color:rgba(88,231,255,.45)}
-.card.status-unavailable{border-color:rgba(255,104,127,.58);background:linear-gradient(180deg,rgba(72,29,42,.96),rgba(35,15,24,.98))}
-.card.status-deferred{border-color:rgba(173,134,255,.55);background:linear-gradient(180deg,rgba(53,37,78,.96),rgba(25,18,39,.98))}
-.staff-strip{display:flex;align-items:center;gap:8px;margin:11px 0;padding:9px 11px;border-radius:11px;background:rgba(255,255,255,.035);font-size:11px}
-.staff-dot{width:9px;height:9px;border-radius:50%}
-.staff-bassemah{background:#ad86ff}.staff-batool{background:#58e7ff}.staff-ghada{background:#45e6aa}
-.status-banner{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:10px 0;padding:10px 12px;border-radius:11px;background:#10263a;font-size:11px}
-.staff-modal{position:fixed;inset:0;background:rgba(2,8,14,.88);backdrop-filter:blur(17px);z-index:120;display:grid;place-items:center}
-.staff-box{width:min(620px,92vw);border:1px solid #284a63;background:#091a2a;border-radius:24px;padding:28px;box-shadow:0 30px 100px rgba(0,0,0,.45)}
-.staff-options{display:grid;gap:12px;margin-top:22px}
-.staff-option{border:1px solid var(--line);background:#0d2234;color:#fff;border-radius:15px;padding:16px;text-align:left;display:flex;justify-content:space-between;align-items:center}
-.staff-option:hover{border-color:var(--cyan);transform:translateY(-2px)}
-.staff-option strong{display:block;font-size:15px}.staff-option span{color:var(--muted);font-size:11px}
-.team-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
-.team-card{border:1px solid var(--line);background:#0b1c2c;border-radius:18px;padding:19px}
-.team-card .employee{font-size:15px;font-weight:900}.team-card .score{font-size:38px;font-weight:900;margin:12px 0 3px}.team-card small{color:var(--muted)}
-.leaderboard{display:flex;flex-direction:column;gap:10px}.leader-row{display:grid;grid-template-columns:42px 1fr 90px;gap:12px;align-items:center;border:1px solid var(--line);background:#0d2234;border-radius:13px;padding:12px}.rank-medal{font-size:24px;text-align:center}
-@media(max-width:820px){.user-pill{max-width:210px}.team-grid{grid-template-columns:1fr}}
+.undo-banner{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:80;width:min(620px,92vw);border:1px solid rgba(69,230,170,.4);background:#0c2b25;color:#e9fff8;border-radius:14px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px;box-shadow:0 22px 70px #0008}
+.undo-banner.hidden{display:none}
+.undo-banner b{display:block;font-size:12px}.undo-banner small{color:#aee8d3}
+.undo-banner button{border:1px solid rgba(255,255,255,.2);background:#fff;color:#07111d;border-radius:9px;padding:8px 12px;font-weight:900}
+.audit-list{display:flex;flex-direction:column;gap:8px;max-height:520px;overflow:auto}
+.audit-row{display:grid;grid-template-columns:130px 130px 120px 1fr;gap:10px;align-items:center;border:1px solid var(--line);background:#0d2234;border-radius:11px;padding:10px;font-size:10px}
+.audit-row b{font-size:11px}.audit-row small{color:var(--m)}
+.reopen-btn{border:1px solid rgba(255,184,95,.35);background:rgba(255,184,95,.1);color:var(--o);border-radius:8px;padding:7px 9px;font-size:9px;font-weight:900}
+.admin-search{display:flex;gap:8px;margin-bottom:12px}
+.admin-search input{flex:1;border:1px solid var(--line);background:#0d2234;color:#fff;border-radius:10px;padding:10px}
+@media(max-width:720px){.audit-row{grid-template-columns:1fr 1fr}.undo-banner{bottom:12px}}
 
-</style>
-</head>
-<body>
-<div class="app">
-<aside class="sidebar">
- <div class="brand"><div class="logo">DI</div><div><div class="brand-title">Dispense Intelligence</div><div class="brand-sub">Pharmacy Command Center</div></div></div>
- <button class="nav active" data-v="dashboard">◈ <span>Command Center</span></button>
- <button class="nav" data-v="queue">▷ <span>Today's Work</span></button>
- <button class="nav" data-v="patients">◎ <span>Patient Registry</span></button>
- <button class="nav" data-v="calendar">▦ <span>Smart Calendar</span></button>
- <button class="nav" data-v="drugs">◇ <span>Drug Intelligence</span></button>
- <button class="nav" data-v="demand">◆ <span>Drug Preparation</span></button>
- <button class="nav" data-v="tower">▣ <span>Control Tower</span></button>
- <button class="nav" data-v="reports">▤ <span>End of Day</span></button>
- <button class="nav" data-v="quality">✓ <span>Data Quality</span></button>
- <button class="nav" data-v="team">♟ <span>Team Performance</span></button>
- <button class="nav" data-v="admin">⚙ <span>Administration</span></button>
- <div class="sync"><div class="sync-dot"></div><div><b>Data Pipeline</b><small id="sync">Loading…</small></div></div>
- <div class="credit">Created by Automation Supervisor Ali Alsada</div>
-</aside>
-
-<main class="main">
-<header class="topbar">
- <div><div class="eyebrow">PHARMACY OPERATIONS</div><h1 id="title">Command Center</h1></div>
- <div class="actions">
- <div class="user-pill"><div><small>Current pharmacist</small><b id="currentStaffLabel">Not selected</b></div><button onclick="openStaffSelector()">Switch</button></div>
- <input id="ref" type="date"><button id="export" class="primary">Export View</button></div>
-</header>
-
-<section id="dashboard" class="view active">
- <div class="hero">
-  <div><div class="eyebrow">LIVE DISPENSING OVERVIEW</div><h2 id="greeting">Good Morning, Pharmacist.</h2><div class="hero-sub">Here's your dispensing overview for today.</div><div id="hero" class="hero-count">0</div><div id="heroDate" class="hero-label">—</div><button id="start" class="start">Start Today's Work →</button></div>
-  <div class="orbit"><div class="ring"></div><div class="ring two"></div><div class="orbit-core"><b id="orb">0</b><small>patients</small></div></div>
- </div>
- <div class="kpis">
-  <div class="kpi red"><span>Overdue</span><b id="kOver">0</b><small>Needs attention</small></div>
-  <div class="kpi green"><span>Today</span><b id="kToday">0</b><small>Eligible now</small></div>
-  <div class="kpi orange"><span>Tomorrow</span><b id="kTomorrow">0</b><small>Prepare workload</small></div>
-  <div class="kpi cyan"><span>Next 7 days</span><b id="kWeek">0</b><small>Upcoming demand</small></div>
-  <div class="kpi"><span>Unique patients</span><b id="kPatients">0</b><small>One row per MRN</small></div>
-  <div class="kpi violet"><span>Date exceptions</span><b id="kExceptions">0</b><small>Mixed medication dates</small></div>
- </div>
- <div class="grid">
-  <article class="panel"><div class="panel-head"><div><div class="eyebrow">30-DAY FORECAST</div><h3>Eligible patients by day</h3></div></div><div id="forecast" class="bars"></div></article>
-  <article class="panel"><div class="panel-head"><div><div class="eyebrow">TOP SPECIALTIES</div><h3>Patient distribution</h3></div></div><div id="specialties" class="rank"></div></article>
- </div>
-</section>
-
-<section id="queue" class="view">
- <div class="section-head"><div><div class="eyebrow">DAILY OPERATIONS</div><h2>Today's Work Queue</h2><p>Track progress, open patient profiles, and complete today's list.</p></div><div class="filters"><select id="queueMode"><option value="today">Today</option><option value="tomorrow">Tomorrow</option><option value="overdue">Overdue</option><option value="week">Next 7 days</option></select></div></div>
- <div class="summary"><div><span>Scheduled</span><b id="scheduled">0</b></div><div><span>Dispensed</span><b id="done">0</b></div><div><span>Pending</span><b id="pending">0</b></div><div><span>Completion</span><b id="completion">0%</b></div></div>
- <div class="progress-shell"><div id="progress" class="progress-bar"></div></div>
- <div id="cards" class="cards"></div>
-</section>
-
-<section id="patients" class="view">
- <div class="section-head"><div><div class="eyebrow">UNIQUE PATIENT INDEX</div><h2>Patient Registry</h2><p>Open any patient to review medications and dispense history.</p></div><div class="filters"><input id="q" placeholder="Search MRN, patient, medication or specialty…"><select id="status"><option value="all">All statuses</option><option value="overdue">Overdue</option><option value="today">Today</option><option value="tomorrow">Tomorrow</option><option value="week">Next 7 days</option><option value="future">Future</option><option value="exception">Date exceptions</option></select></div></div>
- <div class="tablebox"><table><thead><tr><th>Patient</th><th>MRN</th><th>Medications</th><th>Last dispense</th><th>Next eligible</th><th>Alignment</th><th>Status</th><th>Specialty</th></tr></thead><tbody id="rows"></tbody></table><div class="pager"><span id="count">0 patients</span><div><button id="prev">←</button> <span id="page"></span> <button id="next">→</button></div></div></div>
-</section>
-
-<section id="calendar" class="view">
- <div class="section-head"><div><div class="eyebrow">WORKLOAD CALENDAR</div><h2>Smart Calendar</h2><p>Select any date to review expected dispensing demand.</p></div></div>
- <div class="calendar-layout"><div class="calendar"><div class="cal-head"><button id="prevMonth">←</button><h3 id="monthTitle">Month</h3><button id="nextMonth">→</button></div><div class="weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div><div id="days" class="days"></div></div>
- <div class="day-panel"><div class="eyebrow">SELECTED DAY</div><h3 id="selectedTitle">—</h3><div id="selectedCount" class="day-count">0</div><div class="muted">eligible patients</div><div id="selectedList" class="day-list"></div></div></div>
-</section>
-
-<section id="drugs" class="view">
- <div class="section-head"><div><div class="eyebrow">MEDICATION ANALYTICS</div><h2>Drug Intelligence</h2><p>Review patient demand and workload by medication.</p></div></div>
- <div class="drug-layout"><div class="drug-list"><div class="drug-search"><input id="drugSearch" placeholder="Search medication…"></div><div id="drugRows" class="drug-rows"></div></div>
- <div id="drugDetail" class="drug-detail"><div class="eyebrow">SELECT A MEDICATION</div><h3>Drug analytics will appear here.</h3></div></div>
-</section>
-
-<section id="demand" class="view">
- <div class="section-head"><div><div class="eyebrow">DAILY DRUG DEMAND</div><h2>Drug Preparation Center</h2><p>Prepare medications in priority order using the actual latest dispensed quantity.</p></div><div class="filters"><input id="demandSearch" class="demand-search" placeholder="Search medication…"></div></div>
- <div class="demand-grid"><div class="demand-card"><span>Medications today</span><b id="dMeds">0</b></div><div class="demand-card"><span>Patients today</span><b id="dPatients">0</b></div><div class="demand-card"><span>Total quantity required</span><b id="dQty" class="qty-accent">0</b></div><div class="demand-card"><span>Preparation completed</span><b id="dProgress">0%</b></div></div>
- <div class="progress-shell"><div id="prepProgress" class="progress-bar"></div></div>
- <div id="prepList" class="prep-list"></div>
-</section>
-<section id="tower" class="view">
- <div class="section-head"><div><div class="eyebrow">PHARMACY CONTROL TOWER</div><h2>Live Operational View</h2><p>One screen for patient workload and medication preparation.</p></div></div>
- <div class="tower"><div class="tower-panel"><div class="eyebrow">TODAY'S DISPENSING LOAD</div><div id="towerPatients" class="tower-big">0</div><div class="muted">patients scheduled today</div><div class="progress-shell"><div id="towerProgress" class="progress-bar"></div></div><div class="summary"><div><span>Completed</span><b id="towerDone">0</b></div><div><span>Remaining</span><b id="towerRemaining">0</b></div><div><span>Medications</span><b id="towerMeds">0</b></div><div><span>Total Qty</span><b id="towerQty">0</b></div></div></div><div class="tower-panel"><div class="eyebrow">TOP DEMAND</div><div id="towerTop" class="rank"></div></div></div>
-</section>
-
-<section id="reports" class="view">
- <div class="section-head"><div><div class="eyebrow">DAILY PERFORMANCE</div><h2>End-of-Day Report</h2><p>Operational summary for the selected reference date.</p></div><button class="primary" onclick="exportEndOfDay()">Export Report</button></div>
- <div class="local-warning">Work statuses and notes in this release are saved on this browser. A shared multi-user database will be added when the platform is connected to a secure backend.</div>
- <div class="report-grid">
-  <div class="report-card"><span>Scheduled</span><b id="rScheduled">0</b></div>
-  <div class="report-card"><span>Dispensed</span><b id="rDispensed">0</b></div>
-  <div class="report-card"><span>Pending</span><b id="rPending">0</b></div>
-  <div class="report-card"><span>Completion</span><b id="rCompletion">0%</b></div>
-  <div class="report-card"><span>Contacted</span><b id="rContacted">0</b></div>
-  <div class="report-card"><span>Not Available</span><b id="rUnavailable">0</b></div>
-  <div class="report-card"><span>Deferred</span><b id="rDeferred">0</b></div>
-  <div class="report-card"><span>Mixed Dates</span><b id="rExceptions">0</b></div>
- </div>
- <article class="panel"><div class="eyebrow">STATUS BREAKDOWN</div><h3>Patients requiring follow-up</h3><div id="followupRows" style="margin-top:16px"></div></article>
-</section>
-
-<section id="quality" class="view">
- <div class="section-head"><div><div class="eyebrow">DATA GOVERNANCE</div><h2>Data Quality Center</h2><p>Automatic checks based on the latest processed dispensing report.</p></div></div>
- <div class="quality-grid">
-  <div class="quality-card"><span>Raw records</span><b id="qRaw">0</b></div>
-  <div class="quality-card"><span>Valid records</span><b id="qValid">0</b></div>
-  <div class="quality-card"><span>Unique patients</span><b id="qPatients">0</b></div>
-  <div class="quality-card"><span>Patient + medication records</span><b id="qMeds">0</b></div>
-  <div class="quality-card"><span>Historical / duplicate records</span><b id="qDuplicates">0</b></div>
-  <div class="quality-card"><span>Mixed-date patients</span><b id="qExceptions">0</b></div>
- </div>
- <article class="panel" style="margin-top:16px"><div class="eyebrow">SOURCE VALIDATION</div><h3>Latest import details</h3><div class="setting-summary"><div><span>Source file</span><b id="qSource">—</b></div><div><span>Processed at</span><b id="qGenerated">—</b></div><div><span>Current eligibility interval</span><b><span id="qInterval">25</span> days</b></div><div><span>Required fields recognized</span><b>Patient ID, Drug Name, Disp Date</b></div></div></article>
-</section>
-
-
-<section id="team" class="view">
- <div class="section-head"><div><div class="eyebrow">TEAM OPERATIONS</div><h2>Team Performance</h2><p>Dispensed patients completed by each pharmacist for the selected day.</p></div><button class="primary" onclick="exportTeamPerformance()">Export Team Report</button></div>
- <div class="local-warning">This first team release synchronizes names and counts only within the same browser. A shared database is required for live synchronization across several computers.</div>
- <div id="teamCards" class="team-grid"></div>
- <article class="panel"><div class="eyebrow">TODAY'S LEADERBOARD</div><h3>Dispensing completed</h3><div id="leaderboard" class="leaderboard" style="margin-top:16px"></div></article>
-</section>
+</style></head><body>
+<div class="shell"><aside class="side"><div class="brand"><div class="logo">DI</div><div><b>Dispense Lite</b><small>Daily Operations</small></div></div>
+<button class="nav active" data-v="home">◈ <span>Overview</span></button><button class="nav" data-v="queue">▷ <span>Dispense Queue</span></button><button class="nav" data-v="registry">◎ <span>Patient Registry</span></button><button class="nav" data-v="team">♟ <span>Team</span></button><button id="adminNav" class="nav hidden" data-v="admin">⚙ <span>Admin</span></button><div class="sidefoot">Created by Automation Supervisor Ali Alsada</div></aside>
+<main class="main"><header class="top"><div><div class="ey">PHARMACY OPERATIONS</div><h1 id="title">Overview</h1></div><div class="actions"><div id="live" class="live"><span class="dot"></span><small id="sync">Local mode</small></div><div class="user"><small id="roleLabel">User</small><b id="who">Not signed in</b></div><button class="logout-btn" onclick="signOutUser()">Sign Out</button><input id="date" type="date"></div></header>
+<section id="home" class="view active"><div class="hero"><div><div class="ey">TODAY'S DISPENSING</div><h2 id="hello">Good Morning, Pharmacist.</h2><p>Fast, focused, and ready for daily dispensing.</p><div class="num" id="heroCount">0</div><p id="heroDate">—</p></div><button class="copy" onclick="go('queue')">Start Queue →</button></div><div class="kpis"><div class="kpi red"><span>Overdue</span><b id="over">0</b></div><div class="kpi green"><span>Today</span><b id="today">0</b></div><div class="kpi orange"><span>Tomorrow</span><b id="tomorrow">0</b></div><div class="kpi cyan"><span>Next 7 Days</span><b id="week">0</b></div><div class="kpi"><span>Unique Patients</span><b id="all">0</b></div></div></section>
+<section id="queue" class="view"><div class="section"><div><div class="ey">DAILY WORKLIST</div><h2>Dispense Queue</h2><p>Copy MRN, start patient, and finish dispensing.</p></div><div class="toolbar"><select id="mode"><option value="today">Today</option><option value="overdue">Overdue</option><option value="tomorrow">Tomorrow</option><option value="week">Next 7 Days</option></select><input id="qqueue" class="search" placeholder="Search MRN, patient, medication…"></div></div><div class="summary"><div><span>Scheduled</span><b id="scheduled">0</b></div><div><span>Dispensed</span><b id="done">0</b></div><div><span>In Progress</span><b id="working">0</b></div><div><span>Completion</span><b id="rate">0%</b></div></div><div class="progress"><i id="bar"></i></div><div id="cards" class="cards"></div></section>
+<section id="registry" class="view"><div class="section"><div><div class="ey">PATIENT INDEX</div><h2>Patient Registry</h2></div><input id="qreg" class="search" placeholder="Search MRN, patient, medication…"></div><div class="tablebox"><table><thead><tr><th>Patient</th><th>MRN</th><th>Medications</th><th>Last Dispense</th><th>Next Eligible</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table><div class="pager"><span id="count"></span><div><button onclick="page(-1)">←</button> <span id="pg"></span> <button onclick="page(1)">→</button></div></div></div></section>
+<section id="team" class="view"><div class="section"><div><div class="ey">TEAM PERFORMANCE</div><h2>Today</h2><p>Imported completed work is included in the total without assigning it to an employee.</p></div><button class="copy" onclick="migrate()">Sync Existing Work</button></div><div class="summary"><div><span>Total Dispensed</span><b id="teamTotal">0</b></div><div><span>In Progress</span><b id="teamWorking">0</b></div><div><span>Completion</span><b id="teamRate">0%</b></div><div><span>Active Staff</span><b id="activeStaff">0</b></div></div><div id="teamCards" class="team"></div></section>
 
 <section id="admin" class="view">
- <div class="section-head"><div><div class="eyebrow">SYSTEM SETTINGS</div><h2>Administration</h2><p>Control the dispensing eligibility interval for the entire platform.</p></div></div>
- <div class="admin-grid">
-  <article class="admin-card">
-   <div class="eyebrow">DISPENSING INTERVAL</div><h3>Select the number of days after the last dispense</h3>
-   <div class="admin-options"><button class="interval-option" data-days="15">15</button><button class="interval-option" data-days="20">20</button><button class="interval-option" data-days="25">25</button><button class="interval-option" data-days="30">30</button></div>
-   <div class="custom-row"><input id="customInterval" type="number" min="1" max="365" placeholder="Enter any number of days"><button id="applyCustom" class="primary">Apply</button></div>
-   <div id="adminSaved" class="success-note"></div>
+ <div class="section"><div><div class="ey">ADMINISTRATION</div><h2>System Administration</h2><p>Only administrators can access this page.</p></div></div>
+ <div class="account-grid">
+  <article class="account-card">
+   <div class="ey">CREATE USER</div><h3>New Account</h3>
+   <label>Full Name</label><input id="newFullName" placeholder="Full name">
+   <label>Display Name</label><input id="newDisplayName" placeholder="Display name">
+   <label>Username</label><input id="newUsername" placeholder="e.g. bassemah">
+   <label>Temporary Password</label><input id="newPassword" type="password" placeholder="Minimum 8 characters">
+   <label>Role</label><select id="newRole"><option value="pharmacist">Pharmacist</option><option value="supervisor">Supervisor</option><option value="admin">Administrator</option></select>
+   <button class="copy" onclick="createUserAccount()">Create Account</button>
+   <div id="createUserMessage" class="auth-msg"></div>
   </article>
-  <article class="admin-card">
-   <div class="eyebrow">CURRENT CONFIGURATION</div><h3>Platform calculation settings</h3>
-   <div class="setting-summary"><div><span>Current interval</span><b><span id="currentInterval">25</span> days</b></div><div><span>Calculation</span><b>Last dispense + interval</b></div><div><span>Affects</span><b>All queues, calendar & demand</b></div><div><span>Saved on this device</span><b>Yes</b></div></div>
-   <div class="admin-note">Changing this setting immediately recalculates patient eligibility, overdue status, daily workload, drug quantities, calendar dates, and forecasts. The original dispense history is not changed.</div>
+  <article class="account-card">
+   <div class="ey">DISPENSING SETTINGS</div><h3>Eligibility Interval</h3>
+   <div class="settings" style="grid-template-columns:repeat(2,1fr);margin-top:12px">
+    <div class="setting"><h3>15 Days</h3><button class="copy" onclick="setDays(15)">Apply</button></div>
+    <div class="setting"><h3>20 Days</h3><button class="copy" onclick="setDays(20)">Apply</button></div>
+    <div class="setting"><h3>25 Days</h3><button class="copy" onclick="setDays(25)">Apply</button></div>
+    <div class="setting"><h3>30 Days</h3><button class="copy" onclick="setDays(30)">Apply</button></div>
+   </div>
+   <label>Custom days</label><input id="custom" type="number" min="1" max="365" value="25">
+   <button class="copy" onclick="setDays(+$('#custom').value)">Save Interval</button>
+   <p class="muted">Current interval: <b id="currentDays">25</b> days</p>
   </article>
  </div>
+ <article class="panel" style="margin-top:14px">
+  <div class="section"><div><div class="ey">USER MANAGEMENT</div><h3>Active Accounts</h3></div><button class="copy" onclick="loadUsers()">Refresh</button></div>
+  <div class="tablebox"><table class="user-table"><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Status</th><th>Action</th></tr></thead><tbody id="userRows"></tbody></table></div>
+ </article>
+
+ <article class="panel" style="margin-top:14px">
+  <div class="section"><div><div class="ey">ADMIN OVERRIDE</div><h3>Reopen Dispensed Patient</h3><p>Use only when the 5-minute Undo period has expired.</p></div></div>
+  <div class="admin-search"><input id="reopenMrn" placeholder="Enter MRN"><input id="reopenReason" placeholder="Reason for reopening"></div>
+  <button class="copy" onclick="adminReopenPatient()">Reopen Patient</button>
+  <div id="reopenMessage" class="auth-msg"></div>
+ </article>
+ <article class="panel" style="margin-top:14px">
+  <div class="section"><div><div class="ey">AUDIT LOG</div><h3>Recent Workflow Activity</h3></div><button class="copy" onclick="loadAuditLog()">Refresh</button></div>
+  <div id="auditRows" class="audit-list"></div>
+ </article>
 </section>
+</main></div>
 
-</main>
-</div>
-
-
-<div id="staffSelector" class="staff-modal hidden">
- <div class="staff-box">
-  <div class="eyebrow">WORKSTATION USER</div>
-  <h2>Select the pharmacist using this workstation</h2>
-  <p class="muted">The selected name will be recorded automatically when a patient is started or dispensed.</p>
-  <div class="staff-options">
-   <button class="staff-option" onclick="selectStaff('bassemah')"><div><strong>👩‍⚕️ Bassemah H. Al Faraj</strong><span>Bassemah Hassan Al Faraj</span></div><span>Choose →</span></button>
-   <button class="staff-option" onclick="selectStaff('batool')"><div><strong>👩‍⚕️ Batool S. T. Alfaraj</strong><span>Batool Sadiq Taqi Alfaraj</span></div><span>Choose →</span></button>
-   <button class="staff-option" onclick="selectStaff('ghada')"><div><strong>👩‍⚕️ Ghada A. Alqudaihi</strong><span>Ghada Abbas Abdullah Alqudaihi</span></div><span>Choose →</span></button>
-  </div>
+<div id="authScreen" class="auth-screen">
+ <div class="auth-box">
+  <div class="ey">SECURE ACCESS</div>
+  <h2>Dispense Intelligence</h2>
+  <p class="muted">Sign in with your username and password.</p>
+  <input id="loginUsername" placeholder="Username">
+  <input id="loginPassword" type="password" placeholder="Password">
+  <button onclick="signInUser()">Sign In</button>
+  <div id="authMessage" class="auth-msg"></div>
  </div>
 </div>
 
-<div id="toast" class="toast">MRN copied</div>
-<div id="modal" class="modal hidden"><div class="modalbox"><button id="close" class="close">×</button><div id="modalContent"></div></div></div>
-
+<div id="login" class="login hidden"><div class="loginbox"><div class="ey">WORKSTATION USER</div><h2>Select Pharmacist</h2><div class="staffoptions"><button onclick="selectStaff('bassemah')">👩‍⚕️ Bassemah H. Al Faraj</button><button onclick="selectStaff('batool')">👩‍⚕️ Batool S. T. Alfaraj</button><button onclick="selectStaff('ghada')">👩‍⚕️ Ghada A. Alqudaihi</button><button onclick="selectStaff('rabab')">👩‍⚕️ Rabab Alsheef</button></div></div></div><div id="undoBanner" class="undo-banner hidden">
+ <div><b id="undoTitle">Patient dispensed successfully</b><small id="undoTimer">Undo available for 05:00</small></div>
+ <button onclick="undoLastDispense()">↩ Undo</button>
+</div>
+<div id="toast" class="toast">Done</div>
 <script>
-const S={meta:null,patients:[],drugs:[],ref:new Date(),view:"dashboard",page:1,size:35,work:JSON.parse(localStorage.getItem("dip-work")||"{}"),month:new Date(),selected:new Date(),prep:JSON.parse(localStorage.getItem("dip-prep")||"{}"),notes:JSON.parse(localStorage.getItem("dip-notes")||"{}"),assignments:JSON.parse(localStorage.getItem("dip-assignments")||"{}"),currentStaff:localStorage.getItem("dip-current-staff")||"",interval:Number(localStorage.getItem("dip-interval")||25)};
-const $=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)],fmt=n=>new Intl.NumberFormat().format(n||0),esc=v=>String(v??"").replace(/[&<>"']/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[x]));
-const iso=d=>{let x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)},pd=s=>new Date(s+"T00:00:00"),diff=(a,b)=>Math.round((pd(a)-pd(b))/86400000);
+const $=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)],fmt=n=>new Intl.NumberFormat().format(Math.round(n||0));
+const STAFF={bassemah:"Bassemah H. Al Faraj",batool:"Batool S. T. Alfaraj",ghada:"Ghada A. Alqudaihi",rabab:"Rabab Alsheef",team_import:"Today's Team Total"};
+const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||25,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastUndo:null,undoTicker:null,legacy:null};
+const iso=d=>{let x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)},pd=s=>new Date(s+"T00:00:00"),add=(s,n)=>{let d=pd(s);d.setDate(d.getDate()+n);return iso(d)},next=p=>add(p.base_last,S.days),delta=p=>Math.round((pd(next(p))-pd(iso(S.date)))/86400000);
+const state=p=>{let d=delta(p);return d<0?"overdue":d===0?"today":d===1?"tomorrow":d<=7?"week":"future"},label=s=>({overdue:"Overdue",today:"Today",tomorrow:"Tomorrow",week:"Within 7 days",future:"Future"})[s];
+function toast(x){let t=$("#toast");t.textContent=x;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1500)}
 
-const STAFF={
- bassemah:{short:"Bassemah H. Al Faraj",full:"Bassemah Hassan Al Faraj",css:"bassemah"},
- batool:{short:"Batool S. T. Alfaraj",full:"Batool Sadiq Taqi Alfaraj",css:"batool"},
- ghada:{short:"Ghada A. Alqudaihi",full:"Ghada Abbas Abdullah Alqudaihi",css:"ghada"}
-};
-const staffName=id=>STAFF[id]?.short||"Unassigned";
-const actionStatus=id=>{
- const x=S.assignments[id];
- if(x?.status)return x.status;
- const old=S.work[id];
- return typeof old==="string"?old:(old?.status||"waiting");
-};
-const actionUser=id=>S.assignments[id]?.staff||"";
-const actionTime=(id,key)=>S.assignments[id]?.[key]||"";
-function requireStaff(){if(!S.currentStaff){openStaffSelector();showToast("Select a pharmacist first");return false}return true}
-window.openStaffSelector=()=>$("#staffSelector").classList.remove("hidden");
-window.selectStaff=id=>{
- S.currentStaff=id;localStorage.setItem("dip-current-staff",id);
- $("#currentStaffLabel").textContent=staffName(id);$("#staffSelector").classList.add("hidden");showToast(`Logged in as ${staffName(id)}`);
-};
-window.startPatient=id=>{
- if(!requireStaff())return;
- const current=S.assignments[id];
- if(current?.status==="in_progress"&&current.staff!==S.currentStaff){showToast(`In progress by ${staffName(current.staff)}`);return}
- S.assignments[id]={...(current||{}),status:"in_progress",staff:S.currentStaff,startedAt:current?.startedAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
- localStorage.setItem("dip-assignments",JSON.stringify(S.assignments));renderAll();showToast(`Patient started by ${staffName(S.currentStaff)}`);
-};
+function authEmail(username){return `${String(username).trim().toLowerCase()}@dispense.local`}
+function setAuthMessage(msg){$("#authMessage").textContent=msg||""}
+async function initAuth(){
+ const c=window.SUPABASE_CONFIG;
+ if(!c?.url||c.url.includes("YOUR_")){setAuthMessage("Supabase is not configured.");return false}
+ if(!S.sb)S.sb=window.supabase.createClient(c.url,c.publishableKey);
+ const {data:{session}}=await S.sb.auth.getSession();
+ if(session){await applySession(session);return true}
+ $("#authScreen").classList.remove("hidden");return false
+}
+async function applySession(session){
+ S.user=session.user;
+ const {data,error}=await S.sb.from("profiles").select("*").eq("id",S.user.id).single();
+ if(error){console.error(error);setAuthMessage("User profile not found.");return}
+ S.profile=data;
+ S.staff=data.username||"";
+ $("#who").textContent=data.display_name||data.full_name||data.username;
+ $("#roleLabel").textContent=data.role||"user";
+ $("#authScreen").classList.add("hidden");
+ $("#adminNav").classList.toggle("hidden",data.role!=="admin");
+ localStorage.setItem("dip-staff",S.staff);
+}
+window.signInUser=async()=>{
+ setAuthMessage("Signing in…");
+ const username=$("#loginUsername").value.trim(),password=$("#loginPassword").value;
+ if(!username||!password){setAuthMessage("Enter username and password.");return}
+ const {data,error}=await S.sb.auth.signInWithPassword({email:authEmail(username),password});
+ if(error){setAuthMessage(error.message);return}
+ await applySession(data.session);setAuthMessage("");await loadShared();await loadLegacyImport();render();toast("Signed in");
+}
+window.signOutUser=async()=>{if(S.sb)await S.sb.auth.signOut();S.user=null;S.profile=null;S.staff="";$("#who").textContent="Not signed in";$("#roleLabel").textContent="User";$("#adminNav").classList.add("hidden");$("#authScreen").classList.remove("hidden")}
+function requireAdmin(){if(S.profile?.role!=="admin"){toast("Administrator access required");return false}return true}
+window.createUserAccount=async()=>{
+ if(!requireAdmin())return;
+ const payload={
+  full_name:$("#newFullName").value.trim(),
+  display_name:$("#newDisplayName").value.trim(),
+  username:$("#newUsername").value.trim().toLowerCase(),
+  password:$("#newPassword").value,
+  role:$("#newRole").value
+ };
+ const msg=$("#createUserMessage");msg.textContent="Creating account…";
+ if(!payload.full_name||!payload.display_name||!payload.username||payload.password.length<8){msg.textContent="Complete all fields. Password must be at least 8 characters.";return}
+ const {data,error}=await S.sb.functions.invoke("create-user",{body:payload});
+ if(error){msg.textContent=error.message||"Could not create user.";return}
+ msg.textContent="Account created successfully.";
+ ["newFullName","newDisplayName","newUsername","newPassword"].forEach(id=>$("#"+id).value="");
+ await loadUsers();
+}
+window.loadUsers=async()=>{
+ if(!requireAdmin())return;
+ const {data,error}=await S.sb.from("profiles").select("id,full_name,display_name,username,role,is_active").order("full_name");
+ if(error){toast("Could not load users");return}
+ $("#userRows").innerHTML=(data||[]).map(u=>`<tr><td>${u.display_name||u.full_name}</td><td>${u.username}</td><td class="role-${u.role}">${u.role}</td><td>${u.is_active?"Active":"Disabled"}</td><td><button class="copy" onclick="toggleUser('${u.id}',${!u.is_active})">${u.is_active?"Disable":"Enable"}</button></td></tr>`).join("");
+}
+window.toggleUser=async(id,active)=>{
+ if(!requireAdmin())return;
+ const {error}=await S.sb.from("profiles").update({is_active:active}).eq("id",id);
+ if(error){toast("Update failed");return}
+ await loadUsers();toast(active?"User enabled":"User disabled");
+}
 
-const addDays=(dateStr,days)=>{let d=pd(dateStr);d.setDate(d.getDate()+Number(days));return iso(d)};const nextFor=p=>addDays(p.last,S.interval);const sourceDateFor=target=>addDays(target,25-S.interval);
-const st=p=>{let d=diff(nextFor(p),iso(S.ref));return d<0?"overdue":d===0?"today":d===1?"tomorrow":d<=7?"week":"future"},lbl=s=>({overdue:"Overdue",today:"Eligible today",tomorrow:"Tomorrow",week:"Within 7 days",future:"Future"})[s];
+
+const UNDO_WINDOW_MS=5*60*1000;
+function auditActionLabel(action){return ({start:"Start Patient",dispensed:"Dispensed",undo_dispensed:"Undo Dispensed",admin_reopen:"Admin Reopen",unavailable:"Unavailable"})[action]||action}
+async function writeAudit(mrn,action,fromStatus,toStatus,reason=""){
+ if(!S.sb||!S.user)return;
+ const payload={
+  work_date:iso(S.date),mrn:String(mrn),action,
+  from_status:fromStatus||null,to_status:toStatus||null,
+  user_id:S.user.id,user_name:S.profile?.display_name||S.profile?.full_name||S.profile?.username||"",
+  reason:reason||null,created_at:new Date().toISOString()
+ };
+ const {error}=await S.sb.from("dispense_audit_log").insert(payload);
+ if(error)console.error("Audit write failed",error);
+}
+function showUndo(id,staff,completedAt){
+ clearInterval(S.undoTicker);
+ S.lastUndo={id,staff,completedAt};
+ $("#undoBanner").classList.remove("hidden");
+ const tick=()=>{
+  const left=Math.max(0,UNDO_WINDOW_MS-(Date.now()-new Date(completedAt).getTime()));
+  if(left<=0){$("#undoBanner").classList.add("hidden");clearInterval(S.undoTicker);S.lastUndo=null;return}
+  const m=Math.floor(left/60000),s=Math.floor((left%60000)/1000);
+  $("#undoTitle").textContent=`MRN ${id} dispensed successfully`;
+  $("#undoTimer").textContent=`Undo available for ${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+ };
+ tick();S.undoTicker=setInterval(tick,1000);
+}
+window.undoLastDispense=async()=>{
+ const u=S.lastUndo;if(!u)return;
+ if(Date.now()-new Date(u.completedAt).getTime()>UNDO_WINDOW_MS){toast("Undo period expired");$("#undoBanner").classList.add("hidden");return}
+ const current=S.a[u.id];if(current?.staff==="team_import"){toast("Imported team work can only be changed by Admin");return}
+ if(!current||current.status!=="dispensed"){toast("Patient is no longer dispensed");return}
+ const from=current.status;
+ S.a[u.id]={...current,status:"in_progress",completedAt:"",updatedAt:new Date().toISOString()};
+ saveLocal();
+ await saveShared(u.id);
+ await writeAudit(u.id,"undo_dispensed",from,"in_progress","Undo within 5 minutes");
+ $("#undoBanner").classList.add("hidden");clearInterval(S.undoTicker);S.lastUndo=null;
+ render();toast("Dispense undone");
+}
+window.adminReopenPatient=async()=>{
+ if(!requireAdmin())return;
+ const id=$("#reopenMrn").value.trim(),reason=$("#reopenReason").value.trim(),msg=$("#reopenMessage");
+ if(!id||!reason){msg.textContent="Enter MRN and reason.";return}
+ let current=S.a[id];
+ if(S.sb){
+  const {data}=await S.sb.from("dispense_workflow").select("*").eq("work_date",iso(S.date)).eq("mrn",id).maybeSingle();
+  if(data)current={status:data.status,staff:data.staff_id||"",startedAt:data.started_at||"",completedAt:data.completed_at||"",updatedAt:data.updated_at||""};
+ }
+ if(!current){msg.textContent="No workflow record found for this MRN.";return}
+ const from=current.status;
+ S.a[id]={...current,status:"in_progress",staff:S.staff,completedAt:"",updatedAt:new Date().toISOString()};
+ saveLocal();await saveShared(id);await writeAudit(id,"admin_reopen",from,"in_progress",reason);
+ msg.textContent="Patient reopened successfully.";$("#reopenMrn").value="";$("#reopenReason").value="";
+ render();await loadAuditLog();toast("Patient reopened");
+}
+window.loadAuditLog=async()=>{
+ if(!requireAdmin()||!S.sb)return;
+ const {data,error}=await S.sb.from("dispense_audit_log").select("*").order("created_at",{ascending:false}).limit(200);
+ if(error){$("#auditRows").innerHTML='<div class="muted">Could not load audit log.</div>';return}
+ $("#auditRows").innerHTML=(data||[]).map(r=>`<div class="audit-row"><div><b>${new Date(r.created_at).toLocaleString()}</b></div><div><b>${r.user_name||"—"}</b><small>MRN ${r.mrn}</small></div><div><b>${auditActionLabel(r.action)}</b><small>${r.from_status||"—"} → ${r.to_status||"—"}</small></div><div>${r.reason||"—"}</div></div>`).join("")||'<div class="muted">No audit records yet.</div>';
+}
+
+
+async function loadLegacyImport(){
+ try{
+  const r=await fetch("data/legacy-import.json",{cache:"no-store"});
+  if(!r.ok)return;
+  S.legacy=await r.json();
+  if(S.legacy.work_date!==iso(S.date))return;
+  for(const x of S.legacy.records||[]){
+   const current=S.a[x.mrn];
+   if(!current||current.status==="waiting"){
+    S.a[x.mrn]={status:"dispensed",staff:"team_import",startedAt:"",completedAt:x.completedAt||"",updatedAt:x.updatedAt||"",source:"historical_import"};
+   }
+  }
+  saveLocal();
+ }catch(e){console.warn("Legacy import not loaded",e)}
+}
 
 async function boot(){
  S.meta=await fetch("data/meta.json").then(r=>r.json());
- const chunks=await Promise.all(S.meta.chunks.map(f=>fetch("data/"+f).then(r=>r.json())));
- S.patients=chunks.flat();
- S.drugs=await fetch("data/drugs.json").then(r=>r.json());
- S.ref=new Date();S.month=new Date(S.ref.getFullYear(),S.ref.getMonth(),1);S.selected=new Date(S.ref);
- $("#ref").value=iso(S.ref);
- const h=S.ref.getHours();$("#greeting").textContent=(h<12?"Good Morning":h<18?"Good Afternoon":"Good Evening")+", Pharmacist.";
- $("#sync").textContent="Synced • "+new Date(S.meta.generated_at).toLocaleString();
- bind();$("#currentStaffLabel").textContent=staffName(S.currentStaff);if(!S.currentStaff)openStaffSelector();renderAll();
+ S.p=(await Promise.all(S.meta.chunks.map(f=>fetch("data/"+f).then(r=>r.json())))).flat();
+ S.date=new Date();
+ $("#date").value=iso(S.date);
+ $("#currentDays").textContent=S.days;
+ $("#custom").value=S.days;
+ bind();
+ const c=window.SUPABASE_CONFIG;
+ if(c?.url&&!c.url.includes("YOUR_"))S.sb=window.supabase.createClient(c.url,c.publishableKey);
+ await initAuth();
+ await initShared();
+ await loadLegacyImport();
+ render();
 }
-function bind(){
- $$(".nav").forEach(b=>b.onclick=()=>switchV(b.dataset.v));
- $("#ref").onchange=e=>{S.ref=pd(e.target.value);S.selected=new Date(S.ref);renderAll()};
- $("#start").onclick=()=>switchV("queue");
- $("#q").oninput=()=>{S.page=1;renderPatients()};
- $("#status").onchange=()=>{S.page=1;renderPatients()};
- $("#queueMode").onchange=renderQueue;
- $("#prev").onclick=()=>{if(S.page>1){S.page--;renderPatients()}};
- $("#next").onclick=()=>{S.page++;renderPatients()};
- $("#close").onclick=()=>$("#modal").classList.add("hidden");
- $("#modal").onclick=e=>{if(e.target.id==="modal")$("#modal").classList.add("hidden")};
- $("#prevMonth").onclick=()=>{S.month=new Date(S.month.getFullYear(),S.month.getMonth()-1,1);renderCalendar()};
- $("#nextMonth").onclick=()=>{S.month=new Date(S.month.getFullYear(),S.month.getMonth()+1,1);renderCalendar()};
- $("#drugSearch").oninput=renderDrugList;
- $("#demandSearch").oninput=renderDemand;
- $$(".interval-option").forEach(b=>b.onclick=()=>setIntervalDays(Number(b.dataset.days)));
- $("#applyCustom").onclick=()=>{let v=Number($("#customInterval").value);if(v>=1&&v<=365)setIntervalDays(v)};
- $("#export").onclick=exportView;
-}
-function switchV(v){
- S.view=v;$$(".view").forEach(x=>x.classList.remove("active"));$("#"+v).classList.add("active");
- $$(".nav").forEach(x=>x.classList.toggle("active",x.dataset.v===v));
- $("#title").textContent={dashboard:"Command Center",queue:"Today's Work",patients:"Patient Registry",calendar:"Smart Calendar",drugs:"Drug Intelligence",demand:"Drug Preparation",tower:"Control Tower",reports:"End of Day",quality:"Data Quality",team:"Team Performance",admin:"Administration"}[v];
- if(v==="queue")renderQueue();if(v==="patients")renderPatients();if(v==="calendar")renderCalendar();if(v==="drugs")renderDrugList();if(v==="demand")renderDemand();if(v==="tower")renderTower();if(v==="reports")renderReports();if(v==="quality")renderQuality();if(v==="team")renderTeam();if(v==="admin")renderAdmin();
-}
-function counts(){let c={overdue:0,today:0,tomorrow:0,week:0,future:0};S.patients.forEach(p=>c[st(p)]++);return c}
-function renderAll(){renderDash();renderQueue();renderPatients();renderCalendar();renderDrugList();renderDemand();renderTower();renderReports();renderQuality();renderTeam();renderAdmin()}
-function renderDash(){
- const c=counts();$("#hero").textContent=fmt(c.today);$("#orb").textContent=fmt(c.today);$("#heroDate").textContent=S.ref.toLocaleDateString("en-GB",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
- $("#kOver").textContent=fmt(c.overdue);$("#kToday").textContent=fmt(c.today);$("#kTomorrow").textContent=fmt(c.tomorrow);$("#kWeek").textContent=fmt(c.week);$("#kPatients").textContent=fmt(S.meta.unique_patients);$("#kExceptions").textContent=fmt(S.meta.date_exceptions);
- let vals=[];for(let i=0;i<30;i++){let d=new Date(S.ref);d.setDate(d.getDate()+i);vals.push({d,n:S.patients.filter(p=>nextFor(p)===iso(d)).length})}
- let mx=Math.max(...vals.map(x=>x.n),1);$("#forecast").innerHTML=vals.map((x,i)=>`<div class="bar" style="height:${Math.max(2,x.n/mx*100)}%" title="${x.d.toLocaleDateString()}: ${x.n}">${i%4===0?`<label>${x.d.toLocaleDateString("en-US",{day:"2-digit",month:"short"})}</label>`:""}</div>`).join("");
- let m={};S.patients.forEach(p=>m[p.speciality||"Unknown"]=(m[p.speciality||"Unknown"]||0)+1);let top=Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,8),tm=top[0]?.[1]||1;$("#specialties").innerHTML=top.map(([n,v])=>`<div class="rankrow"><span>${esc(n.length>30?n.slice(0,30)+"…":n)}</span><div class="track"><div class="fill" style="width:${v/tm*100}%"></div></div><b>${fmt(v)}</b></div>`).join("");
-}
-function filtered(){let q=$("#q").value.toLowerCase(),f=$("#status").value;return S.patients.filter(p=>{let hay=[p.id,p.name,p.drug_text,p.speciality,p.location].join(" ").toLowerCase();return(!q||hay.includes(q))&&(f==="all"||f==="exception"&&p.exceptions>0||st(p)===f)})}
-function renderPatients(){let a=filtered(),pages=Math.max(1,Math.ceil(a.length/S.size));S.page=Math.min(S.page,pages);let part=a.slice((S.page-1)*S.size,S.page*S.size);$("#rows").innerHTML=part.map(p=>`<tr onclick="openPatient('${esc(p.id)}')"><td><b>${esc(p.name||"Unknown")}</b><br><small class="muted">${esc(p.gender)} ${esc(p.age)}</small></td><td><button class="copy-mrn" onclick="copyMRN(\'${esc(p.id)}\',event)">⧉ ${esc(p.id)}</button></td><td>${p.meds}${p.exceptions?` <span class="exception">⚠ ${p.exceptions} different</span>`:""}</td><td>${p.last}</td><td>${nextFor(p)}</td><td>${Math.round(p.aligned/p.meds*100)}%</td><td><span class="badge ${st(p)}">${lbl(st(p))}</span></td><td>${esc(p.speciality)}</td></tr>`).join("");$("#count").textContent=fmt(a.length)+" patients";$("#page").textContent=`Page ${S.page} of ${pages}`;$("#prev").disabled=S.page===1;$("#next").disabled=S.page===pages}
-function queueList(){let mode=$("#queueMode").value;return S.patients.filter(p=>mode==="week"?["today","tomorrow","week"].includes(st(p)):st(p)===mode)}
-function renderQueue(){
- let a=queueList(),done=a.filter(p=>actionStatus(p.id)==="dispensed").length,rate=a.length?Math.round(done/a.length*100):0;
- $("#scheduled").textContent=fmt(a.length);$("#done").textContent=fmt(done);$("#pending").textContent=fmt(a.length-done);$("#completion").textContent=rate+"%";$("#progress").style.width=rate+"%";
- $("#cards").innerHTML=a.slice(0,300).map(p=>{
-  const status=actionStatus(p.id),staff=actionUser(p.id),assigned=staffName(staff),locked=status==="in_progress"&&staff&&staff!==S.currentStaff;
-  const badge=status==="in_progress"?"In Progress":status==="dispensed"?"Dispensed":status==="unavailable"?"Not Available":status==="deferred"?"Deferred":status==="called"?"Called":lbl(st(p));
-  const time=actionTime(p.id,status==="dispensed"?"completedAt":"startedAt");
-  return `<article class="card status-${status}">
-   <span class="badge ${status==="dispensed"?"today":status==="unavailable"?"overdue":status==="deferred"?"week":status==="in_progress"?"tomorrow":st(p)}">${badge}</span>
-   <h4>${esc(p.name||"Unknown")}</h4>
-   <small><button class="copy-mrn" onclick="copyMRN('${esc(p.id)}',event)">⧉ ${esc(p.id)}</button> • ${p.meds} medications</small>
-   ${staff?`<div class="staff-strip"><span class="staff-dot staff-${STAFF[staff]?.css||""}"></span><b>👩‍⚕️ ${esc(assigned)}</b><span class="muted">${time?new Date(time).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}):""}</span></div>`:""}
-   <div class="drug">${esc(p.drug_text)}</div>
-   <div class="card-actions">
-    <button onclick="startPatient('${esc(p.id)}')" ${locked||status==="dispensed"?"disabled":""}>${status==="in_progress"&&staff===S.currentStaff?"Continue":"Start Patient"}</button>
-    <button onclick="setPatientAction('${esc(p.id)}','dispensed')" ${locked?"disabled":""}>✓ Dispensed</button>
-    <button onclick="openPatient('${esc(p.id)}')">Profile</button>
-   </div>
-   ${locked?`<div class="status-banner">Currently processed by <b>${esc(assigned)}</b></div>`:""}
-   <select class="reason-select" data-reason="${esc(p.id)}"><option value="">Select follow-up reason…</option><option ${S.notes[p.id]?.reason==="Medication unavailable"?"selected":""}>Medication unavailable</option><option ${S.notes[p.id]?.reason==="Patient not reached"?"selected":""}>Patient not reached</option><option ${S.notes[p.id]?.reason==="Prescription issue"?"selected":""}>Prescription issue</option><option ${S.notes[p.id]?.reason==="Deferred by patient"?"selected":""}>Deferred by patient</option><option ${S.notes[p.id]?.reason==="Other"?"selected":""}>Other</option></select>
-   <input class="note-input" data-note="${esc(p.id)}" value="${esc(S.notes[p.id]?.note||"")}" placeholder="Optional note…">
-   <div class="card-actions" style="margin-top:8px"><button onclick="setPatientAction('${esc(p.id)}','called')" ${locked?"disabled":""}>Called</button><button onclick="setPatientAction('${esc(p.id)}','unavailable')" ${locked?"disabled":""}>Not Available</button><button onclick="setPatientAction('${esc(p.id)}','deferred')" ${locked?"disabled":""}>Deferred</button></div>
-  </article>`;
- }).join("");
-}
-window.work=(id,v)=>setPatientAction(id,v)
-window.openPatient=async id=>{let p=S.patients.find(x=>x.id===id);if(!p)return;let bucket=await fetch(`data/details/${p.bucket}.json`).then(r=>r.json()),d=bucket[id];if(!d)return;let s=d.summary;$("#modalContent").innerHTML=`<div class="profile-head"><div><div class="eyebrow">PATIENT CENTER</div><h2>${esc(s.name||"Unknown")}</h2><button class="copy-mrn" onclick="copyMRN(\'${esc(s.id)}\',event)">⧉ Copy MRN ${esc(s.id)}</button></div><span class="badge ${st(s)}">${lbl(st(s))}</span></div><div class="profile-grid"><div><span>Primary last dispense</span><b>${s.last}</b></div><div><span>Primary next eligible</span><b>${nextFor(s)}</b></div><div><span>Medications</span><b>${s.meds}</b></div><div><span>Alignment</span><b>${Math.round(s.aligned/s.meds*100)}%</b></div><div><span>Specialty</span><b>${esc(s.speciality)}</b></div><div><span>Location</span><b>${esc(s.location)}</b></div><div><span>Gender</span><b>${esc(s.gender)}</b></div><div><span>Age</span><b>${esc(s.age)}</b></div></div>${s.exceptions?`<div class="warning">⚠ ${s.exceptions} medication(s) have a different latest dispense date and require review.</div>`:""}<div class="eyebrow" style="margin-top:22px">CURRENT MEDICATION SCHEDULE</div><div class="med-grid">${d.medications.map(m=>`<article class="med-card"><h4>${esc(m.drug)}</h4><div class="med-meta"><div><span>Last dispense</span><b>${m.disp}</b></div><div><span>Next eligible</span><b>${addDays(m.disp,S.interval)}</b></div><div><span>Dispensed qty</span><b>${esc(m.disp_qty)}</b></div><div><span>Order ID</span><b>${esc(m.order_id||"—")}</b></div></div></article>`).join("")}</div><div class="timeline"><div class="eyebrow">DISPENSE HISTORY</div>${d.history.slice().reverse().slice(0,40).map(h=>`<div class="event"><b>${h.disp} — ${esc(h.drug)}</b><span>Qty ${esc(h.disp_qty)} • Order ${esc(h.order_id||"—")}</span></div>`).join("")}</div>`;$("#modal").classList.remove("hidden")}
-function renderCalendar(){let y=S.month.getFullYear(),m=S.month.getMonth(),first=new Date(y,m,1),start=new Date(y,m,1-first.getDay());$("#monthTitle").textContent=S.month.toLocaleDateString("en-US",{month:"long",year:"numeric"});let h="";for(let i=0;i<42;i++){let d=new Date(start);d.setDate(start.getDate()+i);let key=iso(d),n=S.patients.filter(p=>nextFor(p)===key).length;h+=`<button class="day ${d.getMonth()!==m?"dim":""} ${key===iso(S.selected)?"selected":""}" onclick="selectDay('${key}')"><b>${d.getDate()}</b><span>${n?fmt(n)+" patients":""}</span></button>`}$("#days").innerHTML=h;renderSelected()}
-window.selectDay=k=>{S.selected=pd(k);renderCalendar()}
-function renderSelected(){let key=iso(S.selected),a=S.patients.filter(p=>nextFor(p)===key);$("#selectedTitle").textContent=S.selected.toLocaleDateString("en-US",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});$("#selectedCount").textContent=fmt(a.length);$("#selectedList").innerHTML=a.slice(0,80).map(p=>`<button onclick="openPatient('${esc(p.id)}')"><b>${esc(p.name||"Unknown")}</b><br><span>${esc(p.id)} • ${p.meds} medications</span></button>`).join("")}
-function renderDrugList(){let q=($("#drugSearch").value||"").toLowerCase(),a=S.drugs.filter(d=>d.drug.toLowerCase().includes(q)).slice(0,300);$("#drugRows").innerHTML=a.map(d=>`<div class="drug-row" onclick="openDrug('${esc(d.drug.replace(/'/g,"&#39;"))}')"><div><b>${esc(d.drug)}</b><br><small class="muted">${fmt(d.patients)} patients</small></div><span>→</span></div>`).join("")}
-window.openDrug=name=>{let d=S.drugs.find(x=>x.drug===name);if(!d)return;let ref=sourceDateFor(iso(S.ref)),tom=sourceDateFor(iso(new Date(S.ref.getFullYear(),S.ref.getMonth(),S.ref.getDate()+1))),week=0,over=0,today=d.due_dates[ref]||0,tomorrow=d.due_dates[tom]||0;Object.entries(d.due_dates).forEach(([k,v])=>{let delta=diff(k,ref);if(delta<0)over+=v;else if(delta<=7)week+=v});$("#drugDetail").innerHTML=`<div class="eyebrow">DRUG INTELLIGENCE</div><h2>${esc(d.drug)}</h2><div class="drug-kpis"><div><span>Active patients</span><b>${fmt(d.patients)}</b></div><div><span>Due today</span><b>${fmt(today)}</b></div><div><span>Tomorrow</span><b>${fmt(tomorrow)}</b></div><div><span>Overdue</span><b>${fmt(over)}</b></div></div><div class="grid" style="grid-template-columns:1fr 1fr"><div><h3>Top specialties</h3><div class="rank" style="margin-top:14px">${rankHtml(d.top_specialities)}</div></div><div><h3>Top locations</h3><div class="rank" style="margin-top:14px">${rankHtml(d.top_locations)}</div></div></div>`}
-function rankHtml(items){let mx=items[0]?.[1]||1;return items.map(([n,v])=>`<div class="rankrow"><span>${esc(n)}</span><div class="track"><div class="fill" style="width:${v/mx*100}%"></div></div><b>${fmt(v)}</b></div>`).join("")}
-
-function todayDemand(){let key=sourceDateFor(iso(S.ref));return S.drugs.map(d=>({drug:d.drug,patients:d.due_dates[key]||0,qty:d.qty_by_date?.[key]||0})).filter(x=>x.patients>0).sort((a,b)=>b.qty-a.qty)}
-function renderDemand(){if(!$("#prepList"))return;let q=($("#demandSearch").value||"").toLowerCase(),a=todayDemand().filter(x=>x.drug.toLowerCase().includes(q)),done=a.filter(x=>S.prep[x.drug]).length,rate=a.length?Math.round(done/a.length*100):0;$("#dMeds").textContent=fmt(a.length);$("#dPatients").textContent=fmt(a.reduce((s,x)=>s+x.patients,0));$("#dQty").textContent=fmt(a.reduce((s,x)=>s+x.qty,0));$("#dProgress").textContent=rate+"%";$("#prepProgress").style.width=rate+"%";$("#prepList").innerHTML=a.map((x,i)=>`<article class="prep-item ${S.prep[x.drug]?"done":""}"><div class="prep-top"><div><div class="eyebrow">PRIORITY ${i+1}</div><h4>${esc(x.drug)}</h4></div><span class="badge today">${fmt(x.qty)} qty</span></div><div class="prep-meta"><div><span>Patients</span><b>${fmt(x.patients)}</b></div><div><span>Required qty</span><b>${fmt(x.qty)}</b></div><div><span>Avg / patient</span><b>${fmt(x.patients?x.qty/x.patients:0)}</b></div></div><div class="prep-actions"><button onclick='togglePrep(${JSON.stringify(x.drug)})'>${S.prep[x.drug]?"Undo":"✓ Prepared"}</button><button onclick='showDrugPatients(${JSON.stringify(x.drug)})'>Patients</button></div></article>`).join("")}
-window.togglePrep=drug=>{S.prep[drug]=!S.prep[drug];localStorage.setItem("dip-prep",JSON.stringify(S.prep));renderDemand();renderTower()}
-window.showDrugPatients=drug=>{let key=iso(S.ref),p=S.patients.filter(x=>nextFor(x)===key&&x.drug_text.toLowerCase().includes(drug.toLowerCase()));$("#modalContent").innerHTML=`<div class="eyebrow">TODAY'S DRUG PATIENTS</div><h2>${esc(drug)}</h2><div class="summary"><div><span>Patients</span><b>${fmt(p.length)}</b></div></div><table><thead><tr><th>Patient</th><th>MRN</th><th>Specialty</th></tr></thead><tbody>${p.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.id)}</td><td>${esc(x.speciality)}</td></tr>`).join("")}</tbody></table>`;$("#modal").classList.remove("hidden")}
-function renderTower(){if(!$("#towerPatients"))return;let key=iso(S.ref),today=S.patients.filter(p=>nextFor(p)===key),done=today.filter(p=>actionStatus(p.id)==="dispensed").length,rate=today.length?Math.round(done/today.length*100):0,d=todayDemand(),qty=d.reduce((s,x)=>s+x.qty,0);$("#towerPatients").textContent=fmt(today.length);$("#towerDone").textContent=fmt(done);$("#towerRemaining").textContent=fmt(today.length-done);$("#towerMeds").textContent=fmt(d.length);$("#towerQty").textContent=fmt(qty);$("#towerProgress").style.width=rate+"%";let mx=d[0]?.qty||1;$("#towerTop").innerHTML=d.slice(0,10).map(x=>`<div class="rankrow"><span>${esc(x.drug)}</span><div class="track"><div class="fill" style="width:${x.qty/mx*100}%"></div></div><b>${fmt(x.qty)}</b></div>`).join("")}
-
-
-function showToast(message="MRN copied"){
- const t=$("#toast");if(!t)return;t.textContent=message;t.classList.add("show");clearTimeout(window.__toastTimer);window.__toastTimer=setTimeout(()=>t.classList.remove("show"),1700);
-}
-window.copyMRN=async(id,event)=>{
- if(event){event.preventDefault();event.stopPropagation()}
- try{await navigator.clipboard.writeText(String(id))}
- catch(e){const ta=document.createElement("textarea");ta.value=String(id);document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove()}
- showToast(`MRN ${id} copied`);
-}
-window.setPatientAction=(id,status)=>{
- if(!requireStaff())return;
- const current=S.assignments[id]||{};
- if(current.status==="in_progress"&&current.staff&&current.staff!==S.currentStaff){
-  showToast(`Patient is being processed by ${staffName(current.staff)}`);return;
- }
- S.assignments[id]={
-  ...current,status,staff:S.currentStaff,
-  startedAt:current.startedAt||new Date().toISOString(),
-  completedAt:status==="dispensed"?new Date().toISOString():(current.completedAt||""),
-  updatedAt:new Date().toISOString()
- };
- S.work[id]=status;
- localStorage.setItem("dip-work",JSON.stringify(S.work));
- localStorage.setItem("dip-assignments",JSON.stringify(S.assignments));
- renderAll();showToast(`${status.replace("_"," ")} — ${staffName(S.currentStaff)}`);
-}
-window.savePatientNote=(id)=>{
- const reason=document.querySelector(`[data-reason="${CSS.escape(id)}"]`)?.value||"";
- const note=document.querySelector(`[data-note="${CSS.escape(id)}"]`)?.value||"";
- S.notes[id]={reason,note,updated:new Date().toISOString()};
- localStorage.setItem("dip-notes",JSON.stringify(S.notes));showToast("Patient note saved");renderReports();
-}
-function renderReports(){
- if(!$("#rScheduled"))return;
- const key=iso(S.ref),a=S.patients.filter(p=>nextFor(p)===key);
- const countStatus=s=>a.filter(p=>actionStatus(p.id)===s).length;
- const disp=countStatus("dispensed"), contacted=countStatus("called"), unavailable=countStatus("unavailable"), deferred=countStatus("deferred");
- const pending=a.length-disp,rate=a.length?Math.round(disp/a.length*100):0;
- $("#rScheduled").textContent=fmt(a.length);$("#rDispensed").textContent=fmt(disp);$("#rPending").textContent=fmt(pending);$("#rCompletion").textContent=rate+"%";
- $("#rContacted").textContent=fmt(contacted);$("#rUnavailable").textContent=fmt(unavailable);$("#rDeferred").textContent=fmt(deferred);$("#rExceptions").textContent=fmt(a.filter(p=>p.exceptions>0).length);
- const follow=a.filter(p=>["called","unavailable","deferred","pending","in_progress"].includes(actionStatus(p.id))||S.notes[p.id]).slice(0,150);
- $("#followupRows").innerHTML=follow.length?`<div class="tablebox"><table><thead><tr><th>Patient</th><th>MRN</th><th>Status</th><th>Pharmacist</th><th>Reason / Note</th></tr></thead><tbody>${follow.map(p=>`<tr><td>${esc(p.name||"Unknown")}</td><td><button class="copy-mrn" onclick="copyMRN('${esc(p.id)}',event)">⧉ ${esc(p.id)}</button></td><td><span class="action-chip">${esc(actionStatus(p.id)||"Pending")}</span></td><td>${esc(staffName(actionUser(p.id)))}</td><td>${esc([S.notes[p.id]?.reason,S.notes[p.id]?.note].filter(Boolean).join(" — ")||"—")}</td></tr>`).join("")}</tbody></table></div>`:`<div class="muted">No follow-up cases recorded for this day.</div>`;
-}
-
-function teamStats(){
- const key=iso(S.ref),today=S.patients.filter(p=>nextFor(p)===key);
- return Object.keys(STAFF).map(id=>{
-  const disp=today.filter(p=>actionStatus(p.id)==="dispensed"&&actionUser(p.id)===id);
-  const progress=today.filter(p=>actionStatus(p.id)==="in_progress"&&actionUser(p.id)===id);
-  return {id,name:STAFF[id].short,full:STAFF[id].full,dispensed:disp.length,inProgress:progress.length};
- });
-}
+function bind(){$$(".nav").forEach(b=>b.onclick=()=>go(b.dataset.v));$("#date").onchange=async e=>{S.date=pd(e.target.value);await loadShared();render()};$("#mode").onchange=renderQueue;$("#qqueue").oninput=renderQueue;$("#qreg").oninput=()=>{S.page=1;renderRegistry()}}
+function go(v){if(v==="admin"&&!requireAdmin())return;$$(".view").forEach(x=>x.classList.remove("active"));$("#"+v).classList.add("active");$$(".nav").forEach(x=>x.classList.toggle("active",x.dataset.v===v));$("#title").textContent={home:"Overview",queue:"Dispense Queue",registry:"Patient Registry",team:"Team Performance",admin:"Administration"}[v];render()}
+function openLogin(){$("#authScreen").classList.remove("hidden")}function selectStaff(id){S.staff=id;localStorage.setItem("dip-staff",id);$("#who").textContent=STAFF[id];$("#login").classList.add("hidden");toast("Signed in")}
+async function copy(id,e){e?.stopPropagation();try{await navigator.clipboard.writeText(id)}catch{let x=document.createElement("textarea");x.value=id;document.body.appendChild(x);x.select();document.execCommand("copy");x.remove()}toast("MRN copied")}
+function setDays(n){if(!n||n<1||n>365)return;S.days=n;localStorage.setItem("dip-days",n);$("#currentDays").textContent=n;render();toast("Interval updated")}
+function counts(){let c={overdue:0,today:0,tomorrow:0,week:0};S.p.forEach(p=>{let s=state(p);if(c[s]!=null)c[s]++});return c}
+function render(){let c=counts(),h=new Date().getHours();$("#hello").textContent=(h<12?"Good Morning":h<18?"Good Afternoon":"Good Evening")+", Pharmacist.";$("#heroCount").textContent=fmt(c.today);$("#heroDate").textContent=S.date.toLocaleDateString("en-GB",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});$("#over").textContent=fmt(c.overdue);$("#today").textContent=fmt(c.today);$("#tomorrow").textContent=fmt(c.tomorrow);$("#week").textContent=fmt(c.week);$("#all").textContent=fmt(S.p.length);renderQueue();renderRegistry();renderTeam()}
+function qlist(){let m=$("#mode").value,q=$("#qqueue").value.toLowerCase();return S.p.filter(p=>(m==="week"?["today","tomorrow","week"].includes(state(p)):state(p)===m)&&(!q||[p.id,p.name,p.drug_text,p.speciality].join(" ").toLowerCase().includes(q)))}
+function ast(id){return S.a[id]?.status||"waiting"}function au(id){return S.a[id]?.staff||""}
+function renderQueue(){let a=qlist(),done=a.filter(p=>ast(p.id)==="dispensed").length,working=a.filter(p=>ast(p.id)==="in_progress").length,rate=a.length?Math.round(done/a.length*100):0;$("#scheduled").textContent=fmt(a.length);$("#done").textContent=fmt(done);$("#working").textContent=fmt(working);$("#rate").textContent=rate+"%";$("#bar").style.width=rate+"%";$("#cards").innerHTML=a.slice(0,300).map(p=>{let s=ast(p.id),u=au(p.id),locked=s==="in_progress"&&u&&u!==S.staff;return `<article class="card ${s}"><span class="badge ${state(p)}">${s==="waiting"?label(state(p)):s.replace("_"," ")}</span><h4>${p.name||"Unknown"}</h4><button class="copy" onclick="copy('${p.id}',event)">⧉ ${p.id}</button>${u?`<div class="staff">👩‍⚕️ ${STAFF[u]||u}</div>`:""}<div class="drugs">${p.drug_text}</div><div class="btns"><button class="primary" onclick="start('${p.id}')" ${locked||s==="dispensed"?"disabled":""}>${s==="in_progress"&&u===S.staff?"Continue":"Start"}</button><button onclick="finish('${p.id}','dispensed')" ${locked?"disabled":""}>Dispensed</button><button onclick="finish('${p.id}','unavailable')" ${locked?"disabled":""}>Unavailable</button></div></article>`}).join("")}
+async function start(id){if(!S.user||!S.profile)return openLogin();if(S.profile.is_active===false)return toast("Account disabled");let a=S.a[id];if(a?.status==="in_progress"&&a.staff!==S.staff)return toast("Already in progress");const from=a?.status||"waiting";S.a[id]={...(a||{}),status:"in_progress",staff:S.staff,startedAt:a?.startedAt||new Date().toISOString(),updatedAt:new Date().toISOString()};saveLocal();await saveShared(id);await writeAudit(id,"start",from,"in_progress");render()}
+async function finish(id,status){if(!S.user||!S.profile)return openLogin();if(S.profile.is_active===false)return toast("Account disabled");let a=S.a[id];if(a?.status==="in_progress"&&a.staff&&a.staff!==S.staff)return toast("Locked by another pharmacist");const from=a?.status||"waiting";const completedAt=status==="dispensed"?new Date().toISOString():"";S.a[id]={...(a||{}),status,staff:S.staff,startedAt:a?.startedAt||new Date().toISOString(),completedAt,updatedAt:new Date().toISOString()};saveLocal();await saveShared(id);await writeAudit(id,status==="dispensed"?"dispensed":status,from,status);if(status==="dispensed")showUndo(id,S.staff,completedAt);render()}
+function saveLocal(){localStorage.setItem("dip-a",JSON.stringify(S.a))}
+function renderRegistry(){let q=$("#qreg").value.toLowerCase(),a=S.p.filter(p=>!q||[p.id,p.name,p.drug_text].join(" ").toLowerCase().includes(q)),pages=Math.max(1,Math.ceil(a.length/S.size));S.page=Math.min(S.page,pages);let x=a.slice((S.page-1)*S.size,S.page*S.size);$("#rows").innerHTML=x.map(p=>`<tr><td>${p.name||"Unknown"}</td><td><button class="copy" onclick="copy('${p.id}',event)">⧉ ${p.id}</button></td><td>${p.meds}</td><td>${p.base_last}</td><td>${next(p)}</td><td>${label(state(p))}</td></tr>`).join("");$("#count").textContent=fmt(a.length)+" patients";$("#pg").textContent=`${S.page}/${pages}`}
+function page(n){S.page=Math.max(1,S.page+n);renderRegistry()}
 function renderTeam(){
- if(!$("#teamCards"))return;
- const stats=teamStats(),sorted=[...stats].sort((a,b)=>b.dispensed-a.dispensed);
- $("#teamCards").innerHTML=stats.map(x=>`<article class="team-card"><div class="employee">👩‍⚕️ ${esc(x.name)}</div><div class="score">${fmt(x.dispensed)}</div><small>patients dispensed</small><div class="status-banner"><span>In progress now</span><b>${fmt(x.inProgress)}</b></div></article>`).join("");
- const medals=["🥇","🥈","🥉"];
- $("#leaderboard").innerHTML=sorted.map((x,i)=>`<div class="leader-row"><div class="rank-medal">${medals[i]||i+1}</div><div><b>${esc(x.name)}</b><br><small class="muted">${esc(x.full)}</small></div><b>${fmt(x.dispensed)} dispensed</b></div>`).join("");
+ let today=S.p.filter(p=>next(p)===iso(S.date));
+ let employeeIds=["bassemah","batool","ghada","rabab"];
+ let stats=employeeIds.map(id=>({
+  id,
+  done:today.filter(p=>ast(p.id)==="dispensed"&&au(p.id)===id).length,
+  working:today.filter(p=>ast(p.id)==="in_progress"&&au(p.id)===id).length
+ }));
+ let imported=today.filter(p=>ast(p.id)==="dispensed"&&au(p.id)==="team_import").length;
+ let done=today.filter(p=>ast(p.id)==="dispensed").length;
+ let working=today.filter(p=>ast(p.id)==="in_progress").length;
+ let rate=today.length?Math.round(done/today.length*100):0;
+ $("#teamTotal").textContent=fmt(done);
+ $("#teamWorking").textContent=fmt(working);
+ $("#teamRate").textContent=rate+"%";
+ $("#activeStaff").textContent=stats.filter(x=>x.done||x.working).length;
+ $("#teamCards").innerHTML=
+  `<div class="teamcard" style="border-color:var(--o)"><strong>📥 Today's Team Import</strong><div class="score">${fmt(imported)}</div><small>dispensed before employee tracking</small></div>`+
+  stats.map(x=>`<div class="teamcard"><strong>👩‍⚕️ ${STAFF[x.id]}</strong><div class="score">${fmt(x.done)}</div><small>dispensed • ${x.working} in progress</small></div>`).join("");
 }
-function exportTeamPerformance(){
- const rows=[["Pharmacist","Full Name","Dispensed","In Progress"],...teamStats().map(x=>[x.name,x.full,x.dispensed,x.inProgress])];
- const csv=rows.map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n");
- const blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),link=document.createElement("a");link.href=URL.createObjectURL(blob);link.download=`team-performance-${iso(S.ref)}.csv`;link.click();
-}
-
-function renderQuality(){
- if(!$("#qRaw"))return;
- $("#qRaw").textContent=fmt(S.meta.raw_records);$("#qValid").textContent=fmt(S.meta.valid_records||S.meta.raw_records);
- $("#qPatients").textContent=fmt(S.meta.unique_patients);$("#qMeds").textContent=fmt(S.meta.patient_medication_records);
- $("#qDuplicates").textContent=fmt(S.meta.duplicate_or_historical||Math.max(0,(S.meta.valid_records||S.meta.raw_records)-S.meta.patient_medication_records));
- $("#qExceptions").textContent=fmt(S.meta.date_exceptions);$("#qSource").textContent=S.meta.source_file||"—";
- $("#qGenerated").textContent=new Date(S.meta.generated_at).toLocaleString();$("#qInterval").textContent=S.interval;
-}
-function exportEndOfDay(){
- const key=iso(S.ref),a=S.patients.filter(p=>nextFor(p)===key);
- const rows=[["Patient ID","Patient Name","Status","Pharmacist","Reason","Note","Medications","Specialty"],...a.map(p=>[p.id,p.name,actionStatus(p.id)||"pending",staffName(actionUser(p.id)),S.notes[p.id]?.reason||"",S.notes[p.id]?.note||"",p.meds,p.speciality])];
- const csv=rows.map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n");
- const blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),link=document.createElement("a");link.href=URL.createObjectURL(blob);link.download=`end-of-day-${key}.csv`;link.click();
-}
-
-function setIntervalDays(days){S.interval=Number(days);localStorage.setItem("dip-interval",String(S.interval));S.page=1;renderAdmin();renderAll();$("#adminSaved").textContent=`Saved. All calculations now use ${S.interval} days.`;setTimeout(()=>$("#adminSaved").textContent="",3000)}
-function renderAdmin(){if(!$("#currentInterval"))return;$("#currentInterval").textContent=S.interval;$$(".interval-option").forEach(b=>b.classList.toggle("active",Number(b.dataset.days)===S.interval));$("#customInterval").value=[15,20,25,30].includes(S.interval)?"":S.interval}
-
-function exportView(){let a=S.view==="demand"?todayDemand().map(x=>[x.drug,x.patients,x.qty]):(S.view==="queue"?queueList():filtered()),rows=S.view==="demand"?[["Drug","Patients","Required Qty"],...a]:[["Patient ID","Patient Name","Medications","Last Dispense","Next Eligible","Status","Specialty"],...a.map(p=>[p.id,p.name,p.meds,p.last,nextFor(p),lbl(st(p)),p.speciality])],csv=rows.map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n"),blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),link=document.createElement("a");link.href=URL.createObjectURL(blob);link.download="dispense-intelligence-export.csv";link.click()}
+async function initShared(){let c=window.SUPABASE_CONFIG;if(!c?.url||c.url.includes("YOUR_"))return;try{if(!S.sb)S.sb=window.supabase.createClient(c.url,c.publishableKey);await loadShared();S.sb.channel("dip-live").on("postgres_changes",{event:"*",schema:"public",table:"dispense_workflow"},p=>{let r=p.new||p.old;if(r.work_date!==iso(S.date))return;if(p.eventType==="DELETE")delete S.a[r.mrn];else S.a[r.mrn]={status:r.status,staff:r.staff_id||"",startedAt:r.started_at||"",completedAt:r.completed_at||"",updatedAt:r.updated_at||""};saveLocal();render()}).subscribe(x=>{if(x==="SUBSCRIBED"){S.shared=true;$("#live").classList.add("on");$("#sync").textContent="Live on all devices"}})}catch(e){console.error(e)}}
+async function loadShared(){if(!S.sb)return;let {data}=await S.sb.from("dispense_workflow").select("*").eq("work_date",iso(S.date));if(data){S.a={};data.forEach(r=>S.a[r.mrn]={status:r.status,staff:r.staff_id||"",startedAt:r.started_at||"",completedAt:r.completed_at||"",updatedAt:r.updated_at||""});saveLocal()}}
+async function saveShared(id){if(!S.sb)return;let a=S.a[id];await S.sb.from("dispense_workflow").upsert({work_date:iso(S.date),mrn:id,status:a.status,staff_id:a.staff,staff_name:STAFF[a.staff],started_at:a.startedAt||null,completed_at:a.completedAt||null,updated_at:a.updatedAt},{onConflict:"work_date,mrn"})}
+async function migrate(){if(!S.sb)return toast("Connect Supabase first");let n=0;for(let id in S.a){await saveShared(id);n++}toast(n+" records synced")}
 boot();
-</script>
-</body>
-</html>
+</script></body></html>
