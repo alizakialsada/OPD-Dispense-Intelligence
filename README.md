@@ -1,11 +1,16 @@
-# Dispense Intelligence Platform v4 — Operations Release
+# Dispense Intelligence Platform v5 — Team Workflow
 
 Added:
-- One-click MRN copy throughout Patient Registry, Work Queue, Patient Center, and End-of-Day Report.
-- Workflow statuses: Dispensed, Called, Not Available, Deferred.
-- Follow-up reasons and notes.
-- End-of-Day operational report and CSV export.
-- Data Quality Center.
-- Administration-controlled eligibility interval.
+- Pharmacist selection on workstation startup.
+- Three configured pharmacists:
+  - Bassemah H. Al Faraj
+  - Batool S. T. Alfaraj
+  - Ghada A. Alqudaihi
+- Start Patient / In Progress assignment.
+- Status colors: in progress, dispensed, called, unavailable, deferred.
+- Dispensed records automatically attributed to the selected pharmacist.
+- Team Performance page and daily leaderboard.
+- End-of-day report includes pharmacist name.
 
-Important: workflow statuses and notes are currently stored in the browser. A secure shared backend is required for multi-user synchronization.
+Important limitation:
+This release stores team activity in the current browser. It does not synchronize between different computers. Live multi-device locking and shared counts require a secure shared backend/database.
