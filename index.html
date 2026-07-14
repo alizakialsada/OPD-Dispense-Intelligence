@@ -75,6 +75,24 @@ h1,h2,h3,h4{margin:0}h1{font-size:34px}h2{font-size:30px}h3{font-size:18px}
 .admin-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:16px}.admin-card{border:1px solid var(--line);background:#0b1c2c;border-radius:20px;padding:24px}.admin-options{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}.interval-option{border:1px solid var(--line);background:#0e2336;color:#fff;border-radius:14px;padding:18px 10px;font-weight:900;font-size:20px}.interval-option.active,.interval-option:hover{border-color:var(--cyan);background:linear-gradient(135deg,rgba(88,231,255,.15),rgba(93,130,255,.14));color:var(--cyan)}.custom-row{display:flex;gap:10px;margin-top:14px}.custom-row input{flex:1;border:1px solid var(--line);background:#0d2234;color:#fff;border-radius:12px;padding:13px}.setting-summary{display:grid;gap:10px;margin-top:18px}.setting-summary div{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:12px 0}.setting-summary span{color:var(--muted)}.admin-note{border:1px solid rgba(88,231,255,.2);background:rgba(88,231,255,.06);padding:14px;border-radius:12px;color:#ccebf2;line-height:1.6;margin-top:18px}.success-note{margin-top:14px;color:var(--green);font-weight:800;min-height:22px}
 @media(max-width:1120px){.prep-list{grid-template-columns:1fr 1fr}.demand-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:820px){.prep-list,.tower{grid-template-columns:1fr}.demand-grid{grid-template-columns:repeat(2,1fr)}}
+
+.copy-mrn{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(88,231,255,.28);background:rgba(88,231,255,.08);color:var(--cyan);border-radius:10px;padding:7px 10px;font-weight:900;font-size:11px;cursor:pointer}
+.copy-mrn:hover{background:rgba(88,231,255,.16);transform:translateY(-1px)}
+.mrn-click{display:inline-flex;align-items:center;gap:7px;color:var(--cyan);font-weight:900;cursor:pointer}
+.mrn-click:hover{text-decoration:underline}
+.toast{position:fixed;right:28px;bottom:28px;z-index:100;background:#0d2538;border:1px solid rgba(69,230,170,.35);color:#dffff2;padding:14px 18px;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.35);font-weight:800;opacity:0;transform:translateY(12px);pointer-events:none;transition:.22s}
+.toast.show{opacity:1;transform:translateY(0)}
+.reason-select,.note-input{width:100%;border:1px solid var(--line);background:#0d2234;color:#fff;border-radius:10px;padding:9px 10px;margin-top:8px;font-size:11px}
+.report-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.report-card{border:1px solid var(--line);background:#0b1c2c;border-radius:18px;padding:18px}
+.report-card span{display:block;color:var(--muted);font-size:11px}.report-card b{display:block;font-size:30px;margin-top:7px}
+.quality-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.quality-card{border:1px solid var(--line);background:#0b1c2c;border-radius:18px;padding:18px}
+.quality-card span{display:block;color:var(--muted);font-size:11px}.quality-card b{display:block;font-size:28px;margin-top:7px}
+.local-warning{border:1px solid rgba(255,184,95,.3);background:rgba(255,184,95,.08);color:#ffd8a6;border-radius:13px;padding:13px 15px;margin-bottom:18px;line-height:1.5}
+.action-chip{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:9px;font-weight:900;background:#142a3c;color:#b9ccda}
+@media(max-width:820px){.report-grid,.quality-grid{grid-template-columns:repeat(2,1fr)}.toast{left:15px;right:15px;bottom:15px;text-align:center}}
+
 </style>
 </head>
 <body>
@@ -88,6 +106,8 @@ h1,h2,h3,h4{margin:0}h1{font-size:34px}h2{font-size:30px}h3{font-size:18px}
  <button class="nav" data-v="drugs">◇ <span>Drug Intelligence</span></button>
  <button class="nav" data-v="demand">◆ <span>Drug Preparation</span></button>
  <button class="nav" data-v="tower">▣ <span>Control Tower</span></button>
+ <button class="nav" data-v="reports">▤ <span>End of Day</span></button>
+ <button class="nav" data-v="quality">✓ <span>Data Quality</span></button>
  <button class="nav" data-v="admin">⚙ <span>Administration</span></button>
  <div class="sync"><div class="sync-dot"></div><div><b>Data Pipeline</b><small id="sync">Loading…</small></div></div>
  <div class="credit">Created by Automation Supervisor Ali Alsada</div>
@@ -152,6 +172,36 @@ h1,h2,h3,h4{margin:0}h1{font-size:34px}h2{font-size:30px}h3{font-size:18px}
  <div class="section-head"><div><div class="eyebrow">PHARMACY CONTROL TOWER</div><h2>Live Operational View</h2><p>One screen for patient workload and medication preparation.</p></div></div>
  <div class="tower"><div class="tower-panel"><div class="eyebrow">TODAY'S DISPENSING LOAD</div><div id="towerPatients" class="tower-big">0</div><div class="muted">patients scheduled today</div><div class="progress-shell"><div id="towerProgress" class="progress-bar"></div></div><div class="summary"><div><span>Completed</span><b id="towerDone">0</b></div><div><span>Remaining</span><b id="towerRemaining">0</b></div><div><span>Medications</span><b id="towerMeds">0</b></div><div><span>Total Qty</span><b id="towerQty">0</b></div></div></div><div class="tower-panel"><div class="eyebrow">TOP DEMAND</div><div id="towerTop" class="rank"></div></div></div>
 </section>
+
+<section id="reports" class="view">
+ <div class="section-head"><div><div class="eyebrow">DAILY PERFORMANCE</div><h2>End-of-Day Report</h2><p>Operational summary for the selected reference date.</p></div><button class="primary" onclick="exportEndOfDay()">Export Report</button></div>
+ <div class="local-warning">Work statuses and notes in this release are saved on this browser. A shared multi-user database will be added when the platform is connected to a secure backend.</div>
+ <div class="report-grid">
+  <div class="report-card"><span>Scheduled</span><b id="rScheduled">0</b></div>
+  <div class="report-card"><span>Dispensed</span><b id="rDispensed">0</b></div>
+  <div class="report-card"><span>Pending</span><b id="rPending">0</b></div>
+  <div class="report-card"><span>Completion</span><b id="rCompletion">0%</b></div>
+  <div class="report-card"><span>Contacted</span><b id="rContacted">0</b></div>
+  <div class="report-card"><span>Not Available</span><b id="rUnavailable">0</b></div>
+  <div class="report-card"><span>Deferred</span><b id="rDeferred">0</b></div>
+  <div class="report-card"><span>Mixed Dates</span><b id="rExceptions">0</b></div>
+ </div>
+ <article class="panel"><div class="eyebrow">STATUS BREAKDOWN</div><h3>Patients requiring follow-up</h3><div id="followupRows" style="margin-top:16px"></div></article>
+</section>
+
+<section id="quality" class="view">
+ <div class="section-head"><div><div class="eyebrow">DATA GOVERNANCE</div><h2>Data Quality Center</h2><p>Automatic checks based on the latest processed dispensing report.</p></div></div>
+ <div class="quality-grid">
+  <div class="quality-card"><span>Raw records</span><b id="qRaw">0</b></div>
+  <div class="quality-card"><span>Valid records</span><b id="qValid">0</b></div>
+  <div class="quality-card"><span>Unique patients</span><b id="qPatients">0</b></div>
+  <div class="quality-card"><span>Patient + medication records</span><b id="qMeds">0</b></div>
+  <div class="quality-card"><span>Historical / duplicate records</span><b id="qDuplicates">0</b></div>
+  <div class="quality-card"><span>Mixed-date patients</span><b id="qExceptions">0</b></div>
+ </div>
+ <article class="panel" style="margin-top:16px"><div class="eyebrow">SOURCE VALIDATION</div><h3>Latest import details</h3><div class="setting-summary"><div><span>Source file</span><b id="qSource">—</b></div><div><span>Processed at</span><b id="qGenerated">—</b></div><div><span>Current eligibility interval</span><b><span id="qInterval">25</span> days</b></div><div><span>Required fields recognized</span><b>Patient ID, Drug Name, Disp Date</b></div></div></article>
+</section>
+
 <section id="admin" class="view">
  <div class="section-head"><div><div class="eyebrow">SYSTEM SETTINGS</div><h2>Administration</h2><p>Control the dispensing eligibility interval for the entire platform.</p></div></div>
  <div class="admin-grid">
@@ -172,10 +222,11 @@ h1,h2,h3,h4{margin:0}h1{font-size:34px}h2{font-size:30px}h3{font-size:18px}
 </main>
 </div>
 
+<div id="toast" class="toast">MRN copied</div>
 <div id="modal" class="modal hidden"><div class="modalbox"><button id="close" class="close">×</button><div id="modalContent"></div></div></div>
 
 <script>
-const S={meta:null,patients:[],drugs:[],ref:new Date(),view:"dashboard",page:1,size:35,work:JSON.parse(localStorage.getItem("dip-work")||"{}"),month:new Date(),selected:new Date(),prep:JSON.parse(localStorage.getItem("dip-prep")||"{}"),interval:Number(localStorage.getItem("dip-interval")||25)};
+const S={meta:null,patients:[],drugs:[],ref:new Date(),view:"dashboard",page:1,size:35,work:JSON.parse(localStorage.getItem("dip-work")||"{}"),month:new Date(),selected:new Date(),prep:JSON.parse(localStorage.getItem("dip-prep")||"{}"),notes:JSON.parse(localStorage.getItem("dip-notes")||"{}"),interval:Number(localStorage.getItem("dip-interval")||25)};
 const $=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)],fmt=n=>new Intl.NumberFormat().format(n||0),esc=v=>String(v??"").replace(/[&<>"']/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[x]));
 const iso=d=>{let x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)},pd=s=>new Date(s+"T00:00:00"),diff=(a,b)=>Math.round((pd(a)-pd(b))/86400000);
 const addDays=(dateStr,days)=>{let d=pd(dateStr);d.setDate(d.getDate()+Number(days));return iso(d)};const nextFor=p=>addDays(p.last,S.interval);const sourceDateFor=target=>addDays(target,25-S.interval);
@@ -214,11 +265,11 @@ function bind(){
 function switchV(v){
  S.view=v;$$(".view").forEach(x=>x.classList.remove("active"));$("#"+v).classList.add("active");
  $$(".nav").forEach(x=>x.classList.toggle("active",x.dataset.v===v));
- $("#title").textContent={dashboard:"Command Center",queue:"Today's Work",patients:"Patient Registry",calendar:"Smart Calendar",drugs:"Drug Intelligence",demand:"Drug Preparation",tower:"Control Tower",admin:"Administration"}[v];
- if(v==="queue")renderQueue();if(v==="patients")renderPatients();if(v==="calendar")renderCalendar();if(v==="drugs")renderDrugList();if(v==="demand")renderDemand();if(v==="tower")renderTower();if(v==="admin")renderAdmin();
+ $("#title").textContent={dashboard:"Command Center",queue:"Today's Work",patients:"Patient Registry",calendar:"Smart Calendar",drugs:"Drug Intelligence",demand:"Drug Preparation",tower:"Control Tower",reports:"End of Day",quality:"Data Quality",admin:"Administration"}[v];
+ if(v==="queue")renderQueue();if(v==="patients")renderPatients();if(v==="calendar")renderCalendar();if(v==="drugs")renderDrugList();if(v==="demand")renderDemand();if(v==="tower")renderTower();if(v==="reports")renderReports();if(v==="quality")renderQuality();if(v==="admin")renderAdmin();
 }
 function counts(){let c={overdue:0,today:0,tomorrow:0,week:0,future:0};S.patients.forEach(p=>c[st(p)]++);return c}
-function renderAll(){renderDash();renderQueue();renderPatients();renderCalendar();renderDrugList();renderDemand();renderTower();renderAdmin()}
+function renderAll(){renderDash();renderQueue();renderPatients();renderCalendar();renderDrugList();renderDemand();renderTower();renderReports();renderQuality();renderAdmin()}
 function renderDash(){
  const c=counts();$("#hero").textContent=fmt(c.today);$("#orb").textContent=fmt(c.today);$("#heroDate").textContent=S.ref.toLocaleDateString("en-GB",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
  $("#kOver").textContent=fmt(c.overdue);$("#kToday").textContent=fmt(c.today);$("#kTomorrow").textContent=fmt(c.tomorrow);$("#kWeek").textContent=fmt(c.week);$("#kPatients").textContent=fmt(S.meta.unique_patients);$("#kExceptions").textContent=fmt(S.meta.date_exceptions);
@@ -227,11 +278,11 @@ function renderDash(){
  let m={};S.patients.forEach(p=>m[p.speciality||"Unknown"]=(m[p.speciality||"Unknown"]||0)+1);let top=Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,8),tm=top[0]?.[1]||1;$("#specialties").innerHTML=top.map(([n,v])=>`<div class="rankrow"><span>${esc(n.length>30?n.slice(0,30)+"…":n)}</span><div class="track"><div class="fill" style="width:${v/tm*100}%"></div></div><b>${fmt(v)}</b></div>`).join("");
 }
 function filtered(){let q=$("#q").value.toLowerCase(),f=$("#status").value;return S.patients.filter(p=>{let hay=[p.id,p.name,p.drug_text,p.speciality,p.location].join(" ").toLowerCase();return(!q||hay.includes(q))&&(f==="all"||f==="exception"&&p.exceptions>0||st(p)===f)})}
-function renderPatients(){let a=filtered(),pages=Math.max(1,Math.ceil(a.length/S.size));S.page=Math.min(S.page,pages);let part=a.slice((S.page-1)*S.size,S.page*S.size);$("#rows").innerHTML=part.map(p=>`<tr onclick="openPatient('${esc(p.id)}')"><td><b>${esc(p.name||"Unknown")}</b><br><small class="muted">${esc(p.gender)} ${esc(p.age)}</small></td><td>${esc(p.id)}</td><td>${p.meds}${p.exceptions?` <span class="exception">⚠ ${p.exceptions} different</span>`:""}</td><td>${p.last}</td><td>${nextFor(p)}</td><td>${Math.round(p.aligned/p.meds*100)}%</td><td><span class="badge ${st(p)}">${lbl(st(p))}</span></td><td>${esc(p.speciality)}</td></tr>`).join("");$("#count").textContent=fmt(a.length)+" patients";$("#page").textContent=`Page ${S.page} of ${pages}`;$("#prev").disabled=S.page===1;$("#next").disabled=S.page===pages}
+function renderPatients(){let a=filtered(),pages=Math.max(1,Math.ceil(a.length/S.size));S.page=Math.min(S.page,pages);let part=a.slice((S.page-1)*S.size,S.page*S.size);$("#rows").innerHTML=part.map(p=>`<tr onclick="openPatient('${esc(p.id)}')"><td><b>${esc(p.name||"Unknown")}</b><br><small class="muted">${esc(p.gender)} ${esc(p.age)}</small></td><td><button class="copy-mrn" onclick="copyMRN(\'${esc(p.id)}\',event)">⧉ ${esc(p.id)}</button></td><td>${p.meds}${p.exceptions?` <span class="exception">⚠ ${p.exceptions} different</span>`:""}</td><td>${p.last}</td><td>${nextFor(p)}</td><td>${Math.round(p.aligned/p.meds*100)}%</td><td><span class="badge ${st(p)}">${lbl(st(p))}</span></td><td>${esc(p.speciality)}</td></tr>`).join("");$("#count").textContent=fmt(a.length)+" patients";$("#page").textContent=`Page ${S.page} of ${pages}`;$("#prev").disabled=S.page===1;$("#next").disabled=S.page===pages}
 function queueList(){let mode=$("#queueMode").value;return S.patients.filter(p=>mode==="week"?["today","tomorrow","week"].includes(st(p)):st(p)===mode)}
-function renderQueue(){let a=queueList(),done=a.filter(p=>S.work[p.id]==="dispensed").length,rate=a.length?Math.round(done/a.length*100):0;$("#scheduled").textContent=fmt(a.length);$("#done").textContent=fmt(done);$("#pending").textContent=fmt(a.length-done);$("#completion").textContent=rate+"%";$("#progress").style.width=rate+"%";$("#cards").innerHTML=a.slice(0,300).map(p=>`<article class="card"><span class="badge ${st(p)}">${lbl(st(p))}</span><h4>${esc(p.name||"Unknown")}</h4><small>${esc(p.id)} • ${p.meds} medications</small><div class="drug">${esc(p.drug_text)}</div><div class="card-actions"><button onclick="work('${esc(p.id)}','dispensed')">✓ Dispensed</button><button onclick="work('${esc(p.id)}','pending')">Pending</button><button onclick="openPatient('${esc(p.id)}')">Profile</button></div></article>`).join("")}
+function renderQueue(){let a=queueList(),done=a.filter(p=>S.work[p.id]==="dispensed").length,rate=a.length?Math.round(done/a.length*100):0;$("#scheduled").textContent=fmt(a.length);$("#done").textContent=fmt(done);$("#pending").textContent=fmt(a.length-done);$("#completion").textContent=rate+"%";$("#progress").style.width=rate+"%";$("#cards").innerHTML=a.slice(0,300).map(p=>`<article class="card"><span class="badge ${st(p)}">${lbl(st(p))}</span><h4>${esc(p.name||"Unknown")}</h4><small><button class="copy-mrn" onclick="copyMRN('${esc(p.id)}',event)">⧉ ${esc(p.id)}</button> • ${p.meds} medications</small><div class="drug">${esc(p.drug_text)}</div><div class="card-actions"><button onclick="setPatientAction('${esc(p.id)}','dispensed')">✓ Dispensed</button><button onclick="setPatientAction('${esc(p.id)}','called')">Called</button><button onclick="openPatient('${esc(p.id)}')">Profile</button></div><select class="reason-select" data-reason="${esc(p.id)}"><option value="">Select follow-up reason…</option><option ${S.notes[p.id]?.reason==="Medication unavailable"?"selected":""}>Medication unavailable</option><option ${S.notes[p.id]?.reason==="Patient not reached"?"selected":""}>Patient not reached</option><option ${S.notes[p.id]?.reason==="Prescription issue"?"selected":""}>Prescription issue</option><option ${S.notes[p.id]?.reason==="Deferred by patient"?"selected":""}>Deferred by patient</option><option ${S.notes[p.id]?.reason==="Other"?"selected":""}>Other</option></select><input class="note-input" data-note="${esc(p.id)}" value="${esc(S.notes[p.id]?.note||"")}" placeholder="Optional note…"><div class="card-actions" style="margin-top:8px"><button onclick="setPatientAction('${esc(p.id)}','unavailable')">Not Available</button><button onclick="setPatientAction('${esc(p.id)}','deferred')">Deferred</button><button onclick="savePatientNote('${esc(p.id)}')">Save Note</button></div></article>`).join("")}
 window.work=(id,v)=>{S.work[id]=v;localStorage.setItem("dip-work",JSON.stringify(S.work));renderQueue();renderTower()}
-window.openPatient=async id=>{let p=S.patients.find(x=>x.id===id);if(!p)return;let bucket=await fetch(`data/details/${p.bucket}.json`).then(r=>r.json()),d=bucket[id];if(!d)return;let s=d.summary;$("#modalContent").innerHTML=`<div class="profile-head"><div><div class="eyebrow">PATIENT CENTER</div><h2>${esc(s.name||"Unknown")}</h2><div class="muted">MRN ${esc(s.id)}</div></div><span class="badge ${st(s)}">${lbl(st(s))}</span></div><div class="profile-grid"><div><span>Primary last dispense</span><b>${s.last}</b></div><div><span>Primary next eligible</span><b>${nextFor(s)}</b></div><div><span>Medications</span><b>${s.meds}</b></div><div><span>Alignment</span><b>${Math.round(s.aligned/s.meds*100)}%</b></div><div><span>Specialty</span><b>${esc(s.speciality)}</b></div><div><span>Location</span><b>${esc(s.location)}</b></div><div><span>Gender</span><b>${esc(s.gender)}</b></div><div><span>Age</span><b>${esc(s.age)}</b></div></div>${s.exceptions?`<div class="warning">⚠ ${s.exceptions} medication(s) have a different latest dispense date and require review.</div>`:""}<div class="eyebrow" style="margin-top:22px">CURRENT MEDICATION SCHEDULE</div><div class="med-grid">${d.medications.map(m=>`<article class="med-card"><h4>${esc(m.drug)}</h4><div class="med-meta"><div><span>Last dispense</span><b>${m.disp}</b></div><div><span>Next eligible</span><b>${addDays(m.disp,S.interval)}</b></div><div><span>Dispensed qty</span><b>${esc(m.disp_qty)}</b></div><div><span>Order ID</span><b>${esc(m.order_id||"—")}</b></div></div></article>`).join("")}</div><div class="timeline"><div class="eyebrow">DISPENSE HISTORY</div>${d.history.slice().reverse().slice(0,40).map(h=>`<div class="event"><b>${h.disp} — ${esc(h.drug)}</b><span>Qty ${esc(h.disp_qty)} • Order ${esc(h.order_id||"—")}</span></div>`).join("")}</div>`;$("#modal").classList.remove("hidden")}
+window.openPatient=async id=>{let p=S.patients.find(x=>x.id===id);if(!p)return;let bucket=await fetch(`data/details/${p.bucket}.json`).then(r=>r.json()),d=bucket[id];if(!d)return;let s=d.summary;$("#modalContent").innerHTML=`<div class="profile-head"><div><div class="eyebrow">PATIENT CENTER</div><h2>${esc(s.name||"Unknown")}</h2><button class="copy-mrn" onclick="copyMRN(\'${esc(s.id)}\',event)">⧉ Copy MRN ${esc(s.id)}</button></div><span class="badge ${st(s)}">${lbl(st(s))}</span></div><div class="profile-grid"><div><span>Primary last dispense</span><b>${s.last}</b></div><div><span>Primary next eligible</span><b>${nextFor(s)}</b></div><div><span>Medications</span><b>${s.meds}</b></div><div><span>Alignment</span><b>${Math.round(s.aligned/s.meds*100)}%</b></div><div><span>Specialty</span><b>${esc(s.speciality)}</b></div><div><span>Location</span><b>${esc(s.location)}</b></div><div><span>Gender</span><b>${esc(s.gender)}</b></div><div><span>Age</span><b>${esc(s.age)}</b></div></div>${s.exceptions?`<div class="warning">⚠ ${s.exceptions} medication(s) have a different latest dispense date and require review.</div>`:""}<div class="eyebrow" style="margin-top:22px">CURRENT MEDICATION SCHEDULE</div><div class="med-grid">${d.medications.map(m=>`<article class="med-card"><h4>${esc(m.drug)}</h4><div class="med-meta"><div><span>Last dispense</span><b>${m.disp}</b></div><div><span>Next eligible</span><b>${addDays(m.disp,S.interval)}</b></div><div><span>Dispensed qty</span><b>${esc(m.disp_qty)}</b></div><div><span>Order ID</span><b>${esc(m.order_id||"—")}</b></div></div></article>`).join("")}</div><div class="timeline"><div class="eyebrow">DISPENSE HISTORY</div>${d.history.slice().reverse().slice(0,40).map(h=>`<div class="event"><b>${h.disp} — ${esc(h.drug)}</b><span>Qty ${esc(h.disp_qty)} • Order ${esc(h.order_id||"—")}</span></div>`).join("")}</div>`;$("#modal").classList.remove("hidden")}
 function renderCalendar(){let y=S.month.getFullYear(),m=S.month.getMonth(),first=new Date(y,m,1),start=new Date(y,m,1-first.getDay());$("#monthTitle").textContent=S.month.toLocaleDateString("en-US",{month:"long",year:"numeric"});let h="";for(let i=0;i<42;i++){let d=new Date(start);d.setDate(start.getDate()+i);let key=iso(d),n=S.patients.filter(p=>nextFor(p)===key).length;h+=`<button class="day ${d.getMonth()!==m?"dim":""} ${key===iso(S.selected)?"selected":""}" onclick="selectDay('${key}')"><b>${d.getDate()}</b><span>${n?fmt(n)+" patients":""}</span></button>`}$("#days").innerHTML=h;renderSelected()}
 window.selectDay=k=>{S.selected=pd(k);renderCalendar()}
 function renderSelected(){let key=iso(S.selected),a=S.patients.filter(p=>nextFor(p)===key);$("#selectedTitle").textContent=S.selected.toLocaleDateString("en-US",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});$("#selectedCount").textContent=fmt(a.length);$("#selectedList").innerHTML=a.slice(0,80).map(p=>`<button onclick="openPatient('${esc(p.id)}')"><b>${esc(p.name||"Unknown")}</b><br><span>${esc(p.id)} • ${p.meds} medications</span></button>`).join("")}
@@ -244,6 +295,51 @@ function renderDemand(){if(!$("#prepList"))return;let q=($("#demandSearch").valu
 window.togglePrep=drug=>{S.prep[drug]=!S.prep[drug];localStorage.setItem("dip-prep",JSON.stringify(S.prep));renderDemand();renderTower()}
 window.showDrugPatients=drug=>{let key=iso(S.ref),p=S.patients.filter(x=>nextFor(x)===key&&x.drug_text.toLowerCase().includes(drug.toLowerCase()));$("#modalContent").innerHTML=`<div class="eyebrow">TODAY'S DRUG PATIENTS</div><h2>${esc(drug)}</h2><div class="summary"><div><span>Patients</span><b>${fmt(p.length)}</b></div></div><table><thead><tr><th>Patient</th><th>MRN</th><th>Specialty</th></tr></thead><tbody>${p.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.id)}</td><td>${esc(x.speciality)}</td></tr>`).join("")}</tbody></table>`;$("#modal").classList.remove("hidden")}
 function renderTower(){if(!$("#towerPatients"))return;let key=iso(S.ref),today=S.patients.filter(p=>nextFor(p)===key),done=today.filter(p=>S.work[p.id]==="dispensed").length,rate=today.length?Math.round(done/today.length*100):0,d=todayDemand(),qty=d.reduce((s,x)=>s+x.qty,0);$("#towerPatients").textContent=fmt(today.length);$("#towerDone").textContent=fmt(done);$("#towerRemaining").textContent=fmt(today.length-done);$("#towerMeds").textContent=fmt(d.length);$("#towerQty").textContent=fmt(qty);$("#towerProgress").style.width=rate+"%";let mx=d[0]?.qty||1;$("#towerTop").innerHTML=d.slice(0,10).map(x=>`<div class="rankrow"><span>${esc(x.drug)}</span><div class="track"><div class="fill" style="width:${x.qty/mx*100}%"></div></div><b>${fmt(x.qty)}</b></div>`).join("")}
+
+
+function showToast(message="MRN copied"){
+ const t=$("#toast");if(!t)return;t.textContent=message;t.classList.add("show");clearTimeout(window.__toastTimer);window.__toastTimer=setTimeout(()=>t.classList.remove("show"),1700);
+}
+window.copyMRN=async(id,event)=>{
+ if(event){event.preventDefault();event.stopPropagation()}
+ try{await navigator.clipboard.writeText(String(id))}
+ catch(e){const ta=document.createElement("textarea");ta.value=String(id);document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove()}
+ showToast(`MRN ${id} copied`);
+}
+window.setPatientAction=(id,status)=>{
+ S.work[id]=status;localStorage.setItem("dip-work",JSON.stringify(S.work));renderQueue();renderTower();renderReports();
+}
+window.savePatientNote=(id)=>{
+ const reason=document.querySelector(`[data-reason="${CSS.escape(id)}"]`)?.value||"";
+ const note=document.querySelector(`[data-note="${CSS.escape(id)}"]`)?.value||"";
+ S.notes[id]={reason,note,updated:new Date().toISOString()};
+ localStorage.setItem("dip-notes",JSON.stringify(S.notes));showToast("Patient note saved");renderReports();
+}
+function renderReports(){
+ if(!$("#rScheduled"))return;
+ const key=iso(S.ref),a=S.patients.filter(p=>nextFor(p)===key);
+ const countStatus=s=>a.filter(p=>S.work[p.id]===s).length;
+ const disp=countStatus("dispensed"), contacted=countStatus("called"), unavailable=countStatus("unavailable"), deferred=countStatus("deferred");
+ const pending=a.length-disp,rate=a.length?Math.round(disp/a.length*100):0;
+ $("#rScheduled").textContent=fmt(a.length);$("#rDispensed").textContent=fmt(disp);$("#rPending").textContent=fmt(pending);$("#rCompletion").textContent=rate+"%";
+ $("#rContacted").textContent=fmt(contacted);$("#rUnavailable").textContent=fmt(unavailable);$("#rDeferred").textContent=fmt(deferred);$("#rExceptions").textContent=fmt(a.filter(p=>p.exceptions>0).length);
+ const follow=a.filter(p=>["called","unavailable","deferred","pending"].includes(S.work[p.id])||S.notes[p.id]).slice(0,150);
+ $("#followupRows").innerHTML=follow.length?`<div class="tablebox"><table><thead><tr><th>Patient</th><th>MRN</th><th>Status</th><th>Reason / Note</th></tr></thead><tbody>${follow.map(p=>`<tr><td>${esc(p.name||"Unknown")}</td><td><button class="copy-mrn" onclick="copyMRN('${esc(p.id)}',event)">⧉ ${esc(p.id)}</button></td><td><span class="action-chip">${esc(S.work[p.id]||"Pending")}</span></td><td>${esc([S.notes[p.id]?.reason,S.notes[p.id]?.note].filter(Boolean).join(" — ")||"—")}</td></tr>`).join("")}</tbody></table></div>`:`<div class="muted">No follow-up cases recorded for this day.</div>`;
+}
+function renderQuality(){
+ if(!$("#qRaw"))return;
+ $("#qRaw").textContent=fmt(S.meta.raw_records);$("#qValid").textContent=fmt(S.meta.valid_records||S.meta.raw_records);
+ $("#qPatients").textContent=fmt(S.meta.unique_patients);$("#qMeds").textContent=fmt(S.meta.patient_medication_records);
+ $("#qDuplicates").textContent=fmt(S.meta.duplicate_or_historical||Math.max(0,(S.meta.valid_records||S.meta.raw_records)-S.meta.patient_medication_records));
+ $("#qExceptions").textContent=fmt(S.meta.date_exceptions);$("#qSource").textContent=S.meta.source_file||"—";
+ $("#qGenerated").textContent=new Date(S.meta.generated_at).toLocaleString();$("#qInterval").textContent=S.interval;
+}
+function exportEndOfDay(){
+ const key=iso(S.ref),a=S.patients.filter(p=>nextFor(p)===key);
+ const rows=[["Patient ID","Patient Name","Status","Reason","Note","Medications","Specialty"],...a.map(p=>[p.id,p.name,S.work[p.id]||"pending",S.notes[p.id]?.reason||"",S.notes[p.id]?.note||"",p.meds,p.speciality])];
+ const csv=rows.map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n");
+ const blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),link=document.createElement("a");link.href=URL.createObjectURL(blob);link.download=`end-of-day-${key}.csv`;link.click();
+}
 
 function setIntervalDays(days){S.interval=Number(days);localStorage.setItem("dip-interval",String(S.interval));S.page=1;renderAdmin();renderAll();$("#adminSaved").textContent=`Saved. All calculations now use ${S.interval} days.`;setTimeout(()=>$("#adminSaved").textContent="",3000)}
 function renderAdmin(){if(!$("#currentInterval"))return;$("#currentInterval").textContent=S.interval;$$(".interval-option").forEach(b=>b.classList.toggle("active",Number(b.dataset.days)===S.interval));$("#customInterval").value=[15,20,25,30].includes(S.interval)?"":S.interval}
