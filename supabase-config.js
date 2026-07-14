@@ -1,1 +1,4 @@
-window.SUPABASE_CONFIG={url:"YOUR_SUPABASE_PROJECT_URL",publishableKey:"YOUR_SUPABASE_PUBLISHABLE_KEY"};
+window.SUPABASE_CONFIG = {
+  url: "https://klliqivygbzcfvsygtwx.supabase.co",
+  publishableKey: "sb_publishable_ZU15kbb6iwm27MTx4vWUOg_M9X_SeaQ"
+};
