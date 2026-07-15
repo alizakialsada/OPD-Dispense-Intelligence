@@ -1,13 +1,12 @@
-# Dispense Intelligence — Production v1.0
+# Dispense Intelligence Production v1.0.2
 
-Fixed:
-- Drug Demand now reads a small precomputed file for the selected date.
-- Smart Calendar now reads one compact precomputed monthly source.
-- No repeated full-data scanning in the browser.
-- Automatic Excel updates regenerate all prepared files.
+Calendar and Demand reliability update:
+- Prepared data included for 15, 20, 25, and 30-day dispensing intervals.
+- The active interval is displayed on Smart Calendar and Drug Demand.
+- Cache-busting prevents GitHub Pages from showing old JSON files.
+- Automatic Excel refresh regenerates every supported interval.
+- Navigation and Demand display fixes from v1.0.1 are included.
 
 Deployment:
-Keep your existing live `supabase-config.js`.
-This package intentionally does not include it, so your working Supabase connection is not overwritten.
-
-Current production interval: 25 days.
+Keep the existing `supabase-config.js` in the repository.
+Do not replace or delete it.
