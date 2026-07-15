@@ -127,7 +127,7 @@
    <div id="createUserMessage" class="auth-msg"></div>
   </article>
   <article class="account-card">
-   <div class="ey">DISPENSING SETTINGS</div><h3>Eligibility Interval</h3>
+   <div class="ey">DISPENSING SETTINGS</div><h3>Eligibility Interval</h3><p class="muted">Shared instantly with all employee devices.</p>
    <div class="settings" style="grid-template-columns:repeat(2,1fr);margin-top:12px">
     <div class="setting"><h3>15 Days</h3><button class="copy" onclick="setDays(15)">Apply</button></div>
     <div class="setting"><h3>20 Days</h3><button class="copy" onclick="setDays(20)">Apply</button></div>
@@ -177,7 +177,7 @@
 <script>
 const $=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)],fmt=n=>new Intl.NumberFormat().format(Math.round(n||0));
 const STAFF={bassemah:"Bassemah H. Al Faraj",batool:"Batool S. T. Alfaraj",ghada:"Ghada A. Alqudaihi",rabab:"Rabab Alsheef",team_import:"Today's Team Total"};
-const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||25,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastAction:null,undoTicker:null,legacy:null,demandPatients:null,demandRows:[],view:"home",calMonth:new Date(),calSelected:new Date(),calendarCache:{},precomputedCalendar:null,demandIndex:null,demandDateLoaded:""};
+const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||25,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastAction:null,undoTicker:null,legacy:null,demandPatients:null,demandRows:[],view:"home",calMonth:new Date(),calSelected:new Date(),calendarCache:{},precomputedCalendar:null,demandIndex:null,demandDateLoaded:"",settingsChannel:null};
 const iso=d=>{let x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)},pd=s=>new Date(s+"T00:00:00"),add=(s,n)=>{let d=pd(s);d.setDate(d.getDate()+n);return iso(d)},next=p=>add(p.base_last,S.days),delta=p=>Math.round((pd(next(p))-pd(iso(S.date)))/86400000);
 const state=p=>{let d=delta(p);return d<0?"overdue":d===0?"today":d===1?"tomorrow":d<=7?"week":"future"},label=s=>({overdue:"Overdue",today:"Today",tomorrow:"Tomorrow",week:"Within 7 days",future:"Future"})[s];
 function toast(x){let t=$("#toast");t.textContent=x;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1500)}
@@ -348,6 +348,8 @@ async function boot(){
  if(c?.url&&!c.url.includes("YOUR_"))S.sb=window.supabase.createClient(c.url,c.publishableKey);
  await initAuth();
  await initShared();
+ await loadSharedInterval();
+ subscribeSharedSettings();
  await loadLegacyImport();
  render();
 }
@@ -381,7 +383,35 @@ async function go(v){
 }
 function openLogin(){$("#authScreen").classList.remove("hidden")}function selectStaff(id){S.staff=id;localStorage.setItem("dip-staff",id);$("#who").textContent=STAFF[id];$("#login").classList.add("hidden");toast("Signed in")}
 async function copy(id,e){e?.stopPropagation();try{await navigator.clipboard.writeText(id)}catch{let x=document.createElement("textarea");x.value=id;document.body.appendChild(x);x.select();document.execCommand("copy");x.remove()}toast("MRN copied")}
-function setDays(n){if(!n||n<1||n>365)return;S.days=n;localStorage.setItem("dip-days",n);$("#currentDays").textContent=n;S.demandDateLoaded="";render();if(S.view==="demand")renderDemand();toast("Interval updated")}
+async function applyInterval(n,showMessage=true){
+ if(!n||n<1||n>365)return;
+ S.days=Number(n);
+ localStorage.setItem("dip-days",S.days);
+ if($("#currentDays"))$("#currentDays").textContent=S.days;
+ if($("#custom"))$("#custom").value=S.days;
+ S.precomputedCalendar=null;S.demandIndex=null;S.demandDateLoaded="";S.calendarCache={};
+ render();
+ if(S.view==="demand")await renderDemand();
+ if(S.view==="calendar")await renderCalendar();
+ if(showMessage)toast(`Dispensing interval updated to ${S.days} days`);
+}
+window.setDays=async n=>{
+ if(!requireAdmin())return;
+ if(![15,20,25,30].includes(Number(n))){
+  toast("Production Calendar and Demand support 15, 20, 25, or 30 days");
+  return;
+ }
+ if(S.sb){
+  const {error}=await S.sb.from("system_settings").upsert({
+   setting_key:"dispensing_interval_days",
+   setting_value:String(Number(n)),
+   updated_by:S.user?.id||null,
+   updated_at:new Date().toISOString()
+  },{onConflict:"setting_key"});
+  if(error){console.error(error);toast("Could not save interval");return}
+ }
+ await applyInterval(Number(n),true);
+}
 function counts(){let c={overdue:0,today:0,tomorrow:0,week:0};S.p.forEach(p=>{let s=state(p);if(c[s]!=null)c[s]++});return c}
 function render(){let c=counts(),h=new Date().getHours();$("#hello").textContent=(h<12?"Good Morning":h<18?"Good Afternoon":"Good Evening")+", Pharmacist.";$("#heroCount").textContent=fmt(c.today);$("#heroDate").textContent=S.date.toLocaleDateString("en-GB",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});$("#over").textContent=fmt(c.overdue);$("#today").textContent=fmt(c.today);$("#tomorrow").textContent=fmt(c.tomorrow);$("#week").textContent=fmt(c.week);$("#all").textContent=fmt(S.p.length);renderQueue();renderRegistry();renderTeam()}
 function qlist(){let m=$("#mode").value,q=$("#qqueue").value.toLowerCase();return S.p.filter(p=>(m==="week"?["today","tomorrow","week"].includes(state(p)):state(p)===m)&&(!q||[p.id,p.name,p.drug_text,p.speciality].join(" ").toLowerCase().includes(q)))}
@@ -590,6 +620,32 @@ window.exportTeamExcel=async()=>{
 window.exportCurrentView=()=>({
  queue:exportQueueExcel,registry:exportRegistryExcel,demand:exportDemandExcel,team:exportTeamExcel
 }[S.view]||exportQueueExcel)();
+
+
+async function loadSharedInterval(){
+ if(!S.sb)return;
+ try{
+  const {data,error}=await S.sb.from("system_settings")
+   .select("setting_value")
+   .eq("setting_key","dispensing_interval_days")
+   .maybeSingle();
+  if(error)throw error;
+  if(data?.setting_value){
+   await applyInterval(Number(data.setting_value),false);
+  }
+ }catch(e){console.warn("Could not load shared interval",e)}
+}
+function subscribeSharedSettings(){
+ if(!S.sb||S.settingsChannel)return;
+ S.settingsChannel=S.sb.channel("system-settings-live")
+  .on("postgres_changes",{event:"*",schema:"public",table:"system_settings",filter:"setting_key=eq.dispensing_interval_days"},async payload=>{
+   const row=payload.new;
+   if(!row?.setting_value)return;
+   const n=Number(row.setting_value);
+   if(n!==S.days)await applyInterval(n,true);
+  })
+  .subscribe();
+}
 
 async function initShared(){let c=window.SUPABASE_CONFIG;if(!c?.url||c.url.includes("YOUR_"))return;try{if(!S.sb)S.sb=window.supabase.createClient(c.url,c.publishableKey);await loadShared();S.sb.channel("dip-live").on("postgres_changes",{event:"*",schema:"public",table:"dispense_workflow"},p=>{let r=p.new||p.old;if(r.work_date!==iso(S.date))return;if(p.eventType==="DELETE")delete S.a[r.mrn];else S.a[r.mrn]={status:r.status,staff:r.staff_id||"",startedAt:r.started_at||"",completedAt:r.completed_at||"",updatedAt:r.updated_at||""};saveLocal();render()}).subscribe(x=>{if(x==="SUBSCRIBED"){S.shared=true;$("#live").classList.add("on");$("#sync").textContent="Live on all devices"}})}catch(e){console.error(e)}}
 async function loadShared(){if(!S.sb)return;let {data}=await S.sb.from("dispense_workflow").select("*").eq("work_date",iso(S.date));if(data){S.a={};data.forEach(r=>S.a[r.mrn]={status:r.status,staff:r.staff_id||"",startedAt:r.started_at||"",completedAt:r.completed_at||"",updatedAt:r.updated_at||""});saveLocal()}}

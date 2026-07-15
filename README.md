@@ -1,12 +1,13 @@
-# Dispense Intelligence Production v1.0.2
+# Dispense Intelligence Production v1.0.3 — Shared Dispensing Interval
 
-Calendar and Demand reliability update:
-- Prepared data included for 15, 20, 25, and 30-day dispensing intervals.
-- The active interval is displayed on Smart Calendar and Drug Demand.
-- Cache-busting prevents GitHub Pages from showing old JSON files.
-- Automatic Excel refresh regenerates every supported interval.
-- Navigation and Demand display fixes from v1.0.1 are included.
+Fixed:
+- Admin interval is now stored centrally in Supabase.
+- Every employee device receives the new interval immediately.
+- Queue, Overview, Patient Registry, Smart Calendar, and Drug Demand refresh automatically.
+- Supported operational intervals: 15, 20, 25, and 30 days.
+
+One-time setup:
+Run `supabase-setup/06-system-settings.sql` in Supabase SQL Editor.
 
 Deployment:
-Keep the existing `supabase-config.js` in the repository.
-Do not replace or delete it.
+Keep the current live `supabase-config.js`; this package does not include it.
