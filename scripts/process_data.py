@@ -42,6 +42,31 @@ def main():
  for i in range(0,len(demand),700):
   name=f"demand-{i//700:02d}.json";(demand_dir/name).write_text(json.dumps(demand[i:i+700],ensure_ascii=False,separators=(",",":")),encoding="utf-8");demand_chunks.append(f"data/demand/{name}")
  (DATA/"demand-meta.json").write_text(json.dumps({"patients":len(demand),"chunks":demand_chunks},ensure_ascii=False,separators=(",",":")),encoding="utf-8")
+ # Production precomputation for 25-day interval.
+ from collections import defaultdict as _dd
+ from datetime import date as _date,timedelta as _td
+ pre=DATA/"precomputed"/"25";pre.mkdir(parents=True,exist_ok=True)
+ for old in pre.glob("demand-*.json"):old.unlink()
+ cal=_dd(lambda:{"patients":0,"medications":set(),"quantity":0.0})
+ day=_dd(lambda:_dd(lambda:{"patients":set(),"quantity":0.0,"patientRows":[]}))
+ for x in demand:
+  eligible=(_date.fromisoformat(x["base_last"])+_td(days=25)).isoformat()
+  cal[eligible]["patients"]+=1
+  for item in x["items"]:
+   drug=item["drug"];qty=float(item.get("qty") or 0)
+   cal[eligible]["medications"].add(drug);cal[eligible]["quantity"]+=qty
+   r=day[eligible][drug];r["patients"].add(x["id"]);r["quantity"]+=qty
+   r["patientRows"].append({"mrn":x["id"],"name":x["name"],"speciality":x["speciality"],"qty":qty})
+ (pre/"calendar.json").write_text(json.dumps({k:{"patients":v["patients"],"medications":len(v["medications"]),"quantity":round(v["quantity"],2)} for k,v in sorted(cal.items())},ensure_ascii=False,separators=(",",":")),encoding="utf-8")
+ didx={}
+ for d,drugs in sorted(day.items()):
+  rows=[]
+  for drug,v in drugs.items():
+   n=len(v["patients"]);rows.append({"drug":drug,"patients":n,"qty":round(v["quantity"],2),"avg":round(v["quantity"]/n,2) if n else 0,"patientRows":v["patientRows"]})
+  rows.sort(key=lambda r:(-r["qty"],-r["patients"],r["drug"]))
+  fn=f"demand-{d}.json";(pre/fn).write_text(json.dumps({"date":d,"rows":rows},ensure_ascii=False,separators=(",",":")),encoding="utf-8");didx[d]=f"data/precomputed/25/{fn}"
+ (pre/"demand-index.json").write_text(json.dumps(didx,separators=(",",":")),encoding="utf-8")
+
  meta={"generated_at":datetime.now().isoformat(timespec="seconds"),"source_file":files[-1].name,"raw_records":raw,"valid_records":valid,"unique_patients":len(patients),"patient_medication_records":len(latest),"chunks":chunks,"default_interval":25}
  (DATA/"meta.json").write_text(json.dumps(meta,ensure_ascii=False,separators=(",",":")),encoding="utf-8")
 if __name__=="__main__":main()

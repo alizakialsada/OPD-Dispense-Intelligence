@@ -1,18 +1,13 @@
-# Dispense Intelligence Lite — Final v1.0
+# Dispense Intelligence — Production v1.0
 
-Included:
-- Secure login and administrator-only management
-- Shared realtime team workflow
-- Start / In Progress / Dispensed / Unavailable
-- Undo Start and Undo Dispensed for 5 minutes
-- Audit Log and Admin Reopen
-- Today's historical team import
-- Drug Demand with required quantities
-- Smart Calendar with daily patient load, medication count, quantity forecast, and pressure levels
-- Excel exports for selected day, drug demand, queue, registry, and team performance
-- Automatic Excel processing and GitHub deployment
-- Lazy-loaded medication and calendar data to preserve speed
+Fixed:
+- Drug Demand now reads a small precomputed file for the selected date.
+- Smart Calendar now reads one compact precomputed monthly source.
+- No repeated full-data scanning in the browser.
+- Automatic Excel updates regenerate all prepared files.
 
-Performance:
-- Main dispensing interface remains lightweight.
-- Medication quantities and calendar calculations load only when those pages are opened.
+Deployment:
+Keep your existing live `supabase-config.js`.
+This package intentionally does not include it, so your working Supabase connection is not overwritten.
+
+Current production interval: 25 days.

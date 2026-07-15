@@ -177,7 +177,7 @@
 <script>
 const $=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)],fmt=n=>new Intl.NumberFormat().format(Math.round(n||0));
 const STAFF={bassemah:"Bassemah H. Al Faraj",batool:"Batool S. T. Alfaraj",ghada:"Ghada A. Alqudaihi",rabab:"Rabab Alsheef",team_import:"Today's Team Total"};
-const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||25,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastAction:null,undoTicker:null,legacy:null,demandPatients:null,demandRows:[],view:"home",calMonth:new Date(),calSelected:new Date(),calendarCache:{}};
+const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||25,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastAction:null,undoTicker:null,legacy:null,demandPatients:null,demandRows:[],view:"home",calMonth:new Date(),calSelected:new Date(),calendarCache:{},precomputedCalendar:null,demandIndex:null,demandDateLoaded:""};
 const iso=d=>{let x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)},pd=s=>new Date(s+"T00:00:00"),add=(s,n)=>{let d=pd(s);d.setDate(d.getDate()+n);return iso(d)},next=p=>add(p.base_last,S.days),delta=p=>Math.round((pd(next(p))-pd(iso(S.date)))/86400000);
 const state=p=>{let d=delta(p);return d<0?"overdue":d===0?"today":d===1?"tomorrow":d<=7?"week":"future"},label=s=>({overdue:"Overdue",today:"Today",tomorrow:"Tomorrow",week:"Within 7 days",future:"Future"})[s];
 function toast(x){let t=$("#toast");t.textContent=x;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1500)}
@@ -210,7 +210,7 @@ window.signInUser=async()=>{
  if(!username||!password){setAuthMessage("Enter username and password.");return}
  const {data,error}=await S.sb.auth.signInWithPassword({email:authEmail(username),password});
  if(error){setAuthMessage(error.message);return}
- await applySession(data.session);setAuthMessage("");await loadShared();await loadLegacyImport();if(S.demandPatients)buildDemand();render();if(S.view==="demand")renderDemandTable();toast("Signed in");
+ await applySession(data.session);setAuthMessage("");await loadShared();await loadLegacyImport();S.demandDateLoaded="";render();if(S.view==="demand")renderDemand();toast("Signed in");
 }
 window.signOutUser=async()=>{if(S.sb)await S.sb.auth.signOut();S.user=null;S.profile=null;S.staff="";$("#who").textContent="Not signed in";$("#roleLabel").textContent="User";$("#adminNav").classList.add("hidden");$("#authScreen").classList.remove("hidden")}
 function requireAdmin(){if(S.profile?.role!=="admin"){toast("Administrator access required");return false}return true}
@@ -355,7 +355,7 @@ function bind(){$$(".nav").forEach(b=>b.onclick=()=>go(b.dataset.v));$("#date").
 function go(v){if(v==="admin"&&!requireAdmin())return;S.view=v;$$(".view").forEach(x=>x.classList.remove("active"));$("#"+v).classList.add("active");$$(".nav").forEach(x=>x.classList.toggle("active",x.dataset.v===v));$("#title").textContent={home:"Overview",queue:"Dispense Queue",registry:"Patient Registry",team:"Team Performance",admin:"Administration"}[v];render()}
 function openLogin(){$("#authScreen").classList.remove("hidden")}function selectStaff(id){S.staff=id;localStorage.setItem("dip-staff",id);$("#who").textContent=STAFF[id];$("#login").classList.add("hidden");toast("Signed in")}
 async function copy(id,e){e?.stopPropagation();try{await navigator.clipboard.writeText(id)}catch{let x=document.createElement("textarea");x.value=id;document.body.appendChild(x);x.select();document.execCommand("copy");x.remove()}toast("MRN copied")}
-function setDays(n){if(!n||n<1||n>365)return;S.days=n;localStorage.setItem("dip-days",n);$("#currentDays").textContent=n;if(S.demandPatients)buildDemand();render();if(S.view==="demand")renderDemandTable();toast("Interval updated")}
+function setDays(n){if(!n||n<1||n>365)return;S.days=n;localStorage.setItem("dip-days",n);$("#currentDays").textContent=n;S.demandDateLoaded="";render();if(S.view==="demand")renderDemand();toast("Interval updated")}
 function counts(){let c={overdue:0,today:0,tomorrow:0,week:0};S.p.forEach(p=>{let s=state(p);if(c[s]!=null)c[s]++});return c}
 function render(){let c=counts(),h=new Date().getHours();$("#hello").textContent=(h<12?"Good Morning":h<18?"Good Afternoon":"Good Evening")+", Pharmacist.";$("#heroCount").textContent=fmt(c.today);$("#heroDate").textContent=S.date.toLocaleDateString("en-GB",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});$("#over").textContent=fmt(c.overdue);$("#today").textContent=fmt(c.today);$("#tomorrow").textContent=fmt(c.tomorrow);$("#week").textContent=fmt(c.week);$("#all").textContent=fmt(S.p.length);renderQueue();renderRegistry();renderTeam()}
 function qlist(){let m=$("#mode").value,q=$("#qqueue").value.toLowerCase();return S.p.filter(p=>(m==="week"?["today","tomorrow","week"].includes(state(p)):state(p)===m)&&(!q||[p.id,p.name,p.drug_text,p.speciality].join(" ").toLowerCase().includes(q)))}
@@ -398,27 +398,20 @@ function pressureLabel(n){
  return ({low:"Low",medium:"Medium",high:"High",critical:"Critical"})[pressureClass(n)];
 }
 async function calendarDayStats(key){
- const patientRows=S.p.filter(p=>next(p)===key);
- let meds=0,qty=0;
- if(S.demandPatients){
-  const map=new Set();
-  for(const p of S.demandPatients){
-   if(add(p.base_last,S.days)!==key)continue;
-   for(const item of p.items||[]){map.add(item.drug);qty+=Number(item.qty)||0}
-  }
-  meds=map.size;
- }
- return {patients:patientRows.length,meds,qty,overdue:0};
+ await ensurePrecomputedIndexes();
+ const x=S.precomputedCalendar[key]||{};
+ return {patients:x.patients||0,meds:x.medications||0,qty:x.quantity||0,overdue:0};
 }
 async function renderCalendar(){
- await ensureDemandLoaded();
+ await ensurePrecomputedIndexes();
  const y=S.calMonth.getFullYear(),m=S.calMonth.getMonth();
  const first=new Date(y,m,1),start=new Date(y,m,1-first.getDay());
  $("#calTitle").textContent=S.calMonth.toLocaleDateString("en-US",{month:"long",year:"numeric"});
  let htmlDays="";
  for(let i=0;i<42;i++){
   const d=new Date(start);d.setDate(start.getDate()+i);
-  const key=iso(d),stats=await calendarDayStats(key);
+  const key=iso(d),raw=S.precomputedCalendar[key]||{};
+  const stats={patients:raw.patients||0,meds:raw.medications||0,qty:raw.quantity||0,overdue:0};
   S.calendarCache[key]=stats;
   htmlDays+=`<button class="cal-day ${d.getMonth()!==m?"dim":""} ${key===iso(S.calSelected)?"selected":""} ${pressureClass(stats.patients)}" onclick="selectCalendarDay('${key}')">
    <div class="dnum">${d.getDate()}</div>
@@ -426,8 +419,7 @@ async function renderCalendar(){
    <div class="qty">${fmt(stats.qty)} qty</div>
   </button>`;
  }
- $("#calGrid").innerHTML=htmlDays;
- renderCalendarSide();
+ $("#calGrid").innerHTML=htmlDays;renderCalendarSide();
 }
 window.selectCalendarDay=key=>{S.calSelected=pd(key);renderCalendar()}
 window.moveMonth=n=>{S.calMonth=new Date(S.calMonth.getFullYear(),S.calMonth.getMonth()+n,1);renderCalendar()}
@@ -446,45 +438,47 @@ window.exportCalendarDayExcel=async()=>{
  S.date=new Date(S.calSelected);$("#date").value=iso(S.date);await exportDemandExcel();
 }
 
-async function ensureDemandLoaded(){
- if(S.demandPatients)return;
- $("#demandLoading").classList.remove("hidden");
- $("#demandLoading").textContent="Loading medication quantities…";
+async function ensurePrecomputedIndexes(){
+ if(S.precomputedCalendar&&S.demandIndex)return;
+ const base=`data/precomputed/${S.days}`;
  try{
-  const meta=await fetch("data/demand-meta.json",{cache:"no-store"}).then(r=>r.json());
-  const chunks=await Promise.all(meta.chunks.map(f=>fetch(f,{cache:"no-store"}).then(r=>r.json())));
-  S.demandPatients=chunks.flat();
-  $("#demandLoading").classList.add("hidden");
-  $("#demandTableBox").classList.remove("hidden");
+  const [cal,idx]=await Promise.all([
+   fetch(`${base}/calendar.json`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("calendar");return r.json()}),
+   fetch(`${base}/demand-index.json`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("demand index");return r.json()})
+  ]);
+  S.precomputedCalendar=cal;S.demandIndex=idx;
  }catch(e){
-  console.error(e);$("#demandLoading").textContent="Could not load medication quantities.";
+  S.precomputedCalendar={};S.demandIndex={};
+  console.warn("No prepared data for interval",S.days);
  }
 }
-function buildDemand(){
- if(!S.demandPatients)return [];
- const key=iso(S.date),map=new Map(),patientSet=new Set();
- for(const p of S.demandPatients){
-  if(add(p.base_last,S.days)!==key)continue;
-  patientSet.add(p.id);
-  for(const item of p.items||[]){
-   const name=item.drug||"Unknown";
-   if(!map.has(name))map.set(name,{drug:name,patients:new Set(),qty:0,patientRows:[]});
-   const x=map.get(name),q=Number(item.qty)||0;
-   x.patients.add(p.id);x.qty+=q;
-   x.patientRows.push({mrn:p.id,name:p.name||"",qty:q,speciality:p.speciality||""});
-  }
+async function ensureDemandLoaded(){
+ await ensurePrecomputedIndexes();
+ const key=iso(S.date);
+ if(S.demandDateLoaded===key)return;
+ $("#demandLoading").classList.remove("hidden");
+ $("#demandTableBox").classList.add("hidden");
+ $("#demandLoading").textContent="Loading prepared daily demand…";
+ const file=S.demandIndex[key];
+ if(!file){
+  S.demandRows=[];S.demandEligiblePatients=0;S.demandDateLoaded=key;
+  $("#demandLoading").classList.add("hidden");$("#demandTableBox").classList.remove("hidden");
+  return;
  }
- S.demandRows=[...map.values()].map(x=>({
-  drug:x.drug,patients:x.patients.size,qty:x.qty,
-  avg:x.patients.size?x.qty/x.patients.size:0,patientRows:x.patientRows
- })).sort((a,b)=>b.qty-a.qty||b.patients-a.patients||a.drug.localeCompare(b.drug));
- S.demandEligiblePatients=patientSet.size;
- return S.demandRows;
+ try{
+  const data=await fetch(file,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("daily demand");return r.json()});
+  S.demandRows=data.rows||[];
+  const ids=new Set();
+  S.demandRows.forEach(x=>(x.patientRows||[]).forEach(p=>ids.add(p.mrn)));
+  S.demandEligiblePatients=ids.size;S.demandDateLoaded=key;
+  $("#demandLoading").classList.add("hidden");$("#demandTableBox").classList.remove("hidden");
+ }catch(e){
+  console.error(e);S.demandRows=[];S.demandEligiblePatients=0;
+  $("#demandLoading").textContent="Could not load prepared demand data.";
+ }
 }
-async function renderDemand(){
- await ensureDemandLoaded();
- buildDemand();renderDemandTable();
-}
+function buildDemand(){return S.demandRows||[]}
+async function renderDemand(){await ensureDemandLoaded();renderDemandTable()}
 function renderDemandTable(){
  if(!S.demandPatients)return;
  const q=($("#qdemand")?.value||"").toLowerCase();
@@ -503,7 +497,7 @@ async function loadXLSX(){
 }
 function saveWorkbook(wb,name){XLSX.writeFile(wb,name,{compression:true})}
 window.exportDemandExcel=async()=>{
- await ensureDemandLoaded();buildDemand();await loadXLSX();
+ await ensureDemandLoaded();await loadXLSX();
  const summary=S.demandRows.map((x,i)=>({
   Priority:i+1,Medication:x.drug,Patients:x.patients,
   "Required Quantity":Math.round(x.qty*100)/100,
@@ -521,7 +515,7 @@ window.exportDemandExcel=async()=>{
  saveWorkbook(wb,`drug-demand-${iso(S.date)}.xlsx`);
 }
 window.exportDrugPatients=async encoded=>{
- const drug=decodeURIComponent(encoded);await ensureDemandLoaded();buildDemand();await loadXLSX();
+ const drug=decodeURIComponent(encoded);await ensureDemandLoaded();await loadXLSX();
  const x=S.demandRows.find(r=>r.drug===drug);if(!x)return;
  const rows=x.patientRows.map(p=>({Date:iso(S.date),Medication:drug,MRN:p.mrn,"Patient Name":p.name,Specialty:p.speciality,"Required Quantity":p.qty}));
  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),"Patients");
