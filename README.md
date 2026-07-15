@@ -1,19 +1,13 @@
-# Dispense Intelligence Platform v2 — Final Trial
+# Dispense Intelligence Production v1.0.3 — Shared Dispensing Interval
 
-Included:
-- Live Scheduled / Dispensed / Others / In Progress / Remaining / Completion.
-- Personal live achievement strip for the signed-in employee.
-- Live timer on every In Progress patient.
-- Others reason workflow with Undo for 5 minutes.
-- Others is excluded from Dispensed and productivity.
-- Supervisor live monitor.
-- Team Analytics by Today / Week / Month / Custom and employee.
-- Password change and admin password reset support.
-- Shared dispensing interval.
-- Smart Calendar, Drug Demand, and Excel exports.
+Fixed:
+- Admin interval is now stored centrally in Supabase.
+- Every employee device receives the new interval immediately.
+- Queue, Overview, Patient Registry, Smart Calendar, and Drug Demand refresh automatically.
+- Supported operational intervals: 15, 20, 25, and 30 days.
 
-One-time database update:
-Run `supabase-setup/08-final-trial-others.sql`.
+One-time setup:
+Run `supabase-setup/06-system-settings.sql` in Supabase SQL Editor.
 
 Deployment:
-Keep the current live `supabase-config.js`; this package intentionally does not include it.
+Keep the current live `supabase-config.js`; this package does not include it.

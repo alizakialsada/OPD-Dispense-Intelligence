@@ -60,51 +60,11 @@
 .legend{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 14px}.legend span{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--m)}.legend i{width:9px;height:9px;border-radius:50%;display:inline-block}
 @media(max-width:820px){.calendar-wrap{grid-template-columns:1fr}.cal-day{min-height:72px}.cal-day .qty{display:none}}
 
-
-.team-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.team-filters select,.team-filters input,.team-filters button{border:1px solid var(--line);background:var(--p);color:#fff;border-radius:10px;padding:10px}.team-advanced{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.staff-analytic{border:1px solid var(--line);background:var(--p);border-radius:16px;padding:15px}.staff-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.staff-kpis div{border:1px solid var(--line);background:#0d2234;border-radius:10px;padding:9px}.staff-kpis span{display:block;color:var(--m);font-size:8px}.staff-kpis b{display:block;font-size:16px;margin-top:3px}.contrib{height:9px;border-radius:999px;background:#142b3c;overflow:hidden;margin-top:12px}.contrib i{display:block;height:100%;background:linear-gradient(90deg,var(--c),var(--b))}.chart-wrap{height:170px;margin-top:12px}.team-summary-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px}.others-chip{padding:5px 8px;border-radius:999px;background:#ad86ff18;color:var(--v);font-size:9px;font-weight:900}@media(max-width:900px){.team-summary-grid{grid-template-columns:repeat(3,1fr)}.team-advanced{grid-template-columns:1fr}}
-.password-modal{position:fixed;inset:0;z-index:120;background:#030a12e8;backdrop-filter:blur(12px);display:grid;place-items:center}.password-modal.hidden{display:none}.password-box{width:min(460px,92vw);border:1px solid #274960;background:#091a2a;border-radius:20px;padding:22px}.password-box input{width:100%;border:1px solid var(--line);background:#0d2234;color:#fff;border-radius:10px;padding:11px;margin-top:9px}.password-actions{display:flex;gap:8px;margin-top:12px}.password-actions button{flex:1;border:1px solid var(--line);background:#10263a;color:#fff;border-radius:10px;padding:10px}.password-actions .primary{background:linear-gradient(135deg,var(--c),var(--b));color:#04111c;border:0;font-weight:900}.reset-user-btn{border:1px solid rgba(255,184,95,.35);background:rgba(255,184,95,.1);color:var(--o);border-radius:8px;padding:7px 9px;font-size:9px;font-weight:900}
-
-.live-dock{display:grid;grid-template-columns:repeat(6,1fr);gap:9px;margin-bottom:14px}
-.live-box{border:1px solid var(--line);background:var(--p);border-radius:14px;padding:12px;position:relative;overflow:hidden}
-.live-box span{display:block;color:var(--m);font-size:9px}.live-box b{display:block;font-size:24px;margin-top:4px}
-.live-box.remaining b{color:var(--c)}.live-box.done b{color:var(--g)}.live-box.others b{color:var(--v)}.live-box.working b{color:var(--o)}
-.live-box .pulse{position:absolute;right:9px;top:9px;width:7px;height:7px;border-radius:50%;background:var(--g);box-shadow:0 0 12px var(--g)}
-.personal-strip{display:flex;gap:12px;align-items:center;border:1px solid #24465f;background:linear-gradient(90deg,#10283b,#0a1c2c);border-radius:14px;padding:11px 13px;margin-bottom:14px}
-.personal-strip strong{font-size:12px}.personal-strip .mine{display:flex;gap:14px;margin-left:auto}.personal-strip .mine div{text-align:center}.personal-strip span{display:block;color:var(--m);font-size:8px}.personal-strip b{font-size:16px}
-.patient-timer{font-variant-numeric:tabular-nums;color:var(--o);font-weight:900;font-size:11px;margin-top:7px}
-.others-modal{position:fixed;inset:0;z-index:130;background:#030a12e8;backdrop-filter:blur(12px);display:grid;place-items:center}
-.others-modal.hidden{display:none}.others-box{width:min(520px,92vw);border:1px solid #274960;background:#091a2a;border-radius:20px;padding:22px}
-.others-options{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:13px 0}.others-options button{border:1px solid var(--line);background:#0d2234;color:#fff;border-radius:10px;padding:11px;text-align:left}.others-options button.active{border-color:var(--v);background:#251c3b}
-.others-box input{width:100%;border:1px solid var(--line);background:#0d2234;color:#fff;border-radius:10px;padding:11px}
-.complete-banner{border:1px solid rgba(69,230,170,.35);background:rgba(69,230,170,.09);border-radius:14px;padding:14px;text-align:center;margin-bottom:14px}
-.supervisor-panel{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.supervisor-card{border:1px solid var(--line);background:var(--p);border-radius:14px;padding:13px}
-@media(max-width:1000px){.live-dock{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:720px){.live-dock{grid-template-columns:repeat(2,1fr)}.personal-strip{align-items:flex-start;flex-direction:column}.personal-strip .mine{margin-left:0}.others-options{grid-template-columns:1fr}.supervisor-panel{grid-template-columns:1fr}}
-
 </style></head><body>
 <div class="shell"><aside class="side"><div class="brand"><div class="logo">DI</div><div><b>Dispense Lite</b><small>Daily Operations</small></div></div>
-<button class="nav active" data-v="home">◈ <span>Overview</span></button><button class="nav" data-v="queue">▷ <span>Dispense Queue</span></button><button class="nav" data-v="registry">◎ <span>Patient Registry</span></button><button class="nav" data-v="calendar">▦ <span>Smart Calendar</span></button><button class="nav" data-v="demand">◆ <span>Drug Demand</span></button><button class="nav" data-v="team">♟ <span>Team</span></button><button id="supervisorNav" class="nav hidden" data-v="supervisor">◉ <span>Supervisor</span></button><button id="adminNav" class="nav hidden" data-v="admin">⚙ <span>Admin</span></button><div class="sidefoot">Created by Automation Supervisor Ali Alsada</div></aside>
-<main class="main"><header class="top"><div><div class="ey">PHARMACY OPERATIONS</div><h1 id="title">Overview</h1></div><div class="actions"><div id="live" class="live"><span class="dot"></span><small id="sync">Local mode</small></div><div class="user"><small id="roleLabel">User</small><b id="who">Not signed in</b></div><button class="logout-btn" onclick="openPasswordModal()">Change Password</button><button class="logout-btn" onclick="signOutUser()">Sign Out</button><button class="copy" onclick="exportCurrentView()">Export Excel</button><input id="date" type="date"></div></header>
-<section id="home" class="view active">
-<div id="completeBanner" class="complete-banner hidden">🎉 Today's Work Completed</div>
-<div class="personal-strip">
- <div><span>Signed in as</span><strong id="personalName">—</strong></div>
- <div class="mine">
-  <div><span>My Dispensed</span><b id="myDispensed">0</b></div>
-  <div><span>My In Progress</span><b id="myWorking">0</b></div>
-  <div><span>My Others</span><b id="myOthers">0</b></div>
-  <div><span>My Contribution</span><b id="myContribution">0%</b></div>
- </div>
-</div>
-<div class="live-dock">
- <div class="live-box"><span>Scheduled</span><b id="liveScheduled">0</b><i class="pulse"></i></div>
- <div class="live-box done"><span>Dispensed</span><b id="liveDispensed">0</b></div>
- <div class="live-box others"><span>Others</span><b id="liveOthers">0</b></div>
- <div class="live-box working"><span>In Progress</span><b id="liveWorking">0</b></div>
- <div class="live-box remaining"><span>Remaining</span><b id="liveRemaining">0</b></div>
- <div class="live-box"><span>Completion</span><b id="liveCompletion">0%</b></div>
-</div><div class="hero"><div><div class="ey">TODAY'S DISPENSING</div><h2 id="hello">Good Morning, Pharmacist.</h2><p>Fast, focused, and ready for daily dispensing.</p><div class="num" id="heroCount">0</div><p id="heroDate">—</p></div><button class="copy" onclick="go('queue')">Start Queue →</button></div><div class="kpis"><div class="kpi red"><span>Overdue</span><b id="over">0</b></div><div class="kpi green"><span>Today</span><b id="today">0</b></div><div class="kpi orange"><span>Tomorrow</span><b id="tomorrow">0</b></div><div class="kpi cyan"><span>Next 7 Days</span><b id="week">0</b></div><div class="kpi"><span>Unique Patients</span><b id="all">0</b></div></div></section>
+<button class="nav active" data-v="home">◈ <span>Overview</span></button><button class="nav" data-v="queue">▷ <span>Dispense Queue</span></button><button class="nav" data-v="registry">◎ <span>Patient Registry</span></button><button class="nav" data-v="calendar">▦ <span>Smart Calendar</span></button><button class="nav" data-v="demand">◆ <span>Drug Demand</span></button><button class="nav" data-v="team">♟ <span>Team</span></button><button id="adminNav" class="nav hidden" data-v="admin">⚙ <span>Admin</span></button><div class="sidefoot">Created by Automation Supervisor Ali Alsada</div></aside>
+<main class="main"><header class="top"><div><div class="ey">PHARMACY OPERATIONS</div><h1 id="title">Overview</h1></div><div class="actions"><div id="live" class="live"><span class="dot"></span><small id="sync">Local mode</small></div><div class="user"><small id="roleLabel">User</small><b id="who">Not signed in</b></div><button class="logout-btn" onclick="signOutUser()">Sign Out</button><button class="copy" onclick="exportCurrentView()">Export Excel</button><input id="date" type="date"></div></header>
+<section id="home" class="view active"><div class="hero"><div><div class="ey">TODAY'S DISPENSING</div><h2 id="hello">Good Morning, Pharmacist.</h2><p>Fast, focused, and ready for daily dispensing.</p><div class="num" id="heroCount">0</div><p id="heroDate">—</p></div><button class="copy" onclick="go('queue')">Start Queue →</button></div><div class="kpis"><div class="kpi red"><span>Overdue</span><b id="over">0</b></div><div class="kpi green"><span>Today</span><b id="today">0</b></div><div class="kpi orange"><span>Tomorrow</span><b id="tomorrow">0</b></div><div class="kpi cyan"><span>Next 7 Days</span><b id="week">0</b></div><div class="kpi"><span>Unique Patients</span><b id="all">0</b></div></div></section>
 <section id="queue" class="view"><div class="section"><div><div class="ey">DAILY WORKLIST</div><h2>Dispense Queue</h2><p>Copy MRN, start patient, and finish dispensing.</p></div><div class="toolbar"><select id="mode"><option value="today">Today</option><option value="overdue">Overdue</option><option value="tomorrow">Tomorrow</option><option value="week">Next 7 Days</option></select><input id="qqueue" class="search" placeholder="Search MRN, patient, medication…"></div></div><div class="summary"><div><span>Scheduled</span><b id="scheduled">0</b></div><div><span>Dispensed</span><b id="done">0</b></div><div><span>In Progress</span><b id="working">0</b></div><div><span>Completion</span><b id="rate">0%</b></div></div><div class="progress"><i id="bar"></i></div><div id="cards" class="cards"></div></section>
 <section id="registry" class="view"><div class="section"><div><div class="ey">PATIENT INDEX</div><h2>Patient Registry</h2></div><input id="qreg" class="search" placeholder="Search MRN, patient, medication…"></div><div class="tablebox"><table><thead><tr><th>Patient</th><th>MRN</th><th>Medications</th><th>Last Dispense</th><th>Next Eligible</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table><div class="pager"><span id="count"></span><div><button onclick="page(-1)">←</button> <span id="pg"></span> <button onclick="page(1)">→</button></div></div></div></section>
 
@@ -151,38 +111,8 @@
  <div id="demandTableBox" class="tablebox hidden"><table class="demand-table"><thead><tr><th>Priority</th><th>Medication</th><th>Patients</th><th>Required Qty</th><th>Average / Patient</th><th>Patient List</th></tr></thead><tbody id="demandRows"></tbody></table></div>
 </section>
 
+<section id="team" class="view"><div class="section"><div><div class="ey">TEAM PERFORMANCE</div><h2>Today</h2><p>Imported completed work is included in the total without assigning it to an employee.</p></div><button class="copy" onclick="migrate()">Sync Existing Work</button></div><div class="summary"><div><span>Total Dispensed</span><b id="teamTotal">0</b></div><div><span>In Progress</span><b id="teamWorking">0</b></div><div><span>Completion</span><b id="teamRate">0%</b></div><div><span>Active Staff</span><b id="activeStaff">0</b></div></div><div id="teamCards" class="team"></div></section>
 
-<section id="team" class="view">
-<div class="section"><div><div class="ey">TEAM ANALYTICS</div><h2>Performance & Contribution</h2><p id="teamPeriodLabel">Today</p></div><button class="copy" onclick="exportTeamAnalyticsExcel()">Export Excel</button></div>
-<div class="team-filters">
-<select id="teamPeriod"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom Range</option></select>
-<input id="teamFrom" type="date" class="hidden"><input id="teamTo" type="date" class="hidden">
-<select id="teamScope"><option value="all">Whole Team</option></select><button onclick="renderAdvancedTeam()">Apply</button>
-</div>
-<div class="team-summary-grid">
-<div class="kpi cyan"><span>Total Dispensed</span><b id="taDispensed">0</b></div>
-<div class="kpi"><span>Others</span><b id="taOthers">0</b></div>
-<div class="kpi orange"><span>In Progress</span><b id="taWorking">0</b></div>
-<div class="kpi green"><span>Contribution</span><b id="taContribution">100%</b></div>
-<div class="kpi"><span>Average Time</span><b id="taAvg">—</b></div>
-<div class="kpi"><span>Active Staff</span><b id="taActive">0</b></div>
-</div>
-<div id="teamAnalyticsCards" class="team-advanced"></div>
-</section>
-
-
-<section id="supervisor" class="view">
- <div class="section"><div><div class="ey">SUPERVISOR LIVE VIEW</div><h2>Live Staff Monitor</h2><p>Operational monitoring without user-management settings.</p></div></div>
- <div class="live-dock">
-  <div class="live-box"><span>Scheduled</span><b id="svScheduled">0</b></div>
-  <div class="live-box done"><span>Dispensed</span><b id="svDispensed">0</b></div>
-  <div class="live-box others"><span>Others</span><b id="svOthers">0</b></div>
-  <div class="live-box working"><span>In Progress</span><b id="svWorking">0</b></div>
-  <div class="live-box remaining"><span>Remaining</span><b id="svRemaining">0</b></div>
-  <div class="live-box"><span>Completion</span><b id="svCompletion">0%</b></div>
- </div>
- <div id="supervisorStaff" class="supervisor-panel"></div>
-</section>
 <section id="admin" class="view">
  <div class="section"><div><div class="ey">ADMINISTRATION</div><h2>System Administration</h2><p>Only administrators can access this page.</p></div></div>
  <div class="account-grid">
@@ -243,64 +173,17 @@
  <div><b id="undoTitle">Action completed</b><small id="undoTimer">Undo available for 05:00</small></div>
  <button id="undoActionButton" onclick="undoLastAction()">↩ Undo</button>
 </div>
-
-<div id="othersModal" class="others-modal hidden"><div class="others-box">
- <div class="ey">CLOSE AS OTHER</div><h2>Select Reason</h2>
- <div class="others-options">
-  <button onclick="chooseOtherReason(this,'Medication Not Available')">Medication Not Available</button>
-  <button onclick="chooseOtherReason(this,'Wrong National Address')">Wrong National Address</button>
-  <button onclick="chooseOtherReason(this,'Duplicate Prescription')">Duplicate Prescription</button>
-  <button onclick="chooseOtherReason(this,'Patient Did Not Attend')">Patient Did Not Attend</button>
-  <button onclick="chooseOtherReason(this,'Prescription Cancelled')">Prescription Cancelled</button>
-  <button onclick="chooseOtherReason(this,'Other')">Other</button>
- </div>
- <input id="otherNote" placeholder="Optional note">
- <div class="password-actions"><button onclick="closeOthers()">Cancel</button><button class="primary" onclick="confirmOthers()">Confirm</button></div>
- <div id="otherMessage" class="auth-msg"></div>
-</div></div>
-<div id="passwordModal" class="password-modal hidden"><div class="password-box">
-<div class="ey">ACCOUNT SECURITY</div><h2>Change Password</h2>
-<p class="muted">Enter your current password, then choose a new password.</p>
-<input id="currentPassword" type="password" placeholder="Current password">
-<input id="newPasswordSelf" type="password" placeholder="New password (minimum 8 characters)">
-<input id="confirmPasswordSelf" type="password" placeholder="Confirm new password">
-<div class="password-actions"><button onclick="closePasswordModal()">Cancel</button><button class="primary" onclick="changeOwnPassword()">Update Password</button></div>
-<div id="passwordMessage" class="auth-msg"></div></div></div>
 <div id="toast" class="toast">Done</div>
 <script>
 const $=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)],fmt=n=>new Intl.NumberFormat().format(Math.round(n||0));
 const STAFF={bassemah:"Bassemah H. Al Faraj",batool:"Batool S. T. Alfaraj",ghada:"Ghada A. Alqudaihi",rabab:"Rabab Alsheef",team_import:"Today's Team Total"};
-const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||25,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastAction:null,undoTicker:null,legacy:null,demandPatients:null,demandRows:[],view:"home",calMonth:new Date(),calSelected:new Date(),calendarCache:{},precomputedCalendar:null,demandIndex:null,demandDateLoaded:"",settingsChannel:null,teamProfiles:[],teamRows:[],teamCharts:[],otherMrn:"",otherReason:"",timerTicker:null};
+const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||25,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastAction:null,undoTicker:null,legacy:null,demandPatients:null,demandRows:[],view:"home",calMonth:new Date(),calSelected:new Date(),calendarCache:{},precomputedCalendar:null,demandIndex:null,demandDateLoaded:"",settingsChannel:null};
 const iso=d=>{let x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)},pd=s=>new Date(s+"T00:00:00"),add=(s,n)=>{let d=pd(s);d.setDate(d.getDate()+n);return iso(d)},next=p=>add(p.base_last,S.days),delta=p=>Math.round((pd(next(p))-pd(iso(S.date)))/86400000);
 const state=p=>{let d=delta(p);return d<0?"overdue":d===0?"today":d===1?"tomorrow":d<=7?"week":"future"},label=s=>({overdue:"Overdue",today:"Today",tomorrow:"Tomorrow",week:"Within 7 days",future:"Future"})[s];
 function toast(x){let t=$("#toast");t.textContent=x;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1500)}
 
 function authEmail(username){return `${String(username).trim().toLowerCase()}@dispense.local`}
 function setAuthMessage(msg){$("#authMessage").textContent=msg||""}
-
-window.openPasswordModal=()=>{$("#passwordModal").classList.remove("hidden");$("#passwordMessage").textContent="";$("#currentPassword").value="";$("#newPasswordSelf").value="";$("#confirmPasswordSelf").value=""}
-window.closePasswordModal=()=>$("#passwordModal").classList.add("hidden")
-window.changeOwnPassword=async()=>{
- if(!S.sb||!S.user||!S.profile)return;
- const current=$("#currentPassword").value,next=$("#newPasswordSelf").value,confirm=$("#confirmPasswordSelf").value,msg=$("#passwordMessage");
- if(!current||next.length<8){msg.textContent="New password must be at least 8 characters.";return}
- if(next!==confirm){msg.textContent="Passwords do not match.";return}
- msg.textContent="Verifying current password…";
- const {error:v}=await S.sb.auth.signInWithPassword({email:authEmail(S.profile.username),password:current});
- if(v){msg.textContent="Current password is incorrect.";return}
- const {error}=await S.sb.auth.updateUser({password:next});
- if(error){msg.textContent=error.message;return}
- msg.textContent="Password updated successfully.";setTimeout(closePasswordModal,900);toast("Password updated")
-}
-window.adminResetPassword=async(userId,username)=>{
- if(!requireAdmin())return;
- const temp=prompt(`Enter a temporary password for ${username} (minimum 8 characters):`);
- if(!temp)return;if(temp.length<8){toast("Password must be at least 8 characters");return}
- const {error}=await S.sb.functions.invoke("admin-reset-password",{body:{user_id:userId,new_password:temp}});
- if(error){console.error(error);toast("Password reset function is not deployed");return}
- toast(`Temporary password set for ${username}`)
-}
-
 async function initAuth(){
  const c=window.SUPABASE_CONFIG;
  if(!c?.url||c.url.includes("YOUR_")){setAuthMessage("Supabase is not configured.");return false}
@@ -318,7 +201,7 @@ async function applySession(session){
  $("#who").textContent=data.display_name||data.full_name||data.username;
  $("#roleLabel").textContent=data.role||"user";
  $("#authScreen").classList.add("hidden");
- $("#adminNav").classList.toggle("hidden",data.role!=="admin");$("#supervisorNav").classList.toggle("hidden",!["admin","supervisor"].includes(data.role));
+ $("#adminNav").classList.toggle("hidden",data.role!=="admin");
  localStorage.setItem("dip-staff",S.staff);
 }
 window.signInUser=async()=>{
@@ -352,7 +235,7 @@ window.loadUsers=async()=>{
  if(!requireAdmin())return;
  const {data,error}=await S.sb.from("profiles").select("id,full_name,display_name,username,role,is_active").order("full_name");
  if(error){toast("Could not load users");return}
- $("#userRows").innerHTML=(data||[]).map(u=>`<tr><td>${u.display_name||u.full_name}</td><td>${u.username}</td><td class="role-${u.role}">${u.role}</td><td>${u.is_active?"Active":"Disabled"}</td><td><button class="copy" onclick="toggleUser('${u.id}',${!u.is_active})">${u.is_active?"Disable":"Enable"}</button> <button class="reset-user-btn" onclick="adminResetPassword('${u.id}','${u.username}')">Reset Password</button></td></tr>`).join("");
+ $("#userRows").innerHTML=(data||[]).map(u=>`<tr><td>${u.display_name||u.full_name}</td><td>${u.username}</td><td class="role-${u.role}">${u.role}</td><td>${u.is_active?"Active":"Disabled"}</td><td><button class="copy" onclick="toggleUser('${u.id}',${!u.is_active})">${u.is_active?"Disable":"Enable"}</button></td></tr>`).join("");
 }
 window.toggleUser=async(id,active)=>{
  if(!requireAdmin())return;
@@ -383,7 +266,7 @@ function showUndo(action,id,staff,actionAt,previousStatus){
   const left=Math.max(0,UNDO_WINDOW_MS-(Date.now()-new Date(actionAt).getTime()));
   if(left<=0){$("#undoBanner").classList.add("hidden");clearInterval(S.undoTicker);S.lastAction=null;return}
   const m=Math.floor(left/60000),s=Math.floor((left%60000)/1000);
-  $("#undoTitle").textContent=action==="start"?`MRN ${id} started successfully`:action==="others"?`MRN ${id} moved to Others`:`MRN ${id} dispensed successfully`;
+  $("#undoTitle").textContent=action==="start"?`MRN ${id} started successfully`:`MRN ${id} dispensed successfully`;
   $("#undoTimer").textContent=`Undo available for ${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
  };
  tick();S.undoTicker=setInterval(tick,1000);
@@ -403,12 +286,6 @@ window.undoLastAction=async()=>{
   saveLocal();await saveShared(u.id);
   await writeAudit(u.id,"undo_dispensed","dispensed","in_progress","Undo within 5 minutes");
   toast("Dispense undone");
- }else if(u.action==="others"){
-  if(!["others","unavailable"].includes(current.status)){toast("Patient is no longer in Others");return}
-  S.a[u.id]={...current,status:u.previousStatus||"waiting",staff:u.previousStatus==="in_progress"?current.staff:"",completedAt:"",reason:"",note:"",updatedAt:new Date().toISOString()};
-  saveLocal();await saveShared(u.id);
-  await writeAudit(u.id,"undo_others","others",u.previousStatus||"waiting","Undo within 5 minutes");
-  toast("Others action undone");
  }else if(u.action==="start"){
   if(current.status!=="in_progress"){toast("Patient is no longer in progress");return}
   S.a[u.id]={...current,status:u.previousStatus||"waiting",staff:"",startedAt:"",completedAt:"",updatedAt:new Date().toISOString()};
@@ -472,7 +349,6 @@ async function boot(){
  await initAuth();
  await initShared();
  await loadSharedInterval();
- await loadTeamProfiles();
  subscribeSharedSettings();
  await loadLegacyImport();
  render();
@@ -488,9 +364,9 @@ function bind(){$$(".nav").forEach(b=>b.onclick=()=>go(b.dataset.v));$("#date").
   S.calMonth=new Date(S.date.getFullYear(),S.date.getMonth(),1);
   await renderCalendar();
  }
-};$("#mode").onchange=renderQueue;$("#qqueue").oninput=renderQueue;$("#qreg").oninput=()=>{S.page=1;renderRegistry()};$("#qdemand").oninput=renderDemandTable;$("#teamPeriod").onchange=toggleTeamCustomRange;$("#teamScope").onchange=renderAdvancedTeam}
+};$("#mode").onchange=renderQueue;$("#qqueue").oninput=renderQueue;$("#qreg").oninput=()=>{S.page=1;renderRegistry()};$("#qdemand").oninput=renderDemandTable}
 async function go(v){
- if(v==="admin"&&!requireAdmin())return;if(v==="supervisor"&&!["admin","supervisor"].includes(S.profile?.role)){toast("Supervisor access required");return;}
+ if(v==="admin"&&!requireAdmin())return;
  S.view=v;
  $$(".view").forEach(x=>x.classList.remove("active"));
  $("#"+v).classList.add("active");
@@ -498,7 +374,7 @@ async function go(v){
  $("#title").textContent={
   home:"Overview",queue:"Dispense Queue",registry:"Patient Registry",
   calendar:"Smart Calendar",demand:"Drug Demand",
-  team:"Team Performance",supervisor:"Supervisor",admin:"Administration"
+  team:"Team Performance",admin:"Administration"
  }[v]||"Dispense Intelligence";
  render();
  if(v==="calendar")await renderCalendar();
@@ -537,10 +413,10 @@ window.setDays=async n=>{
  await applyInterval(Number(n),true);
 }
 function counts(){let c={overdue:0,today:0,tomorrow:0,week:0};S.p.forEach(p=>{let s=state(p);if(c[s]!=null)c[s]++});return c}
-function render(){let c=counts(),h=new Date().getHours();$("#hello").textContent=(h<12?"Good Morning":h<18?"Good Afternoon":"Good Evening")+", Pharmacist.";$("#heroCount").textContent=fmt(c.today);$("#heroDate").textContent=S.date.toLocaleDateString("en-GB",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});$("#over").textContent=fmt(c.overdue);$("#today").textContent=fmt(c.today);$("#tomorrow").textContent=fmt(c.tomorrow);$("#week").textContent=fmt(c.week);$("#all").textContent=fmt(S.p.length);renderQueue();renderRegistry();renderTeam();renderLiveProgress();startTimers()}
+function render(){let c=counts(),h=new Date().getHours();$("#hello").textContent=(h<12?"Good Morning":h<18?"Good Afternoon":"Good Evening")+", Pharmacist.";$("#heroCount").textContent=fmt(c.today);$("#heroDate").textContent=S.date.toLocaleDateString("en-GB",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});$("#over").textContent=fmt(c.overdue);$("#today").textContent=fmt(c.today);$("#tomorrow").textContent=fmt(c.tomorrow);$("#week").textContent=fmt(c.week);$("#all").textContent=fmt(S.p.length);renderQueue();renderRegistry();renderTeam()}
 function qlist(){let m=$("#mode").value,q=$("#qqueue").value.toLowerCase();return S.p.filter(p=>(m==="week"?["today","tomorrow","week"].includes(state(p)):state(p)===m)&&(!q||[p.id,p.name,p.drug_text,p.speciality].join(" ").toLowerCase().includes(q)))}
 function ast(id){return S.a[id]?.status||"waiting"}function au(id){return S.a[id]?.staff||""}
-function renderQueue(){let a=qlist(),done=a.filter(p=>ast(p.id)==="dispensed").length,working=a.filter(p=>ast(p.id)==="in_progress").length,rate=a.length?Math.round(done/a.length*100):0;$("#scheduled").textContent=fmt(a.length);$("#done").textContent=fmt(done);$("#working").textContent=fmt(working);$("#rate").textContent=rate+"%";$("#bar").style.width=rate+"%";$("#cards").innerHTML=a.slice(0,300).map(p=>{let s=ast(p.id),u=au(p.id),locked=s==="in_progress"&&u&&u!==S.staff;return `<article class="card ${s}"><span class="badge ${state(p)}">${s==="waiting"?label(state(p)):s.replace("_"," ")}</span><h4>${p.name||"Unknown"}</h4><button class="copy" onclick="copy('${p.id}',event)">⧉ ${p.id}</button>${u?`<div class="staff">👩‍⚕️ ${STAFF[u]||u}</div>`:""}${s==="in_progress"?`<div class="patient-timer" data-start="${S.a[p.id]?.startedAt||""}" data-mrn="${p.id}">00:00</div>`:""}<div class="drugs">${p.drug_text}</div><div class="btns"><button class="primary" onclick="start('${p.id}')" ${locked||s==="dispensed"?"disabled":""}>${s==="in_progress"&&u===S.staff?"Continue":"Start"}</button><button onclick="finish('${p.id}','dispensed')" ${locked?"disabled":""}>Dispensed</button><button onclick="openOthers('${p.id}')" ${locked?"disabled":""}>Others</button></div></article>`}).join("")}
+function renderQueue(){let a=qlist(),done=a.filter(p=>ast(p.id)==="dispensed").length,working=a.filter(p=>ast(p.id)==="in_progress").length,rate=a.length?Math.round(done/a.length*100):0;$("#scheduled").textContent=fmt(a.length);$("#done").textContent=fmt(done);$("#working").textContent=fmt(working);$("#rate").textContent=rate+"%";$("#bar").style.width=rate+"%";$("#cards").innerHTML=a.slice(0,300).map(p=>{let s=ast(p.id),u=au(p.id),locked=s==="in_progress"&&u&&u!==S.staff;return `<article class="card ${s}"><span class="badge ${state(p)}">${s==="waiting"?label(state(p)):s.replace("_"," ")}</span><h4>${p.name||"Unknown"}</h4><button class="copy" onclick="copy('${p.id}',event)">⧉ ${p.id}</button>${u?`<div class="staff">👩‍⚕️ ${STAFF[u]||u}</div>`:""}<div class="drugs">${p.drug_text}</div><div class="btns"><button class="primary" onclick="start('${p.id}')" ${locked||s==="dispensed"?"disabled":""}>${s==="in_progress"&&u===S.staff?"Continue":"Start"}</button><button onclick="finish('${p.id}','dispensed')" ${locked?"disabled":""}>Dispensed</button><button onclick="finish('${p.id}','unavailable')" ${locked?"disabled":""}>Unavailable</button></div></article>`}).join("")}
 async function start(id){if(!S.user||!S.profile)return openLogin();if(S.profile.is_active===false)return toast("Account disabled");let a=S.a[id];if(a?.status==="in_progress"&&a.staff!==S.staff)return toast("Already in progress");const from=a?.status||"waiting";const startedAt=new Date().toISOString();S.a[id]={...(a||{}),status:"in_progress",staff:S.staff,startedAt,completedAt:"",updatedAt:startedAt};saveLocal();await saveShared(id);await writeAudit(id,"start",from,"in_progress");showUndo("start",id,S.staff,startedAt,from);render()}
 async function finish(id,status){if(!S.user||!S.profile)return openLogin();if(S.profile.is_active===false)return toast("Account disabled");let a=S.a[id];if(a?.status==="in_progress"&&a.staff&&a.staff!==S.staff)return toast("Locked by another pharmacist");const from=a?.status||"waiting";const completedAt=status==="dispensed"?new Date().toISOString():"";S.a[id]={...(a||{}),status,staff:S.staff,startedAt:a?.startedAt||new Date().toISOString(),completedAt,updatedAt:new Date().toISOString()};saveLocal();await saveShared(id);await writeAudit(id,status==="dispensed"?"dispensed":status,from,status);if(status==="dispensed")showUndo("dispensed",id,S.staff,completedAt,from);render()}
 function saveLocal(){localStorage.setItem("dip-a",JSON.stringify(S.a))}
@@ -771,86 +647,9 @@ function subscribeSharedSettings(){
   .subscribe();
 }
 
-
-function toggleTeamCustomRange(){const x=$("#teamPeriod").value==="custom";$("#teamFrom").classList.toggle("hidden",!x);$("#teamTo").classList.toggle("hidden",!x)}
-function teamRange(){const m=$("#teamPeriod").value,n=new Date();let f,t=new Date(n);if(m==="today")f=new Date(n.getFullYear(),n.getMonth(),n.getDate());else if(m==="week"){f=new Date(n);f.setDate(n.getDate()-n.getDay());f.setHours(0,0,0,0)}else if(m==="month")f=new Date(n.getFullYear(),n.getMonth(),1);else{f=$("#teamFrom").value?pd($("#teamFrom").value):new Date(n.getFullYear(),n.getMonth(),n.getDate());t=$("#teamTo").value?pd($("#teamTo").value):new Date(n)}t.setHours(23,59,59,999);return{from:f,to:t}}
-function fmtDuration(ms){if(!ms||ms<0)return"—";const s=Math.round(ms/1000),m=Math.floor(s/60);return m?`${m}m ${String(s%60).padStart(2,"0")}s`:`${s}s`}
-async function loadTeamProfiles(){if(!S.sb)return;const{data}=await S.sb.from("profiles").select("username,display_name,full_name,role,is_active").eq("is_active",true).order("display_name");S.teamProfiles=data||[];const e=$("#teamScope"),v=e.value;e.innerHTML='<option value="all">Whole Team</option>'+S.teamProfiles.map(p=>`<option value="${p.username}">${p.display_name||p.full_name||p.username}</option>`).join("");if([...e.options].some(o=>o.value===v))e.value=v}
-async function fetchTeamRows(){const r=teamRange();const{data,error}=await S.sb.from("dispense_workflow").select("*").gte("updated_at",r.from.toISOString()).lte("updated_at",r.to.toISOString());if(error){console.error(error);return[]}return data||[]}
-function analyticsFor(rows,id=null){const x=id?rows.filter(r=>r.staff_id===id):rows,d=x.filter(r=>r.status==="dispensed"),o=x.filter(r=>r.status==="others"||r.status==="unavailable"),w=x.filter(r=>r.status==="in_progress"),z=d.map(r=>r.started_at&&r.completed_at?new Date(r.completed_at)-new Date(r.started_at):0).filter(Boolean);return{dispensed:d.length,others:o.length,working:w.length,avg:z.length?z.reduce((a,b)=>a+b,0)/z.length:0,rows:x}}
-function dailySeries(rows){const m={};rows.filter(r=>r.status==="dispensed").forEach(r=>{const k=(r.completed_at||r.updated_at||"").slice(0,10);if(k)m[k]=(m[k]||0)+1});return Object.entries(m).sort()}
-async function loadChartJs(){if(window.Chart)return;await new Promise((ok,no)=>{const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js";s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
-async function renderAdvancedTeam(){if(!S.sb)return;if(!S.teamProfiles.length)await loadTeamProfiles();S.teamRows=await fetchTeamRows();const scope=$("#teamScope").value,whole=analyticsFor(S.teamRows),sel=scope==="all"?whole:analyticsFor(S.teamRows,scope),active=new Set(S.teamRows.map(r=>r.staff_id).filter(Boolean)).size,c=whole.dispensed?Math.round(sel.dispensed/whole.dispensed*100):0;$("#taDispensed").textContent=fmt(sel.dispensed);$("#taOthers").textContent=fmt(sel.others);$("#taWorking").textContent=fmt(sel.working);$("#taContribution").textContent=(scope==="all"?100:c)+"%";$("#taAvg").textContent=fmtDuration(sel.avg);$("#taActive").textContent=scope==="all"?active:(sel.dispensed||sel.others||sel.working?1:0);const rr=teamRange();$("#teamPeriodLabel").textContent=`${rr.from.toLocaleDateString("en-GB")} – ${rr.to.toLocaleDateString("en-GB")}`;const ps=scope==="all"?S.teamProfiles:S.teamProfiles.filter(p=>p.username===scope);$("#teamAnalyticsCards").innerHTML=ps.map((p,i)=>{const a=analyticsFor(S.teamRows,p.username),pc=whole.dispensed?Math.round(a.dispensed/whole.dispensed*100):0;return`<article class="staff-analytic"><div style="display:flex;justify-content:space-between"><div><h3>👩‍⚕️ ${p.display_name||p.full_name||p.username}</h3><small>${p.role}</small></div><span class="others-chip">${a.others} Others</span></div><div class="contrib"><i style="width:${pc}%"></i></div><div class="staff-kpis"><div><span>Dispensed</span><b>${fmt(a.dispensed)}</b></div><div><span>Contribution</span><b>${pc}%</b></div><div><span>Average Time</span><b>${fmtDuration(a.avg)}</b></div><div><span>In Progress</span><b>${fmt(a.working)}</b></div></div><div class="chart-wrap"><canvas id="staffChart${i}"></canvas></div></article>`}).join("");await loadChartJs();(S.teamCharts||[]).forEach(c=>c.destroy());S.teamCharts=[];ps.forEach((p,i)=>{const series=dailySeries(analyticsFor(S.teamRows,p.username).rows),el=document.getElementById(`staffChart${i}`);if(el)S.teamCharts.push(new Chart(el,{type:"bar",data:{labels:series.map(x=>x[0]),datasets:[{data:series.map(x=>x[1])}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}}))})}
-window.exportTeamAnalyticsExcel=async()=>{await loadXLSX();if(!S.teamRows.length)await renderAdvancedTeam();const scope=$("#teamScope").value,rows=scope==="all"?S.teamRows:S.teamRows.filter(r=>r.staff_id===scope),whole=analyticsFor(S.teamRows),profiles=scope==="all"?S.teamProfiles:S.teamProfiles.filter(p=>p.username===scope),summary=profiles.map(p=>{const a=analyticsFor(S.teamRows,p.username);return{Pharmacist:p.display_name||p.full_name||p.username,Role:p.role,Dispensed:a.dispensed,Others:a.others,"In Progress":a.working,Contribution:whole.dispensed?Math.round(a.dispensed/whole.dispensed*100):0,"Average Time":fmtDuration(a.avg)}}),detail=rows.map(r=>({Date:(r.updated_at||"").slice(0,10),MRN:r.mrn,Status:r.status,Pharmacist:r.staff_name||r.staff_id,"Started At":r.started_at||"","Completed At":r.completed_at||""}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(summary),"Summary");XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(detail),"Details");saveWorkbook(wb,`team-analytics-${$("#teamPeriod").value}-${iso(new Date())}.xlsx`)}
-
-
-function todayPatients(){return S.p.filter(p=>next(p)===iso(S.date))}
-function todayOperationalStats(){
- const rows=todayPatients(),scheduled=rows.length;
- const dispensed=rows.filter(p=>ast(p.id)==="dispensed").length;
- const others=rows.filter(p=>["others","unavailable"].includes(ast(p.id))).length;
- const working=rows.filter(p=>ast(p.id)==="in_progress").length;
- const remaining=Math.max(0,scheduled-dispensed-others);
- const completion=scheduled?Math.round((dispensed+others)/scheduled*100):0;
- return{rows,scheduled,dispensed,others,working,remaining,completion}
-}
-function renderLiveProgress(){
- const x=todayOperationalStats();
- [["liveScheduled",x.scheduled],["liveDispensed",x.dispensed],["liveOthers",x.others],["liveWorking",x.working],["liveRemaining",x.remaining],["liveCompletion",x.completion+"%"],
-  ["svScheduled",x.scheduled],["svDispensed",x.dispensed],["svOthers",x.others],["svWorking",x.working],["svRemaining",x.remaining],["svCompletion",x.completion+"%"]].forEach(([id,v])=>{if($("#"+id))$("#"+id).textContent=fmt(v)});
- if($("#completeBanner"))$("#completeBanner").classList.toggle("hidden",x.remaining!==0||x.scheduled===0);
- const mine=x.rows.filter(p=>au(p.id)===S.staff);
- const md=mine.filter(p=>ast(p.id)==="dispensed").length,mw=mine.filter(p=>ast(p.id)==="in_progress").length,mo=mine.filter(p=>["others","unavailable"].includes(ast(p.id))).length;
- if($("#personalName"))$("#personalName").textContent=S.profile?.display_name||S.profile?.full_name||S.staff||"—";
- if($("#myDispensed"))$("#myDispensed").textContent=fmt(md);
- if($("#myWorking"))$("#myWorking").textContent=fmt(mw);
- if($("#myOthers"))$("#myOthers").textContent=fmt(mo);
- if($("#myContribution"))$("#myContribution").textContent=(x.dispensed?Math.round(md/x.dispensed*100):0)+"%";
-}
-function startTimers(){
- clearInterval(S.timerTicker);
- const tick=()=>{
-  document.querySelectorAll(".patient-timer").forEach(el=>{
-   const st=el.dataset.start;if(!st)return;
-   const sec=Math.max(0,Math.floor((Date.now()-new Date(st).getTime())/1000));
-   el.textContent=`⏱ ${String(Math.floor(sec/60)).padStart(2,"0")}:${String(sec%60).padStart(2,"0")}`;
-  });
- };
- tick();S.timerTicker=setInterval(tick,1000);
-}
-window.openOthers=id=>{
- if(!S.user||!S.profile)return openLogin();
- const a=S.a[id];if(a?.status==="in_progress"&&a.staff&&a.staff!==S.staff)return toast("Locked by another pharmacist");
- S.otherMrn=id;S.otherReason="";$("#otherNote").value="";$("#otherMessage").textContent="";
- document.querySelectorAll(".others-options button").forEach(b=>b.classList.remove("active"));
- $("#othersModal").classList.remove("hidden");
-}
-window.chooseOtherReason=(btn,reason)=>{S.otherReason=reason;document.querySelectorAll(".others-options button").forEach(b=>b.classList.remove("active"));btn.classList.add("active")}
-window.closeOthers=()=>$("#othersModal").classList.add("hidden")
-window.confirmOthers=async()=>{
- if(!S.otherReason){$("#otherMessage").textContent="Select a reason.";return}
- const id=S.otherMrn,a=S.a[id]||{},from=a.status||"waiting",at=new Date().toISOString();
- S.a[id]={...a,status:"others",staff:S.staff,startedAt:a.startedAt||at,completedAt:at,updatedAt:at,reason:S.otherReason,note:$("#otherNote").value.trim()};
- saveLocal();await saveShared(id);
- await writeAudit(id,"others",from,"others",S.otherReason+(S.a[id].note?` - ${S.a[id].note}`:""));
- showUndo("others",id,S.staff,at,from);
- closeOthers();render();toast("Moved to Others");
-}
-function renderSupervisor(){
- if(!$("#supervisorStaff"))return;
- renderLiveProgress();
- const x=todayOperationalStats();
- const ids=S.teamProfiles.length?S.teamProfiles.map(p=>p.username):Object.keys(STAFF).filter(x=>x!=="team_import");
- $("#supervisorStaff").innerHTML=ids.map(id=>{
-  const rows=x.rows.filter(p=>au(p.id)===id),done=rows.filter(p=>ast(p.id)==="dispensed").length,working=rows.filter(p=>ast(p.id)==="in_progress"),others=rows.filter(p=>["others","unavailable"].includes(ast(p.id))).length;
-  return `<article class="supervisor-card"><strong>👩‍⚕️ ${STAFF[id]||S.teamProfiles.find(p=>p.username===id)?.display_name||id}</strong><div class="staff-kpis"><div><span>Dispensed</span><b>${done}</b></div><div><span>Others</span><b>${others}</b></div></div><div style="margin-top:10px">${working.length?working.map(p=>`<div class="staff">Working on MRN ${p.id}<div class="patient-timer" data-start="${S.a[p.id]?.startedAt||""}">00:00</div></div>`).join(""):'<small>No active patient</small>'}</div></article>`;
- }).join("");
- startTimers();
-}
-
-async function initShared(){let c=window.SUPABASE_CONFIG;if(!c?.url||c.url.includes("YOUR_"))return;try{if(!S.sb)S.sb=window.supabase.createClient(c.url,c.publishableKey);await loadShared();S.sb.channel("dip-live").on("postgres_changes",{event:"*",schema:"public",table:"dispense_workflow"},p=>{let r=p.new||p.old;if(r.work_date!==iso(S.date))return;if(p.eventType==="DELETE")delete S.a[r.mrn];else S.a[r.mrn]={status:r.status,staff:r.staff_id||"",startedAt:r.started_at||"",completedAt:r.completed_at||"",reason:r.reason||"",note:r.note||"",updatedAt:r.updated_at||""};saveLocal();render()}).subscribe(x=>{if(x==="SUBSCRIBED"){S.shared=true;$("#live").classList.add("on");$("#sync").textContent="Live on all devices"}})}catch(e){console.error(e)}}
-async function loadShared(){if(!S.sb)return;let {data}=await S.sb.from("dispense_workflow").select("*").eq("work_date",iso(S.date));if(data){S.a={};data.forEach(r=>S.a[r.mrn]={status:r.status,staff:r.staff_id||"",startedAt:r.started_at||"",completedAt:r.completed_at||"",reason:r.reason||"",note:r.note||"",updatedAt:r.updated_at||""});saveLocal()}}
-async function saveShared(id){if(!S.sb)return;let a=S.a[id];await S.sb.from("dispense_workflow").upsert({work_date:iso(S.date),mrn:id,status:a.status,staff_id:a.staff,staff_name:STAFF[a.staff],started_at:a.startedAt||null,completed_at:a.completedAt||null,reason:a.reason||null,note:a.note||null,updated_at:a.updatedAt},{onConflict:"work_date,mrn"})}
+async function initShared(){let c=window.SUPABASE_CONFIG;if(!c?.url||c.url.includes("YOUR_"))return;try{if(!S.sb)S.sb=window.supabase.createClient(c.url,c.publishableKey);await loadShared();S.sb.channel("dip-live").on("postgres_changes",{event:"*",schema:"public",table:"dispense_workflow"},p=>{let r=p.new||p.old;if(r.work_date!==iso(S.date))return;if(p.eventType==="DELETE")delete S.a[r.mrn];else S.a[r.mrn]={status:r.status,staff:r.staff_id||"",startedAt:r.started_at||"",completedAt:r.completed_at||"",updatedAt:r.updated_at||""};saveLocal();render()}).subscribe(x=>{if(x==="SUBSCRIBED"){S.shared=true;$("#live").classList.add("on");$("#sync").textContent="Live on all devices"}})}catch(e){console.error(e)}}
+async function loadShared(){if(!S.sb)return;let {data}=await S.sb.from("dispense_workflow").select("*").eq("work_date",iso(S.date));if(data){S.a={};data.forEach(r=>S.a[r.mrn]={status:r.status,staff:r.staff_id||"",startedAt:r.started_at||"",completedAt:r.completed_at||"",updatedAt:r.updated_at||""});saveLocal()}}
+async function saveShared(id){if(!S.sb)return;let a=S.a[id];await S.sb.from("dispense_workflow").upsert({work_date:iso(S.date),mrn:id,status:a.status,staff_id:a.staff,staff_name:STAFF[a.staff],started_at:a.startedAt||null,completed_at:a.completedAt||null,updated_at:a.updatedAt},{onConflict:"work_date,mrn"})}
 async function migrate(){if(!S.sb)return toast("Connect Supabase first");let n=0;for(let id in S.a){await saveShared(id);n++}toast(n+" records synced")}
 boot();
 </script></body></html>
