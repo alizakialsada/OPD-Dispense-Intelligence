@@ -514,7 +514,22 @@ function renderTeam(){
  $("#teamRate").textContent=rate+"%";
  $("#activeStaff").textContent=stats.filter(x=>x.done||x.working||x.others).length;
  $("#teamCards").innerHTML=
-  `<div class="teamcard" style="border-color:var(--o)"><strong>📥 Today's Team Import</strong><div class="score">${fmt(imported)}</div><small>dispensed before employee tracking</small></div>`+
+  `<div class="teamcard" style="border-color:#22c55e">
+<strong>🟢 Live Operations</strong>
+
+<div style="margin-top:12px;line-height:1.8">
+
+<div>👥 Active Staff <b>${stats.filter(x=>x.working>0).length}</b></div>
+
+<div>🔵 In Progress <b>${working}</b></div>
+
+<div>🟠 Others Today <b>${others}</b></div>
+
+</div>
+
+<small>Live across all connected devices</small>
+
+</div>`+
   stats.map(x=>`<div class="teamcard"><strong>👩‍⚕️ ${x.name}</strong><div class="score">${fmt(x.done)}</div><small>${x.role} • ${x.working} in progress • ${x.others} others</small></div>`).join("");
 }
 
