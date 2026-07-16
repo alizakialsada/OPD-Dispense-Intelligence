@@ -1,13 +1,11 @@
-# Dispense Intelligence v2.01.1 — Dynamic Team Profiles
+# Dispense Intelligence v2.02 — Live Progress
 
-Fixes:
-- Team cards are loaded automatically from Supabase `profiles`.
-- Any new active account appears in Team without editing the code.
-- Work is matched using the real profile username, with display-name fallback for older records.
-- Rabab and Hassan activity is counted under their own accounts.
-- Others remains separate from Dispensed.
+Added only to the stable v2.01.1 base:
+- Live Scheduled, Dispensed, Others, In Progress, Remaining, and Completion.
+- Remaining decreases after Dispensed or Others.
+- Undo immediately restores the counters.
+- Queue summary includes Others and Remaining.
+- Realtime Supabase changes refresh all devices automatically.
+- No changes to Smart Calendar, Drug Demand, authentication, or database schema.
 
-One-time Supabase step:
-Run `supabase-setup/09-team-profiles.sql`.
-
-Keep the existing live `supabase-config.js` when deploying.
+Deployment: keep the existing live `supabase-config.js`. No new SQL is required.
