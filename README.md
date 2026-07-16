@@ -1,13 +1,13 @@
-# Dispense Intelligence Production v1.0.3 — Shared Dispensing Interval
+# Dispense Intelligence v2.01.1 — Dynamic Team Profiles
 
-Fixed:
-- Admin interval is now stored centrally in Supabase.
-- Every employee device receives the new interval immediately.
-- Queue, Overview, Patient Registry, Smart Calendar, and Drug Demand refresh automatically.
-- Supported operational intervals: 15, 20, 25, and 30 days.
+Fixes:
+- Team cards are loaded automatically from Supabase `profiles`.
+- Any new active account appears in Team without editing the code.
+- Work is matched using the real profile username, with display-name fallback for older records.
+- Rabab and Hassan activity is counted under their own accounts.
+- Others remains separate from Dispensed.
 
-One-time setup:
-Run `supabase-setup/06-system-settings.sql` in Supabase SQL Editor.
+One-time Supabase step:
+Run `supabase-setup/09-team-profiles.sql`.
 
-Deployment:
-Keep the current live `supabase-config.js`; this package does not include it.
+Keep the existing live `supabase-config.js` when deploying.
