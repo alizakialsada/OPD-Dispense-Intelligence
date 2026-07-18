@@ -840,8 +840,7 @@ function renderTeam(){
 .slice()
 .sort((a,b)=>b.done-a.done)
 .map((x,index)=>`<div class="teamcard">
-<strong>${index===0?"🥇":index===1?"🥈":index===2?"🥉":"👩"} ${x.name}</strong>
-
+<strong>${index===0?"🥇":index===1?"🥈":index===2?"🥉":"👩"} ${x.name.toUpperCase()}</strong>
 <div class="score">${fmt(x.done)}</div>
 
 <small>${x.role} • ${x.working} in progress • ${x.others} others</small>
