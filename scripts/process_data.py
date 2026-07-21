@@ -128,11 +128,11 @@ def recurring_dates(last_iso, end_iso, interval):
     except Exception:
         return []
     out=[]
-    # Keep current/upcoming preparation dates only; each following monthly cycle is 30 days.
+    # Keep current/upcoming preparation dates; every new cycle repeats by the selected preparation interval.
     floor=date.today()-timedelta(days=1)
     while d <= end:
         if d >= floor: out.append(d.isoformat())
-        d += timedelta(days=30)
+        d += timedelta(days=interval)
     return out
 
 def main():
