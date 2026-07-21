@@ -136,6 +136,7 @@ def recurring_dates(last_iso, end_iso, interval):
     return out
 
 def main():
+    cutoff = date(2026, 5, 1)
     files = sorted(IN.glob("*.xlsx"))
     if not files: raise SystemExit("No .xlsx report found in incoming/")
     latest = {}; demographics = {}; raw = valid = 0
@@ -148,7 +149,7 @@ def main():
         for row in [first, *rows]:
             raw += 1
             pid=clean(row.get(cols["id"])); drug=clean(row.get(cols["drug"])); d=parse_date(row.get(cols["disp"]))
-            if not pid or not drug or not d: continue
+            if not pid or not drug or not d or d < cutoff: continue
             valid += 1
             qty_raw=clean(row.get(cols["qty"])) if cols["qty"] else ""
             try: qty=float(qty_raw or 0)
@@ -221,7 +222,7 @@ def main():
                 n=len(v["patients"]); rows.append({"drug":drug,"patients":n,"qty":round(v["quantity"],2),"avg":round(v["quantity"]/n,2) if n else 0,"patientRows":v["patientRows"]})
             rows.sort(key=lambda r:(-r["qty"],-r["patients"],r["drug"])); fn=f"demand-{d}.json"; (pre/fn).write_text(json.dumps({"date":d,"rows":rows},ensure_ascii=False,separators=(",",":")),encoding="utf-8"); didx[d]=f"data/precomputed/{interval}/{fn}"
         (pre/"demand-index.json").write_text(json.dumps(didx,separators=(",",":")),encoding="utf-8")
-    meta={"generated_at":datetime.now().isoformat(timespec="seconds"),"source_file":files[-1].name,"raw_records":raw,"valid_records":valid,"unique_patients":len(patients),"patient_medication_records":len(med_latest),"chunks":chunks,"default_interval":20,"recurring_until_prescription_end":True}
+    meta={"generated_at":datetime.now().isoformat(timespec="seconds"),"source_file":files[-1].name,"raw_records":raw,"valid_records":valid,"unique_patients":len(patients),"patient_medication_records":len(med_latest),"chunks":chunks,"default_interval":20,"recurring_until_prescription_end":True,"dispense_cutoff":cutoff.isoformat()}
     (DATA/"meta.json").write_text(json.dumps(meta,ensure_ascii=False,separators=(",",":")),encoding="utf-8")
     print(json.dumps(meta,indent=2))
 if __name__=="__main__": main()
