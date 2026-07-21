@@ -1,0 +1,11 @@
+Dispense Intelligence v2.6 - Pending Cycle Lock Fix
+
+- First due date = latest actual dispense date + configured preparation interval.
+- An overdue preparation cycle remains on its original due date until staff marks it Dispensed or Others.
+- The system no longer skips an unfinished cycle merely because another interval has passed.
+- After a cycle is completed, the next due date = actual completion work date + configured interval.
+- The interval remains configurable from Admin: 15, 20, 25, or 30 days.
+- Scheduling stops at prescription end date.
+- Existing Supabase users, roles, workflow records, and audit logs are preserved.
+
+Important: Keep the existing supabase-config.js when uploading.

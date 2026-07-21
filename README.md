@@ -31,3 +31,11 @@ Keep the current live `supabase-config.js`; this package intentionally does not 
 - First preparation date is latest dispense + the selected preparation interval (default 20 days).
 - Following preparation dates repeat every 30 days and stop at the calculated prescription end date.
 - A new source Excel rebuilds and replaces future schedules without changing Supabase users or historical workflow records.
+
+
+## v2.3 update
+- Only dispense records dated 2026-05-01 or later are used for scheduling.
+- Completion Rate = (Dispensed + Others) / Scheduled.
+- Dispensed Rate = Dispensed / Scheduled.
+- Existing Supabase users and workflow history are not deleted or replaced.
+- In-app account creation requires the included `supabase/functions/create-user` Edge Function to be deployed once. GitHub Pages deployment cannot deploy Supabase functions.
