@@ -322,7 +322,7 @@
 
 <section id="team" class="view">
  <div class="section">
-  <div><div class="ey">TEAM PERFORMANCE</div><h2 id="teamPeriodTitle">Today</h2><p>Team performance from the complete saved workflow history.</p></div>
+  <div><div class="ey">TEAM PERFORMANCE</div><h2 id="teamPeriodTitle">Today</h2><p>Team performance from the complete saved workflow history.</p><div id="teamLastUpdated" class="performance-note">Live updates enabled</div></div>
   <div class="toolbar"><button class="copy" onclick="migrate()">Sync Existing Work</button><button class="copy" onclick="exportTeamExcel()">Export Performance</button></div>
  </div>
  <div class="performance-filter">
@@ -450,7 +450,7 @@
 <script>
 const $=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)],fmt=n=>new Intl.NumberFormat().format(Math.round(n||0));
 const STAFF={bassemah:"Bassemah H. Al Faraj",batool:"Batool S. T. Alfaraj",ghada:"Ghada A. Alqudaihi",rabab:"Rabab Alsheef",team_import:"Today's Team Total"};
-const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||20,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastAction:null,undoTicker:null,legacy:null,demandPatients:null,demandRows:[],view:"home",calMonth:new Date(),calSelected:new Date(),calendarCache:{},precomputedCalendar:null,demandIndex:null,demandDateLoaded:"",settingsChannel:null,otherMrn:"",otherReason:"",teamProfiles:[],closedBefore:{},performanceCache:{},teamPerformanceRows:[],myPerformanceRange:"today",teamPerformanceRange:"today"};
+const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||20,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastAction:null,undoTicker:null,legacy:null,demandPatients:null,demandRows:[],view:"home",calMonth:new Date(),calSelected:new Date(),calendarCache:{},precomputedCalendar:null,demandIndex:null,demandDateLoaded:"",settingsChannel:null,otherMrn:"",otherReason:"",teamProfiles:[],closedBefore:{},performanceCache:{},teamPerformanceRows:[],myPerformanceRange:"today",teamPerformanceRange:"today",realtimeChannel:null,realtimeTimer:null};
 const iso=d=>{let x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)},pd=s=>new Date(s+"T00:00:00"),add=(s,n)=>{let d=pd(s);d.setDate(d.getDate()+n);return iso(d)},next=p=>{const closed=S.closedBefore?.[p.id]||"",end=p.prescription_end||"9999-12-31";const anchor=closed||p.base_last||"";if(!anchor)return "";const due=add(anchor,S.days);return due<=end?due:""},delta=p=>{const d=next(p);return d?Math.round((pd(d)-pd(iso(S.date)))/86400000):99999};
 const state=p=>{let d=delta(p);return d<0?"overdue":d===0?"today":d===1?"tomorrow":d<=7?"week":"future"},label=s=>({overdue:"Overdue",today:"Today",tomorrow:"Tomorrow",week:"Within 7 days",future:"Future"})[s];
 function toast(x){let t=$("#toast");t.textContent=x;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1500)}
@@ -468,6 +468,61 @@ async function loadTeamProfiles(){
  if(error){console.warn("Could not load team profiles",error);return}
  S.teamProfiles=(data||[]).filter(p=>p.username&&p.username!=="team_import");
  S.teamProfiles.forEach(p=>{STAFF[p.username]=p.display_name||p.full_name||p.username});
+}
+
+function scheduleRealtimeRefresh(source="update"){
+ clearTimeout(S.realtimeTimer);
+ S.realtimeTimer=setTimeout(async()=>{
+  try{
+   S.performanceCache={};
+   const jobs=[loadShared()];
+   if(S.user&&S.profile)jobs.push(loadMyPerformance());
+   if(["admin","supervisor"].includes(S.profile?.role)){
+    jobs.push(loadTeamProfiles());
+    jobs.push(loadTeamPerformance());
+   }
+   await Promise.allSettled(jobs);
+   render();
+   if(S.view==="team")await loadTeamPerformance();
+   if(S.view==="demand")await renderDemand();
+   $("#sync").textContent=`Live • ${new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"})}`;
+   $("#live").classList.add("on");
+  }catch(e){
+   console.warn("Realtime refresh warning",source,e);
+  }
+ },250);
+}
+
+async function startRealtimePerformance(){
+ if(!S.sb||!S.user)return;
+ if(S.realtimeChannel){
+  try{await S.sb.removeChannel(S.realtimeChannel)}catch{}
+  S.realtimeChannel=null;
+ }
+ S.realtimeChannel=S.sb
+  .channel(`dispense-live-${S.user.id}`)
+  .on("postgres_changes",{event:"*",schema:"public",table:"dispense_audit_log"},()=>scheduleRealtimeRefresh("audit"))
+  .on("postgres_changes",{event:"*",schema:"public",table:"dispense_workflow"},()=>scheduleRealtimeRefresh("workflow"))
+  .on("postgres_changes",{event:"*",schema:"public",table:"profiles"},()=>scheduleRealtimeRefresh("profiles"))
+  .on("postgres_changes",{event:"*",schema:"public",table:"system_settings"},()=>scheduleRealtimeRefresh("settings"))
+  .subscribe(status=>{
+   if(status==="SUBSCRIBED"){
+    $("#live").classList.add("on");
+    $("#sync").textContent="Live on all devices";
+   }else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"||status==="CLOSED"){
+    $("#live").classList.remove("on");
+    $("#sync").textContent="Reconnecting…";
+   }
+  });
+}
+
+async function stopRealtimePerformance(){
+ clearTimeout(S.realtimeTimer);
+ S.realtimeTimer=null;
+ if(S.sb&&S.realtimeChannel){
+  try{await S.sb.removeChannel(S.realtimeChannel)}catch{}
+ }
+ S.realtimeChannel=null;
 }
 function activityBelongsToProfile(patient,profile){
  const a=S.a[patient.id]||{},sid=normStaff(a.staff),uname=normStaff(profile.username),sname=normStaff(a.staffName),display=normStaff(profile.display_name||profile.full_name);
@@ -535,6 +590,7 @@ window.signInUser=async()=>{
   S.demandDateLoaded="";
   render();
   toast("Signed in");
+  startRealtimePerformance().catch(e=>console.warn("Realtime startup warning",e));
 
   Promise.allSettled([
    loadTeamProfiles(),
@@ -552,7 +608,7 @@ window.signInUser=async()=>{
   if(btn)btn.disabled=false;
  }
 }
-window.signOutUser=async()=>{if(S.sb)await S.sb.auth.signOut();S.user=null;S.profile=null;S.staff="";$("#who").textContent="Not signed in";$("#roleLabel").textContent="User";$("#adminNav").classList.add("hidden");if($("#teamNav"))$("#teamNav").classList.add("hidden");if($("#myPerformance"))$("#myPerformance").classList.add("hidden");$("#authScreen").classList.remove("hidden")}
+window.signOutUser=async()=>{await stopRealtimePerformance();if(S.sb)await S.sb.auth.signOut();S.user=null;S.profile=null;S.staff="";$("#who").textContent="Not signed in";$("#roleLabel").textContent="User";$("#adminNav").classList.add("hidden");if($("#teamNav"))$("#teamNav").classList.add("hidden");if($("#myPerformance"))$("#myPerformance").classList.add("hidden");$("#authScreen").classList.remove("hidden")}
 function requireAdmin(){if(S.profile?.role!=="admin"){toast("Administrator access required");return false}return true}
 window.createUserAccount = async () => {
   const full_name = $("#newFullName")?.value.trim();
@@ -648,6 +704,10 @@ async function writeAudit(mrn,action,fromStatus,toStatus,reason=""){
  };
  const {error}=await S.sb.from("dispense_audit_log").insert(payload);
  if(error)console.error("Audit write failed",error);
+ else{
+  S.performanceCache={};
+  scheduleRealtimeRefresh("local audit");
+ }
 }
 function showUndo(action,id,staff,actionAt,previousStatus){
  clearInterval(S.undoTicker);
@@ -744,7 +804,8 @@ async function boot(){
  bind();
  const c=window.SUPABASE_CONFIG;
  if(c?.url&&!c.url.includes("YOUR_"))S.sb=window.supabase.createClient(c.url,c.publishableKey);
- await initAuth();
+ const authenticated=await initAuth();
+ if(authenticated)startRealtimePerformance().catch(e=>console.warn("Realtime startup warning",e));
  await loadTeamProfiles();
  await initShared();
  await loadSharedInterval();
@@ -928,6 +989,7 @@ window.loadTeamPerformance=async()=>{
  $("#teamWorkDays").textContent=fmt(summary.workDays);
  $("#activeStaff").textContent=summary.list.filter(x=>x.closed>0).length;
  $("#teamAverage").textContent=summary.workDays?((summary.totalDispensed+summary.totalOthers)/summary.workDays).toFixed(1):"0";
+ if($("#teamLastUpdated"))$("#teamLastUpdated").textContent=`Last updated ${new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"})}`;
  let profiles=(S.teamProfiles||[]).filter(p=>p.is_active!==false);
  const cards=profiles.map(profile=>{
   const name=profile.display_name||profile.full_name||profile.username;
@@ -1161,8 +1223,8 @@ async function ensurePrecomputedIndexes(){
  const base=`data/precomputed/${S.days}`;
  try{
   const [cal,idx]=await Promise.all([
-   fetch(`${base}/calendar.json?v=109`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("calendar");return r.json()}),
-   fetch(`${base}/demand-index.json?v=109`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("demand index");return r.json()})
+   fetch(`${base}/calendar.json?v=110`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("calendar");return r.json()}),
+   fetch(`${base}/demand-index.json?v=110`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("demand index");return r.json()})
   ]);
   S.precomputedCalendar=cal;S.demandIndex=idx;
  }catch(e){
@@ -1184,7 +1246,7 @@ async function ensureDemandLoaded(){
   return;
  }
  try{
-  const data=await fetch(file+"?v=109",{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("daily demand");return r.json()});
+  const data=await fetch(file+"?v=110",{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("daily demand");return r.json()});
   S.demandRows=data.rows||[];
   const ids=new Set();
   S.demandRows.forEach(x=>{
