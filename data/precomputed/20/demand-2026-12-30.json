@@ -1,1 +1,1 @@
-{"date":"2026-12-30","rows":[{"drug":"SODIUM CARBOXYMETHYLCELLULOSE:GLYCERINE-OPTIVE UD-0.5%:0.9% MINIMS","patients":1,"qty":90.0,"mrns":["468651"]}]}
+{"date":"2026-12-30","rows":[{"drug":"SODIUM CARBOXYMETHYLCELLULOSE:GLYCERINE-OPTIVE UD-0.5%:0.9% MINIMS","patients":1,"qty":90.0,"mrns":["468651"],"avg":90.0,"patientRows":[{"mrn":"468651","name":"MOHAMMED HASSAN QAZEM BIN DIRWISH","speciality":"","qty":90.0}]}]}

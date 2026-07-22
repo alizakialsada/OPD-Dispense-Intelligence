@@ -936,7 +936,8 @@ function pressureLabel(n){
 async function calendarDayStats(key){
  await ensurePrecomputedIndexes();
  const x=S.precomputedCalendar[key]||{};
- return {patients:x.patients||0,meds:x.medications||0,qty:x.quantity||0,overdue:0};
+ const n=typeof x==="number"?x:0;
+ return {patients:x.patients||n||0,meds:x.medications||0,qty:x.quantity||0,overdue:0};
 }
 async function renderCalendar(){
  if($("#calendarInterval"))$("#calendarInterval").textContent=S.days+" days";
@@ -948,7 +949,8 @@ async function renderCalendar(){
  for(let i=0;i<42;i++){
   const d=new Date(start);d.setDate(start.getDate()+i);
   const key=iso(d),raw=S.precomputedCalendar[key]||{};
-  const stats={patients:raw.patients||0,meds:raw.medications||0,qty:raw.quantity||0,overdue:0};
+  const n=typeof raw==="number"?raw:0;
+  const stats={patients:raw.patients||n||0,meds:raw.medications||0,qty:raw.quantity||0,overdue:0};
   S.calendarCache[key]=stats;
   htmlDays+=`<button class="cal-day ${d.getMonth()!==m?"dim":""} ${key===iso(S.calSelected)?"selected":""} ${pressureClass(stats.patients)}" onclick="selectCalendarDay('${key}')">
    <div class="dnum">${d.getDate()}</div>
@@ -985,8 +987,8 @@ async function ensurePrecomputedIndexes(){
  const base=`data/precomputed/${S.days}`;
  try{
   const [cal,idx]=await Promise.all([
-   fetch(`${base}/calendar.json?v=106`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("calendar");return r.json()}),
-   fetch(`${base}/demand-index.json?v=106`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("demand index");return r.json()})
+   fetch(`${base}/calendar.json?v=107`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("calendar");return r.json()}),
+   fetch(`${base}/demand-index.json?v=107`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("demand index");return r.json()})
   ]);
   S.precomputedCalendar=cal;S.demandIndex=idx;
  }catch(e){
@@ -1008,10 +1010,13 @@ async function ensureDemandLoaded(){
   return;
  }
  try{
-  const data=await fetch(file+"?v=106",{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("daily demand");return r.json()});
+  const data=await fetch(file+"?v=107",{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("daily demand");return r.json()});
   S.demandRows=data.rows||[];
   const ids=new Set();
-  S.demandRows.forEach(x=>(x.patientRows||[]).forEach(p=>ids.add(p.mrn)));
+  S.demandRows.forEach(x=>{
+   (x.patientRows||[]).forEach(p=>ids.add(p.mrn));
+   (x.mrns||[]).forEach(mrn=>ids.add(String(mrn)));
+  });
   S.demandEligiblePatients=ids.size;S.demandDateLoaded=key;
   $("#demandLoading").classList.add("hidden");$("#demandTableBox").classList.remove("hidden");
  }catch(e){
@@ -1049,7 +1054,7 @@ window.exportDemandExcel=async()=>{
   Date:iso(S.date)
  }));
  const details=[];
- S.demandRows.forEach(x=>x.patientRows.forEach(p=>details.push({
+ S.demandRows.forEach(x=>(x.patientRows||[]).forEach(p=>details.push({
   Date:iso(S.date),Medication:x.drug,MRN:p.mrn,"Patient Name":p.name,
   Specialty:p.speciality,"Required Quantity":p.qty
  })));
@@ -1061,7 +1066,7 @@ window.exportDemandExcel=async()=>{
 window.exportDrugPatients=async encoded=>{
  const drug=decodeURIComponent(encoded);await ensureDemandLoaded();await loadXLSX();
  const x=S.demandRows.find(r=>r.drug===drug);if(!x)return;
- const rows=x.patientRows.map(p=>({Date:iso(S.date),Medication:drug,MRN:p.mrn,"Patient Name":p.name,Specialty:p.speciality,"Required Quantity":p.qty}));
+ const rows=(x.patientRows||[]).map(p=>({Date:iso(S.date),Medication:drug,MRN:p.mrn,"Patient Name":p.name,Specialty:p.speciality,"Required Quantity":p.qty}));
  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),"Patients");
  saveWorkbook(wb,`${drug.replace(/[\\/:*?"<>|]/g,"-").slice(0,80)}-${iso(S.date)}.xlsx`);
 }
