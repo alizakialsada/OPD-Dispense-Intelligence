@@ -478,31 +478,79 @@ async function initAuth(){
  const c=window.SUPABASE_CONFIG;
  if(!c?.url||c.url.includes("YOUR_")){setAuthMessage("Supabase is not configured.");return false}
  if(!S.sb)S.sb=window.supabase.createClient(c.url,c.publishableKey);
- const {data:{session}}=await S.sb.auth.getSession();
- if(session){await applySession(session);return true}
- $("#authScreen").classList.remove("hidden");return false
+ try{
+  const {data:{session}}=await S.sb.auth.getSession();
+  if(session)return await applySession(session);
+ }catch(e){console.warn("Session restore failed",e)}
+ $("#authScreen").classList.remove("hidden");
+ return false;
 }
 async function applySession(session){
- S.user=session.user;
- const {data,error}=await S.sb.from("profiles").select("*").eq("id",S.user.id).single();
- if(error){console.error(error);setAuthMessage("User profile not found.");return}
- S.profile=data;
- S.staff=data.username||"";
- $("#who").textContent=data.display_name||data.full_name||data.username;
- $("#roleLabel").textContent=data.role||"user";
- $("#authScreen").classList.add("hidden");
- $("#adminNav").classList.toggle("hidden",data.role!=="admin");
+ try{
+  S.user=session.user;
+  const {data,error}=await S.sb.from("profiles").select("*").eq("id",S.user.id).maybeSingle();
+  if(error)throw error;
+  if(!data){
+   setAuthMessage("User profile not found. Ask the administrator to activate this account.");
+   await S.sb.auth.signOut();
+   S.user=null;
+   return false;
+  }
+  if(data.is_active===false){
+   setAuthMessage("This account is inactive.");
+   await S.sb.auth.signOut();
+   S.user=null;
+   return false;
+  }
+  S.profile=data;
+  S.staff=data.username||"";
+  $("#who").textContent=data.display_name||data.full_name||data.username;
+  $("#roleLabel").textContent=data.role||"user";
+  $("#authScreen").classList.add("hidden");
+  $("#adminNav").classList.toggle("hidden",data.role!=="admin");
   const teamNav=$("#teamNav");
   if(teamNav)teamNav.classList.toggle("hidden",!["admin","supervisor"].includes(data.role));
- localStorage.setItem("dip-staff",S.staff);
+  localStorage.setItem("dip-staff",S.staff);
+  return true;
+ }catch(e){
+  console.error("Profile loading failed",e);
+  setAuthMessage("Could not load your profile. Please refresh and try again.");
+  return false;
+ }
 }
 window.signInUser=async()=>{
- setAuthMessage("Signing in…");
- const username=$("#loginUsername").value.trim(),password=$("#loginPassword").value;
- if(!username||!password){setAuthMessage("Enter username and password.");return}
- const {data,error}=await S.sb.auth.signInWithPassword({email:authEmail(username),password});
- if(error){setAuthMessage(error.message);return}
- await applySession(data.session);setAuthMessage("");await loadTeamProfiles();await loadShared();await loadLegacyImport();S.demandDateLoaded="";render();if(S.view==="demand")renderDemand();toast("Signed in");
+ const btn=document.querySelector("#authScreen button");
+ try{
+  setAuthMessage("Signing in…");
+  if(btn)btn.disabled=true;
+  const username=$("#loginUsername").value.trim(),password=$("#loginPassword").value;
+  if(!username||!password){setAuthMessage("Enter username and password.");return}
+  const {data,error}=await S.sb.auth.signInWithPassword({email:authEmail(username),password});
+  if(error){setAuthMessage(error.message);return}
+  const opened=await applySession(data.session);
+  if(!opened)return;
+
+  // Open the application immediately. Secondary data loads must never block login.
+  setAuthMessage("");
+  S.demandDateLoaded="";
+  render();
+  toast("Signed in");
+
+  Promise.allSettled([
+   loadTeamProfiles(),
+   loadShared(),
+   loadLegacyImport()
+  ]).then(()=>{
+   render();
+   if(S.view==="demand")renderDemand();
+   if(["admin","supervisor"].includes(S.profile?.role))loadTeamPerformance();
+  }).catch(e=>console.warn("Background loading warning",e));
+ }catch(e){
+  console.error("Sign in failed",e);
+  setAuthMessage(e?.message||"Sign in failed. Please try again.");
+ }finally{
+  if(btn)btn.disabled=false;
+ }
 }
 window.signOutUser=async()=>{if(S.sb)await S.sb.auth.signOut();S.user=null;S.profile=null;S.staff="";$("#who").textContent="Not signed in";$("#roleLabel").textContent="User";$("#adminNav").classList.add("hidden");if($("#teamNav"))$("#teamNav").classList.add("hidden");if($("#myPerformance"))$("#myPerformance").classList.add("hidden");$("#authScreen").classList.remove("hidden")}
 function requireAdmin(){if(S.profile?.role!=="admin"){toast("Administrator access required");return false}return true}
@@ -822,7 +870,8 @@ function renderMyPerformance(){
  const allowed=!!S.user&&!!S.profile;
  box.classList.toggle("hidden",!allowed);if(!allowed)return;
  if($("#myPerfRange"))$("#myPerfRange").value=S.myPerformanceRange||"today";
- loadMyPerformance();
+ clearTimeout(window.__dipPerfTimer);
+ window.__dipPerfTimer=setTimeout(()=>loadMyPerformance().catch(e=>console.warn("Performance load warning",e)),250);
 }
 window.changeTeamPerformanceRange=()=>{
  S.teamPerformanceRange=$("#teamPerfRange").value;
@@ -1074,8 +1123,8 @@ async function ensurePrecomputedIndexes(){
  const base=`data/precomputed/${S.days}`;
  try{
   const [cal,idx]=await Promise.all([
-   fetch(`${base}/calendar.json?v=108`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("calendar");return r.json()}),
-   fetch(`${base}/demand-index.json?v=108`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("demand index");return r.json()})
+   fetch(`${base}/calendar.json?v=109`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("calendar");return r.json()}),
+   fetch(`${base}/demand-index.json?v=109`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("demand index");return r.json()})
   ]);
   S.precomputedCalendar=cal;S.demandIndex=idx;
  }catch(e){
@@ -1097,7 +1146,7 @@ async function ensureDemandLoaded(){
   return;
  }
  try{
-  const data=await fetch(file+"?v=108",{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("daily demand");return r.json()});
+  const data=await fetch(file+"?v=109",{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("daily demand");return r.json()});
   S.demandRows=data.rows||[];
   const ids=new Set();
   S.demandRows.forEach(x=>{

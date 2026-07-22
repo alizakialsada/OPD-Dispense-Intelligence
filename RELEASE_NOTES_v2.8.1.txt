@@ -1,0 +1,6 @@
+Dispense Intelligence v2.8.1 Login Fix
+- Opens the platform immediately after successful authentication.
+- Loads Team, workflow, legacy operations, and performance history in the background.
+- A failure in Team or performance history no longer blocks login.
+- Added clearer profile and inactive-account messages.
+- Preserves v2.8 performance filters and all existing platform features.
