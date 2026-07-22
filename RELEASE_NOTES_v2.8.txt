@@ -1,0 +1,7 @@
+Dispense Intelligence v2.8
+- Complete saved employee history is available from Supabase audit records.
+- Personal filters: Today, This Week, This Month, Custom Range, All History.
+- Supervisor/Admin team filters use the same periods.
+- Metrics: Dispensed, Others, Closed Cases, Work Days, Average per Work Day, Share of Team Dispensed.
+- Team performance Excel export follows the selected period.
+- Existing users, roles, operations, Smart Calendar, Drug Demand, and queue behavior remain unchanged.
