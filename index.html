@@ -554,49 +554,87 @@ window.signInUser=async()=>{
 }
 window.signOutUser=async()=>{if(S.sb)await S.sb.auth.signOut();S.user=null;S.profile=null;S.staff="";$("#who").textContent="Not signed in";$("#roleLabel").textContent="User";$("#adminNav").classList.add("hidden");if($("#teamNav"))$("#teamNav").classList.add("hidden");if($("#myPerformance"))$("#myPerformance").classList.add("hidden");$("#authScreen").classList.remove("hidden")}
 function requireAdmin(){if(S.profile?.role!=="admin"){toast("Administrator access required");return false}return true}
-window.createUserAccount=async()=>{
- if(!requireAdmin())return;
- const payload={
-  full_name:$("#newFullName").value.trim(),
-  display_name:$("#newDisplayName").value.trim(),
-  username:$("#newUsername").value.trim().toLowerCase(),
-  password:$("#newPassword").value,
-  role:$("#newRole").value
- };
- const msg=$("#createUserMessage");msg.textContent="Creating account…";
- if(!payload.full_name||!payload.display_name||!payload.username||payload.password.length<8){msg.textContent="Complete all fields. Password must be at least 8 characters.";return}
- try{
-  const {data,error}=await S.sb.functions.invoke("create-user",{body:payload});
-  if(error){
-   let detail="";
-   try{if(error.context){const body=await error.context.json();detail=body?.error||""}}catch(_){ }
-   console.error("Create user failed",error,detail);
-   msg.textContent=detail||"User creation service is not active. Deploy the create-user Edge Function once, then try again.";
-   return;
-  }
-  if(data?.error){msg.textContent=data.error;return}
- }catch(e){
-  console.error(e);
-  msg.textContent="User creation service is not active. Deploy the create-user Edge Function once, then try again.";
-  return;
- }
- msg.textContent="Account created successfully.";
- ["newFullName","newDisplayName","newUsername","newPassword"].forEach(id=>$("#"+id).value="");
- await loadUsers();await loadTeamProfiles();renderTeam();
-}
-window.loadUsers=async()=>{
- if(!requireAdmin())return;
- const {data,error}=await S.sb.from("profiles").select("id,full_name,display_name,username,role,is_active").order("full_name");
- if(error){toast("Could not load users");return}
- $("#userRows").innerHTML=(data||[]).map(u=>`<tr><td>${u.display_name||u.full_name}</td><td>${u.username}</td><td class="role-${u.role}">${u.role}</td><td>${u.is_active?"Active":"Disabled"}</td><td><button class="copy" onclick="toggleUser('${u.id}',${!u.is_active})">${u.is_active?"Disable":"Enable"}</button></td></tr>`).join("");
-}
-window.toggleUser=async(id,active)=>{
- if(!requireAdmin())return;
- const {error}=await S.sb.from("profiles").update({is_active:active}).eq("id",id);
- if(error){toast("Update failed");return}
- await loadUsers();toast(active?"User enabled":"User disabled");
-}
+window.createUserAccount = async () => {
+  const full_name = $("#newFullName")?.value.trim();
+  const display_name = $("#newDisplayName")?.value.trim();
+  const username = $("#newUsername")?.value.trim().toLowerCase();
+  const password = $("#newPassword")?.value;
+  const role = $("#newRole")?.value;
 
+  const message = $("#createUserMessage");
+  const button = document.querySelector('button[onclick="createUserAccount()"]');
+
+  if (!full_name || !display_name || !username || !password) {
+    if (message) message.textContent = "Please complete all account fields.";
+    return;
+  }
+
+  if (password.length < 8) {
+    if (message) message.textContent = "Password must be at least 8 characters.";
+    return;
+  }
+
+  try {
+    if (button) button.disabled = true;
+    if (message) message.textContent = "Creating account...";
+
+    const { data, error } = await S.sb.functions.invoke("create-user", {
+      body: {
+        full_name,
+        display_name,
+        username,
+        password,
+        role
+      }
+    });
+
+    if (error) {
+      let details = error.message || "Edge Function failed";
+      try {
+        const context = await error.context?.json();
+        if (context?.error) details = context.error;
+      } catch {}
+      throw new Error(details);
+    }
+
+    if (!data || data.ok !== true || !data.user?.id) {
+      throw new Error(data?.error || "Account was not created in Supabase.");
+    }
+
+    const { data: profileCheck, error: profileCheckError } = await S.sb
+      .from("profiles")
+      .select("id,username,display_name,role,is_active")
+      .eq("id", data.user.id)
+      .maybeSingle();
+
+    if (profileCheckError) {
+      throw new Error(profileCheckError.message);
+    }
+
+    if (!profileCheck) {
+      throw new Error("Account was created, but the profile was not saved.");
+    }
+
+    if (message) message.textContent = "Account created successfully.";
+
+    $("#newFullName").value = "";
+    $("#newDisplayName").value = "";
+    $("#newUsername").value = "";
+    $("#newPassword").value = "";
+
+    await loadTeamProfiles();
+    renderTeam();
+    toast(`Account created: ${profileCheck.display_name || profileCheck.username}`);
+
+  } catch (err) {
+    console.error("Create account error:", err);
+    if (message) {
+      message.textContent = err?.message || "Failed to create account.";
+    }
+  } finally {
+    if (button) button.disabled = false;
+  }
+};
 
 const UNDO_WINDOW_MS=5*60*1000;
 function auditActionLabel(action){return ({start:"Start Patient",dispensed:"Dispensed",undo_dispensed:"Undo Dispensed",undo_start:"Undo Start",admin_reopen:"Admin Reopen",unavailable:"Unavailable",others:"Others",undo_others:"Undo Others"})[action]||action}
