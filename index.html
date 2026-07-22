@@ -323,7 +323,7 @@
 <section id="team" class="view">
  <div class="section">
   <div><div class="ey">TEAM PERFORMANCE</div><h2 id="teamPeriodTitle">Today</h2><p>Live performance from the current saved workflow status. Each patient is counted once.</p><div id="teamLastUpdated" class="performance-note">Live totals matched to Dispense Queue</div></div>
-  <div class="toolbar"><button class="copy" onclick="migrate()">Sync Existing Work</button><button class="copy" onclick="exportTeamExcel()">Export Performance</button></div>
+  <div class="toolbar"><button class="copy" onclick="refreshTeamLiveNow('manual')">Refresh Now</button><button class="copy" onclick="migrate()">Sync Existing Work</button><button class="copy" onclick="exportTeamExcel()">Export Performance</button></div>
  </div>
  <div class="performance-filter">
   <select id="teamPerfRange" onchange="changeTeamPerformanceRange()">
@@ -450,7 +450,7 @@
 <script>
 const $=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)],fmt=n=>new Intl.NumberFormat().format(Math.round(n||0));
 const STAFF={bassemah:"Bassemah H. Al Faraj",batool:"Batool S. T. Alfaraj",ghada:"Ghada A. Alqudaihi",rabab:"Rabab Alsheef",team_import:"Today's Team Total"};
-const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||20,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastAction:null,undoTicker:null,legacy:null,demandPatients:null,demandRows:[],view:"home",calMonth:new Date(),calSelected:new Date(),calendarCache:{},precomputedCalendar:null,demandIndex:null,demandDateLoaded:"",settingsChannel:null,otherMrn:"",otherReason:"",teamProfiles:[],closedBefore:{},performanceCache:{},teamPerformanceRows:[],myPerformanceRange:"today",teamPerformanceRange:"today",realtimeChannel:null,realtimeTimer:null};
+const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||20,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastAction:null,undoTicker:null,legacy:null,demandPatients:null,demandRows:[],view:"home",calMonth:new Date(),calSelected:new Date(),calendarCache:{},precomputedCalendar:null,demandIndex:null,demandDateLoaded:"",settingsChannel:null,otherMrn:"",otherReason:"",teamProfiles:[],closedBefore:{},performanceCache:{},teamPerformanceRows:[],myPerformanceRange:"today",teamPerformanceRange:"today",realtimeChannel:null,realtimeTimer:null,teamLivePoll:null,teamRefreshBusy:false};
 const iso=d=>{let x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)},pd=s=>new Date(s+"T00:00:00"),add=(s,n)=>{let d=pd(s);d.setDate(d.getDate()+n);return iso(d)},next=p=>{const closed=S.closedBefore?.[p.id]||"",end=p.prescription_end||"9999-12-31";const anchor=closed||p.base_last||"";if(!anchor)return "";const due=add(anchor,S.days);return due<=end?due:""},delta=p=>{const d=next(p);return d?Math.round((pd(d)-pd(iso(S.date)))/86400000):99999};
 const state=p=>{let d=delta(p);return d<0?"overdue":d===0?"today":d===1?"tomorrow":d<=7?"week":"future"},label=s=>({overdue:"Overdue",today:"Today",tomorrow:"Tomorrow",week:"Within 7 days",future:"Future"})[s];
 function toast(x){let t=$("#toast");t.textContent=x;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1500)}
@@ -493,6 +493,40 @@ function scheduleRealtimeRefresh(source="update"){
  },250);
 }
 
+
+async function refreshTeamLiveNow(source="poll"){
+ if(S.teamRefreshBusy||!S.sb||!["admin","supervisor"].includes(S.profile?.role))return;
+ S.teamRefreshBusy=true;
+ try{
+  S.performanceCache={};
+  await Promise.allSettled([loadShared(),loadTeamProfiles()]);
+  await loadTeamPerformance();
+  renderLiveProgress();
+  if($("#teamLastUpdated")){
+   $("#teamLastUpdated").textContent=`Live • ${new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"})}`;
+  }
+  $("#live").classList.add("on");
+  $("#sync").textContent="Live on all devices";
+ }catch(e){
+  console.warn("Team live refresh failed",source,e);
+ }finally{
+  S.teamRefreshBusy=false;
+ }
+}
+
+function startTeamLivePolling(){
+ stopTeamLivePolling();
+ if(!["admin","supervisor"].includes(S.profile?.role))return;
+ S.teamLivePoll=setInterval(()=>{
+  if(S.view==="team")refreshTeamLiveNow("5-second poll");
+ },5000);
+}
+
+function stopTeamLivePolling(){
+ if(S.teamLivePoll)clearInterval(S.teamLivePoll);
+ S.teamLivePoll=null;
+}
+
 async function startRealtimePerformance(){
  if(!S.sb||!S.user)return;
  if(S.realtimeChannel){
@@ -501,9 +535,9 @@ async function startRealtimePerformance(){
  }
  S.realtimeChannel=S.sb
   .channel(`dispense-live-${S.user.id}`)
-  .on("postgres_changes",{event:"*",schema:"public",table:"dispense_audit_log"},()=>scheduleRealtimeRefresh("audit"))
-  .on("postgres_changes",{event:"*",schema:"public",table:"dispense_workflow"},()=>scheduleRealtimeRefresh("workflow"))
-  .on("postgres_changes",{event:"*",schema:"public",table:"profiles"},()=>scheduleRealtimeRefresh("profiles"))
+  .on("postgres_changes",{event:"*",schema:"public",table:"dispense_audit_log"},()=>{scheduleRealtimeRefresh("audit");refreshTeamLiveNow("audit realtime")})
+  .on("postgres_changes",{event:"*",schema:"public",table:"dispense_workflow"},()=>{scheduleRealtimeRefresh("workflow");refreshTeamLiveNow("workflow realtime")})
+  .on("postgres_changes",{event:"*",schema:"public",table:"profiles"},()=>{scheduleRealtimeRefresh("profiles");refreshTeamLiveNow("profiles realtime")})
   .on("postgres_changes",{event:"*",schema:"public",table:"system_settings"},()=>scheduleRealtimeRefresh("settings"))
   .subscribe(status=>{
    if(status==="SUBSCRIBED"){
@@ -517,6 +551,7 @@ async function startRealtimePerformance(){
 }
 
 async function stopRealtimePerformance(){
+ stopTeamLivePolling();
  clearTimeout(S.realtimeTimer);
  S.realtimeTimer=null;
  if(S.sb&&S.realtimeChannel){
@@ -591,6 +626,7 @@ window.signInUser=async()=>{
   render();
   toast("Signed in");
   startRealtimePerformance().catch(e=>console.warn("Realtime startup warning",e));
+  startTeamLivePolling();
 
   Promise.allSettled([
    loadTeamProfiles(),
@@ -805,7 +841,7 @@ async function boot(){
  const c=window.SUPABASE_CONFIG;
  if(c?.url&&!c.url.includes("YOUR_"))S.sb=window.supabase.createClient(c.url,c.publishableKey);
  const authenticated=await initAuth();
- if(authenticated)startRealtimePerformance().catch(e=>console.warn("Realtime startup warning",e));
+ if(authenticated){startRealtimePerformance().catch(e=>console.warn("Realtime startup warning",e));startTeamLivePolling();}
  await loadTeamProfiles();
  await initShared();
  await loadSharedInterval();
@@ -843,6 +879,7 @@ async function go(v){
  render();
  if(v==="calendar")await renderCalendar();
  if(v==="demand")await renderDemand();
+ if(v==="team")await refreshTeamLiveNow("open team");
  if(v==="admin"){await loadUsers();await loadAuditLog()}
 }
 function openLogin(){$("#authScreen").classList.remove("hidden")}function selectStaff(id){S.staff=id;localStorage.setItem("dip-staff",id);$("#who").textContent=STAFF[id];$("#login").classList.add("hidden");toast("Signed in")}
@@ -1273,8 +1310,8 @@ async function ensurePrecomputedIndexes(){
  const base=`data/precomputed/${S.days}`;
  try{
   const [cal,idx]=await Promise.all([
-   fetch(`${base}/calendar.json?v=111`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("calendar");return r.json()}),
-   fetch(`${base}/demand-index.json?v=111`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("demand index");return r.json()})
+   fetch(`${base}/calendar.json?v=112`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("calendar");return r.json()}),
+   fetch(`${base}/demand-index.json?v=112`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("demand index");return r.json()})
   ]);
   S.precomputedCalendar=cal;S.demandIndex=idx;
  }catch(e){
@@ -1296,7 +1333,7 @@ async function ensureDemandLoaded(){
   return;
  }
  try{
-  const data=await fetch(file+"?v=111",{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("daily demand");return r.json()});
+  const data=await fetch(file+"?v=112",{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("daily demand");return r.json()});
   S.demandRows=data.rows||[];
   const ids=new Set();
   S.demandRows.forEach(x=>{
