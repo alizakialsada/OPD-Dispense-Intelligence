@@ -1,9 +1,0 @@
-Dispense Intelligence v2.7
-
-Fixed Smart Calendar and Drug Demand:
-- Added missing demand-index.json for intervals 15, 20, 25, and 30 days.
-- Rebuilt calendar.json using the schema expected by the interface.
-- Added medication count, patient count, and total quantity per day.
-- Added patientRows fallback data for Excel exports.
-- Added compatibility safeguards and cache version update.
-- No Supabase users or workflow records are changed.
