@@ -322,7 +322,7 @@
 
 <section id="team" class="view">
  <div class="section">
-  <div><div class="ey">TEAM PERFORMANCE</div><h2 id="teamPeriodTitle">Today</h2><p>Team performance from the complete saved workflow history.</p><div id="teamLastUpdated" class="performance-note">Live updates enabled</div></div>
+  <div><div class="ey">TEAM PERFORMANCE</div><h2 id="teamPeriodTitle">Today</h2><p>Live performance from the current saved workflow status. Each patient is counted once.</p><div id="teamLastUpdated" class="performance-note">Live totals matched to Dispense Queue</div></div>
   <div class="toolbar"><button class="copy" onclick="migrate()">Sync Existing Work</button><button class="copy" onclick="exportTeamExcel()">Export Performance</button></div>
  </div>
  <div class="performance-filter">
@@ -924,6 +924,56 @@ async function fetchAuditRange(range){
  }
  S.performanceCache[key]=rows;return rows;
 }
+
+async function fetchWorkflowRange(range){
+ if(!S.sb||!range)return[];
+ const key=`workflow|${range.type}|${range.from?.toISOString()||"all"}|${range.to?.toISOString()||"all"}`;
+ if(S.performanceCache[key])return S.performanceCache[key];
+ let q=S.sb.from("dispense_workflow")
+  .select("work_date,mrn,status,staff_id,staff_name,completed_at,updated_at");
+ if(range.from)q=q.gte("work_date",iso(range.from));
+ if(range.to)q=q.lte("work_date",iso(range.to));
+ const {data,error}=await q.order("work_date",{ascending:true});
+ if(error){
+  console.error("Workflow performance error",error);
+  toast("Could not load current performance totals");
+  return[];
+ }
+ const rows=data||[];
+ S.performanceCache[key]=rows;
+ return rows;
+}
+
+function summarizeWorkflow(rows){
+ const users={},allWorkDays=new Set();
+ const ensure=(key,name)=>users[key]||(users[key]={
+  key,
+  name:name||key||"Unknown",
+  dispensed:0,
+  others:0,
+  workDaySet:new Set()
+ });
+ rows.forEach(r=>{
+  if(!["dispensed","others"].includes(r.status))return;
+  const key=normStaff(r.staff_id)||normStaff(r.staff_name)||"unknown";
+  const u=ensure(key,r.staff_name||r.staff_id);
+  const day=r.work_date||String(r.completed_at||r.updated_at||"").slice(0,10);
+  if(day){u.workDaySet.add(day);allWorkDays.add(day)}
+  if(r.status==="dispensed")u.dispensed++;
+  else if(r.status==="others")u.others++;
+ });
+ const list=Object.values(users).map(u=>({
+  ...u,
+  workDays:u.workDaySet.size,
+  closed:u.dispensed+u.others
+ }));
+ return {
+  list,
+  workDays:allWorkDays.size,
+  totalDispensed:list.reduce((a,b)=>a+b.dispensed,0),
+  totalOthers:list.reduce((a,b)=>a+b.others,0)
+ };
+}
 function summarizeAudit(rows){
  const users={},allWorkDays=new Set();
  const ensure=(key,name)=>users[key]||(users[key]={key,name:name||"Unknown",dispensed:0,others:0,workDaySet:new Set()});
@@ -941,7 +991,7 @@ function summarizeAudit(rows){
 }
 function currentUserSummary(summary){
  const uid=S.user?.id,username=normStaff(S.profile?.username),name=normStaff(S.profile?.display_name||S.profile?.full_name);
- return summary.list.find(x=>x.key===uid||normStaff(x.name)===username||normStaff(x.name)===name)||{dispensed:0,others:0,closed:0,workDays:0};
+ return summary.list.find(x=>normStaff(x.key)===username||normStaff(x.name)===username||normStaff(x.name)===name||x.key===uid)||{dispensed:0,others:0,closed:0,workDays:0};
 }
 window.changeMyPerformanceRange=()=>{
  S.myPerformanceRange=$("#myPerfRange").value;
@@ -952,7 +1002,7 @@ window.loadMyPerformance=async()=>{
  const box=$("#myPerformance");if(!box||!S.user||!S.profile)return;
  const range=performanceRange($("#myPerfRange")?.value||"today","myPerf");if(!range)return;
  box.classList.add("performance-loading");
- const rows=await fetchAuditRange(range),summary=summarizeAudit(rows),mine=currentUserSummary(summary);
+ const rows=await fetchWorkflowRange(range),summary=summarizeWorkflow(rows),mine=currentUserSummary(summary);
  const displayName=S.profile.display_name||S.profile.full_name||S.profile.username||"My";
  $("#myPerformanceName").textContent=`${displayName} — Performance`;
  $("#myPerformancePeriod").textContent=range.label;
@@ -981,7 +1031,7 @@ window.loadTeamPerformance=async()=>{
  if(!["admin","supervisor"].includes(S.profile?.role))return;
  const range=performanceRange($("#teamPerfRange")?.value||"today","teamPerf");if(!range)return;
  const holder=$("#teamCards");holder?.classList.add("performance-loading");
- const rows=await fetchAuditRange(range),summary=summarizeAudit(rows);S.teamPerformanceRows=summary.list;
+ const rows=await fetchWorkflowRange(range),summary=summarizeWorkflow(rows);S.teamPerformanceRows=summary.list;
  $("#teamPeriodTitle").textContent=range.label;
  $("#teamTotal").textContent=fmt(summary.totalDispensed);
  $("#teamOthers").textContent=fmt(summary.totalOthers);
@@ -993,7 +1043,7 @@ window.loadTeamPerformance=async()=>{
  let profiles=(S.teamProfiles||[]).filter(p=>p.is_active!==false);
  const cards=profiles.map(profile=>{
   const name=profile.display_name||profile.full_name||profile.username;
-  const x=summary.list.find(r=>r.key===profile.id||normStaff(r.name)===normStaff(name)||normStaff(r.name)===normStaff(profile.username))||{dispensed:0,others:0,closed:0,workDays:0};
+  const x=summary.list.find(r=>normStaff(r.key)===normStaff(profile.username)||r.key===profile.id||normStaff(r.name)===normStaff(name)||normStaff(r.name)===normStaff(profile.username))||{dispensed:0,others:0,closed:0,workDays:0};
   return {...x,name,role:profile.role||"pharmacist"};
  }).sort((a,b)=>b.dispensed-a.dispensed);
  $("#teamCards").innerHTML=cards.map((x,index)=>{
@@ -1223,8 +1273,8 @@ async function ensurePrecomputedIndexes(){
  const base=`data/precomputed/${S.days}`;
  try{
   const [cal,idx]=await Promise.all([
-   fetch(`${base}/calendar.json?v=110`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("calendar");return r.json()}),
-   fetch(`${base}/demand-index.json?v=110`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("demand index");return r.json()})
+   fetch(`${base}/calendar.json?v=111`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("calendar");return r.json()}),
+   fetch(`${base}/demand-index.json?v=111`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("demand index");return r.json()})
   ]);
   S.precomputedCalendar=cal;S.demandIndex=idx;
  }catch(e){
@@ -1246,7 +1296,7 @@ async function ensureDemandLoaded(){
   return;
  }
  try{
-  const data=await fetch(file+"?v=110",{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("daily demand");return r.json()});
+  const data=await fetch(file+"?v=111",{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("daily demand");return r.json()});
   S.demandRows=data.rows||[];
   const ids=new Set();
   S.demandRows.forEach(x=>{
