@@ -236,6 +236,25 @@
 .performance-loading{opacity:.65;pointer-events:none}
 @media(max-width:720px){.performance-filter{align-items:stretch}.performance-filter select,.performance-filter input,.performance-filter button{width:100%}}
 
+
+.password-panel{
+  border:1px solid #27506b;
+  background:linear-gradient(135deg,#0e2638,#0a1b2a);
+  border-radius:16px;
+  padding:16px;
+  margin:14px 0;
+}
+.password-panel h3{margin:0 0 5px}
+.password-panel p{color:var(--m);margin:0 0 12px;font-size:10px}
+.password-grid{display:grid;grid-template-columns:repeat(3,1fr) auto;gap:8px;align-items:end}
+.password-field label{display:block;color:var(--m);font-size:9px;margin-bottom:5px}
+.password-field input{width:100%;border:1px solid var(--line);background:#0b1f31;color:#fff;border-radius:10px;padding:10px}
+.password-panel button{border:0;background:linear-gradient(135deg,var(--c),var(--b));color:#04111c;border-radius:10px;padding:10px 14px;font-weight:900}
+.password-message{min-height:18px;margin-top:9px;font-size:10px;color:var(--o)}
+.password-message.success{color:var(--g)}
+@media(max-width:900px){.password-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:620px){.password-grid{grid-template-columns:1fr}}
+
 </style></head><body>
 <div class="shell"><aside class="side"><div class="brand"><div class="logo">DI</div><div><b>Dispense Lite</b><small>Daily Operations</small></div></div>
 <button class="nav active" data-v="home">◈ <span>Overview</span></button><button class="nav" data-v="queue">▷ <span>Dispense Queue</span></button><button class="nav" data-v="registry">◎ <span>Patient Registry</span></button><button class="nav" data-v="calendar">▦ <span>Smart Calendar</span></button><button class="nav" data-v="demand">◆ <span>Drug Demand</span></button><button id="teamNav" class="nav" data-v="team">♟ <span>Team</span></button><button id="adminNav" class="nav hidden" data-v="admin">⚙ <span>Admin</span></button><div class="sidefoot">Created by Automation Supervisor Ali Alsada</div></aside>
@@ -273,6 +292,29 @@
     <div class="my-performance-card dispensed"><span>Share of Team Dispensed</span><b id="myTeamShare">0%</b></div>
   </div>
 </div>
+
+<div id="passwordPanel" class="password-panel">
+  <div class="ey">MY ACCOUNT</div>
+  <h3>Change Password</h3>
+  <p>Enter your current password, then choose a new password of at least 8 characters.</p>
+  <div class="password-grid">
+    <div class="password-field">
+      <label>Current Password</label>
+      <input id="currentPassword" type="password" autocomplete="current-password" placeholder="Current password">
+    </div>
+    <div class="password-field">
+      <label>New Password</label>
+      <input id="newOwnPassword" type="password" autocomplete="new-password" placeholder="Minimum 8 characters">
+    </div>
+    <div class="password-field">
+      <label>Confirm New Password</label>
+      <input id="confirmOwnPassword" type="password" autocomplete="new-password" placeholder="Repeat new password">
+    </div>
+    <button id="changePasswordButton" onclick="changeOwnPassword()">Update Password</button>
+  </div>
+  <div id="passwordMessage" class="password-message"></div>
+</div>
+
 <div id="workComplete" class="work-complete hidden">🎉 Today’s work is complete — Remaining: 0</div><div class="live-progress"><div class="live-card"><i class="live-dot"></i><span>Scheduled</span><b id="liveScheduled">0</b></div><div class="live-card dispensed"><span>Dispensed</span><b id="liveDispensed">0</b></div><div class="live-card others"><span>Others</span><b id="liveOthers">0</b></div><div class="live-card working"><span>In Progress</span><b id="liveWorking">0</b></div><div class="live-card remaining"><span>Remaining</span><b id="liveRemaining">0</b></div><div class="live-card"><span>Completion</span><b id="liveCompletion">0%</b></div><div class="live-card dispensed"><span>Dispensed Rate</span><b id="liveDispensedRate">0%</b></div></div><div class="hero"><div><div class="ey">TODAY'S DISPENSING</div><h2 id="hello">Good Morning, Pharmacist.</h2><p>Fast, focused, and ready for daily dispensing.</p><div class="num" id="heroCount">0</div><p id="heroDate">—</p></div><button class="copy" onclick="go('queue')">Start Queue →</button></div><div class="kpis"><div class="kpi red"><span>Overdue</span><b id="over">0</b></div><div class="kpi green"><span>Today</span><b id="today">0</b></div><div class="kpi orange"><span>Tomorrow</span><b id="tomorrow">0</b></div><div class="kpi cyan"><span>Next 7 Days</span><b id="week">0</b></div><div class="kpi"><span>Unique Patients</span><b id="all">0</b></div></div></section>
 <section id="queue" class="view"><div class="section"><div><div class="ey">DAILY WORKLIST</div><h2>Dispense Queue</h2><p>Copy MRN, start patient, and finish dispensing.</p></div><div class="toolbar"><select id="mode"><option value="today">Today</option><option value="overdue">Overdue</option><option value="tomorrow">Tomorrow</option><option value="week">Next 7 Days</option></select><input id="qqueue" class="search" placeholder="Search MRN, patient, medication…"></div></div><div class="summary"><div><span>Scheduled</span><b id="scheduled">0</b></div><div><span>Dispensed</span><b id="done">0</b></div><div><span>Others</span><b id="queueOthers">0</b></div><div><span>In Progress</span><b id="working">0</b></div><div><span>Remaining</span><b id="queueRemaining">0</b></div><div><span>Completion</span><b id="rate">0%</b></div><div><span>Dispensed Rate</span><b id="dispensedRate">0%</b></div></div><div class="progress"><i id="bar"></i></div><div id="cards" class="cards"></div></section>
 <section id="registry" class="view"><div class="section"><div><div class="ey">PATIENT INDEX</div><h2>Patient Registry</h2></div><input id="qreg" class="search" placeholder="Search MRN, patient, medication…"></div><div class="tablebox"><table><thead><tr><th>Patient</th><th>MRN</th><th>Medications</th><th>Last Dispense</th><th>Next Eligible</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table><div class="pager"><span id="count"></span><div><button onclick="page(-1)">←</button> <span id="pg"></span> <button onclick="page(1)">→</button></div></div></div></section>
@@ -646,6 +688,86 @@ window.signInUser=async()=>{
 }
 window.signOutUser=async()=>{await stopRealtimePerformance();if(S.sb)await S.sb.auth.signOut();S.user=null;S.profile=null;S.staff="";$("#who").textContent="Not signed in";$("#roleLabel").textContent="User";$("#adminNav").classList.add("hidden");if($("#teamNav"))$("#teamNav").classList.add("hidden");if($("#myPerformance"))$("#myPerformance").classList.add("hidden");$("#authScreen").classList.remove("hidden")}
 function requireAdmin(){if(S.profile?.role!=="admin"){toast("Administrator access required");return false}return true}
+window.changeOwnPassword=async()=>{
+ const current=$("#currentPassword")?.value||"";
+ const next=$("#newOwnPassword")?.value||"";
+ const confirm=$("#confirmOwnPassword")?.value||"";
+ const msg=$("#passwordMessage");
+ const btn=$("#changePasswordButton");
+
+ const setMessage=(text,success=false)=>{
+  if(!msg)return;
+  msg.textContent=text||"";
+  msg.classList.toggle("success",!!success);
+ };
+
+ if(!S.sb||!S.user||!S.profile){
+  setMessage("Please sign in again.");
+  return;
+ }
+ if(!current||!next||!confirm){
+  setMessage("Please complete all password fields.");
+  return;
+ }
+ if(next.length<8){
+  setMessage("New password must be at least 8 characters.");
+  return;
+ }
+ if(next!==confirm){
+  setMessage("New password and confirmation do not match.");
+  return;
+ }
+ if(current===next){
+  setMessage("New password must be different from the current password.");
+  return;
+ }
+
+ try{
+  if(btn)btn.disabled=true;
+  setMessage("Verifying current password...");
+
+  const email=S.user.email||authEmail(S.profile.username);
+  const {error:verifyError}=await S.sb.auth.signInWithPassword({
+   email,
+   password:current
+  });
+
+  if(verifyError){
+   throw new Error("Current password is incorrect.");
+  }
+
+  setMessage("Updating password...");
+  const {error:updateError}=await S.sb.auth.updateUser({password:next});
+  if(updateError)throw updateError;
+
+  $("#currentPassword").value="";
+  $("#newOwnPassword").value="";
+  $("#confirmOwnPassword").value="";
+  setMessage("Password updated successfully. Please sign in again.",true);
+  toast("Password updated successfully");
+
+  setTimeout(async()=>{
+   await stopRealtimePerformance();
+   await S.sb.auth.signOut();
+   S.user=null;
+   S.profile=null;
+   S.staff="";
+   $("#who").textContent="Not signed in";
+   $("#roleLabel").textContent="User";
+   $("#adminNav").classList.add("hidden");
+   if($("#teamNav"))$("#teamNav").classList.add("hidden");
+   $("#authScreen").classList.remove("hidden");
+   setAuthMessage("Password changed. Sign in with your new password.");
+  },1200);
+
+ }catch(err){
+  console.error("Password update failed",err);
+  setMessage(err?.message||"Could not update password.");
+ }finally{
+  if(btn)btn.disabled=false;
+ }
+}
+
 window.createUserAccount = async () => {
   const full_name = $("#newFullName")?.value.trim();
   const display_name = $("#newDisplayName")?.value.trim();
@@ -1310,8 +1432,8 @@ async function ensurePrecomputedIndexes(){
  const base=`data/precomputed/${S.days}`;
  try{
   const [cal,idx]=await Promise.all([
-   fetch(`${base}/calendar.json?v=112`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("calendar");return r.json()}),
-   fetch(`${base}/demand-index.json?v=112`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("demand index");return r.json()})
+   fetch(`${base}/calendar.json?v=113`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("calendar");return r.json()}),
+   fetch(`${base}/demand-index.json?v=113`,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("demand index");return r.json()})
   ]);
   S.precomputedCalendar=cal;S.demandIndex=idx;
  }catch(e){
@@ -1333,7 +1455,7 @@ async function ensureDemandLoaded(){
   return;
  }
  try{
-  const data=await fetch(file+"?v=112",{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("daily demand");return r.json()});
+  const data=await fetch(file+"?v=113",{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("daily demand");return r.json()});
   S.demandRows=data.rows||[];
   const ids=new Set();
   S.demandRows.forEach(x=>{
