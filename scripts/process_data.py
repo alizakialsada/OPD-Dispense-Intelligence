@@ -1,13 +1,14 @@
 from pathlib import Path
 from datetime import datetime, timedelta, date
 from collections import defaultdict, Counter
-import csv, json, re, zipfile, unicodedata, xml.etree.ElementTree as ET
+import csv, json, re, zipfile, unicodedata, urllib.request, xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 IN = ROOT / "incoming"
 DATA = ROOT / "data"
 NS = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 REL_NS = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
+INVENTORY_DATA_URL = "https://raw.githubusercontent.com/alizakialsada/QCH-DASBOARD/main/dashboard-data.js"
 
 ALIASES = {
     "id": ["Patient ID", "MRN"], "name": ["Patient Name", "Patient EName", "Name"],
@@ -22,6 +23,7 @@ ALIASES = {
     "prescription_no": ["Prescription No", "Prescription Number"],
     "order_id": ["Order ID", "Order Id"],
     "dispense_status": ["Dispense", "Dispense Status"],
+    "order_status": ["Status", "Order Status", "Prescription Status"],
 }
 
 def clean(v):
@@ -184,6 +186,55 @@ def find_col(headers, names):
     lookup = {clean(h).lower(): h for h in headers}
     return next((lookup[n.lower()] for n in names if n.lower() in lookup), None)
 
+
+def parse_inventory_data_js(text):
+    """Parse QCH-DASBOARD/dashboard-data.js into a NUPCO stock lookup."""
+    payload = re.sub(r"^\s*window\.DASHBOARD_DB\s*=\s*", "", text.strip())
+    payload = re.sub(r";\s*$", "", payload)
+    db = json.loads(payload)
+    lookup = {}
+    for item in db.get("items", []):
+        code = clean(item.get("generic"))
+        if not code:
+            continue
+        try:
+            lc = int(round(float(item.get("lc_qty", 0) or 0)))
+        except Exception:
+            lc = 0
+        try:
+            mosool = int(round(float(item.get("mosool_qty", 0) or 0)))
+        except Exception:
+            mosool = 0
+        lookup[code] = {"lc": lc, "mosool": mosool}
+    updated = clean(db.get("overall", {}).get("last_inventory_update"))
+    return lookup, updated
+
+def load_inventory_stock():
+    """
+    Download the latest Inventory Intelligence data.
+    A network failure must not stop Dispense processing; quantities remain blank.
+    """
+    try:
+        req = urllib.request.Request(
+            INVENTORY_DATA_URL,
+            headers={"User-Agent": "Dispense-Intelligence-GitHub-Action"}
+        )
+        with urllib.request.urlopen(req, timeout=45) as response:
+            text = response.read().decode("utf-8-sig")
+        return (*parse_inventory_data_js(text), "")
+    except Exception as exc:
+        return {}, "", str(exc)
+
+def order_rank(order_date, dispense_date, order_id):
+    """Comparable rank for identifying the newest prescription/order."""
+    date_part = order_date or dispense_date or ""
+    oid = clean(order_id)
+    try:
+        oid_part = (1, int(float(oid)))
+    except Exception:
+        oid_part = (0, oid)
+    return (date_part, oid_part)
+
 def recurring_dates(last_iso, end_iso, interval):
     if not last_iso or not end_iso: return []
     try:
@@ -209,8 +260,12 @@ def main():
 
     contacts = load_contact_master(DATA / "Patient_Contact_Master.csv")
     nupco_lookup = load_nupco_codes(DATA / "nupco-codes.json")
+    inventory_lookup, inventory_updated, inventory_error = load_inventory_stock()
     unmatched_drugs = set()
-    latest = {}; demographics = dict(contacts); raw = valid = 0
+    latest = {}
+    newest_order = {}
+    demographics = dict(contacts)
+    raw = valid = 0
 
     for f in files:
         rows = read_csv_rows(f) if f.suffix.lower() == ".csv" else read_xlsx_rows(f)
@@ -224,19 +279,46 @@ def main():
 
         for row in [first, *rows]:
             raw += 1
-            status = clean(row.get(cols["dispense_status"])) if cols.get("dispense_status") else ""
-            if status and status.casefold() not in {"dispensed", "صرف", "تم الصرف"}:
-                continue
             pid = clean(row.get(cols["id"]))
             drug = clean(row.get(cols["drug"]))
-            d = parse_date(row.get(cols["disp"]))
-            if not pid or not drug or not d or d < cutoff:
+            if not pid or not drug:
                 continue
+
+            dispense_status = clean(row.get(cols["dispense_status"])) if cols.get("dispense_status") else ""
+            order_status = clean(row.get(cols["order_status"])) if cols.get("order_status") else ""
+            disp_date = parse_date(row.get(cols["disp"])) if cols.get("disp") else None
+            order_date = parse_date(row.get(cols["order_date"])) if cols.get("order_date") else None
+            order_id = clean(row.get(cols["order_id"])) if cols.get("order_id") else ""
+
+            # Track the newest order regardless of dispensing. This prevents an old
+            # dispensed prescription from continuing to schedule after a newer Stop.
+            order_key = (pid, drug.casefold())
+            current_order = {
+                "status": order_status,
+                "dispense_status": dispense_status,
+                "order_date": order_date.isoformat() if order_date else "",
+                "dispense_date": disp_date.isoformat() if disp_date else "",
+                "order_id": order_id,
+            }
+            current_rank = order_rank(
+                current_order["order_date"],
+                current_order["dispense_date"],
+                order_id
+            )
+            old = newest_order.get(order_key)
+            if old is None or current_rank > old["rank"]:
+                newest_order[order_key] = {"rank": current_rank, **current_order}
+
+            # Only actual dispensing creates a new preparation cycle.
+            if dispense_status and dispense_status.casefold() not in {"dispensed", "صرف", "تم الصرف"}:
+                continue
+            if not disp_date or disp_date < cutoff:
+                continue
+
             valid += 1
             qty_raw = clean(row.get(cols["qty"])) if cols["qty"] else ""
             try: qty = float(qty_raw or 0)
             except Exception: qty = 0
-            order = parse_date(row.get(cols["order_date"])) if cols["order_date"] else None
             normalized_drug = normalize_medication_name(drug)
             nupco_code = nupco_lookup.get(normalized_drug, "")
             if not nupco_code:
@@ -246,19 +328,21 @@ def main():
                 "name": clean(row.get(cols["name"])) if cols["name"] else "",
                 "drug": drug,
                 "nupco_code": nupco_code,
-                "last": d.isoformat(),
+                "last": disp_date.isoformat(),
                 "qty": qty,
                 "speciality": clean(row.get(cols["spec"])) if cols["spec"] else "",
                 "location": clean(row.get(cols["loc"])) if cols["loc"] else "",
                 "national_id": clean(row.get(cols["national_id"])) if cols["national_id"] else "",
                 "mobile": clean(row.get(cols["mobile"])) if cols["mobile"] else "",
                 "national_address": clean(row.get(cols["national_address"])) if cols["national_address"] else "",
-                "order_date": order.isoformat() if order else "",
+                "order_date": order_date.isoformat() if order_date else "",
                 "prescription": clean(row.get(cols["prescription"])) if cols["prescription"] else "",
                 "prescription_no": clean(row.get(cols["prescription_no"])) if cols["prescription_no"] else "",
-                "order_id": clean(row.get(cols["order_id"])) if cols.get("order_id") else "",
+                "order_id": order_id,
+                "order_status": order_status,
+                "dispense_status": dispense_status,
             }
-            rec["rx_end"] = estimate_rx_end(order, rec["prescription"])
+            rec["rx_end"] = estimate_rx_end(order_date, rec["prescription"])
 
             demo = demographics.setdefault(pid, {})
             for k in ("name", "national_id", "mobile", "national_address"):
@@ -274,10 +358,40 @@ def main():
                 latest[same] = rec
 
     med_latest = {}
+    stopped_current = 0
+    awaiting_dispense = 0
+    superseded_dispense = 0
     for rec in latest.values():
         k = (rec["id"], rec["drug"].casefold())
-        rank = (rec["last"], rec.get("order_id", ""))
-        old_rank = (med_latest[k]["last"], med_latest[k].get("order_id", "")) if k in med_latest else None
+        current = newest_order.get(k, {})
+        current_status = clean(current.get("status")).casefold()
+        current_dispense = clean(current.get("dispense_status")).casefold()
+
+        # A current Stopped prescription remains in source history but is excluded
+        # from Smart Calendar and Drug Demand until a newer Active order is dispensed.
+        if current_status in {"stopped", "stop", "inactive", "discontinued", "cancelled", "canceled"}:
+            stopped_current += 1
+            continue
+
+        # A newer Active order that is not yet dispensed must not inherit scheduling
+        # from an older dispensing. It becomes eligible after actual dispensing.
+        rec_rank = order_rank(rec.get("order_date", ""), rec.get("last", ""), rec.get("order_id", ""))
+        current_rank = current.get("rank")
+        if current_rank and current_rank > rec_rank:
+            superseded_dispense += 1
+            if current_dispense not in {"dispensed", "صرف", "تم الصرف"}:
+                awaiting_dispense += 1
+            continue
+
+        rank = order_rank(rec.get("order_date", ""), rec.get("last", ""), rec.get("order_id", ""))
+        old_rank = (
+            order_rank(
+                med_latest[k].get("order_date", ""),
+                med_latest[k].get("last", ""),
+                med_latest[k].get("order_id", "")
+            )
+            if k in med_latest else None
+        )
         if old_rank is None or rank > old_rank:
             med_latest[k] = rec
 
@@ -320,7 +434,9 @@ def main():
             "id": pid, "name": patient["name"], "speciality": patient["speciality"], "base_last": dom,
             "items": [{
                 "drug": m["drug"], "nupco_code": m.get("nupco_code", ""), "qty": m["qty"], "last": m["last"],
-                "end": m.get("rx_end", ""), "order_id": m.get("order_id", "")
+                "end": m.get("rx_end", ""), "order_id": m.get("order_id", ""),
+                "mosool": inventory_lookup.get(m.get("nupco_code", ""), {}).get("mosool") if m.get("nupco_code") in inventory_lookup else None,
+                "lc": inventory_lookup.get(m.get("nupco_code", ""), {}).get("lc") if m.get("nupco_code") in inventory_lookup else None
             } for m in meds]
         })
 
@@ -351,7 +467,12 @@ def main():
                 for eligible in recurring_dates(item["last"], item.get("end") or "", interval):
                     drug = item["drug"]; nupco_code = item.get("nupco_code", ""); qty = float(item.get("qty") or 0)
                     cal[eligible]["patients"].add(x["id"]); cal[eligible]["medications"].add(drug); cal[eligible]["quantity"] += qty
-                    r = day[eligible][drug]; r["nupco_code"] = nupco_code; r["patients"].add(x["id"]); r["quantity"] += qty
+                    r = day[eligible][drug]
+                    r["nupco_code"] = nupco_code
+                    stock = inventory_lookup.get(nupco_code, {})
+                    r["mosool"] = stock.get("mosool") if nupco_code in inventory_lookup else None
+                    r["lc"] = stock.get("lc") if nupco_code in inventory_lookup else None
+                    r["patients"].add(x["id"]); r["quantity"] += qty
                     r["patientRows"].append({"mrn": x["id"], "name": x["name"], "speciality": x["speciality"], "qty": qty})
         (pre / "calendar.json").write_text(json.dumps({k: {"patients": len(v["patients"]), "medications": len(v["medications"]), "quantity": round(v["quantity"], 2)} for k, v in sorted(cal.items())}, separators=(",", ":")), encoding="utf-8")
         didx = {}
@@ -359,7 +480,16 @@ def main():
             rows = []
             for drug, v in drugs.items():
                 n = len(v["patients"])
-                rows.append({"drug": drug, "nupco_code": v.get("nupco_code", ""), "patients": n, "qty": round(v["quantity"], 2), "avg": round(v["quantity"] / n, 2) if n else 0, "patientRows": v["patientRows"]})
+                rows.append({
+                    "drug": drug,
+                    "nupco_code": v.get("nupco_code", ""),
+                    "patients": n,
+                    "qty": round(v["quantity"], 2),
+                    "mosool": v.get("mosool"),
+                    "lc": v.get("lc"),
+                    "avg": round(v["quantity"] / n, 2) if n else 0,
+                    "patientRows": v["patientRows"]
+                })
             rows.sort(key=lambda r: (-r["qty"], -r["patients"], r["drug"]))
             fn = f"demand-{d}.json"
             (pre / fn).write_text(json.dumps({"date": d, "rows": rows}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
@@ -378,6 +508,13 @@ def main():
         "contacts_loaded": len(contacts),
         "nupco_aliases_loaded": len(nupco_lookup),
         "unmatched_nupco_medications": len(unmatched_drugs),
+        "current_stopped_medications_excluded": stopped_current,
+        "newer_orders_awaiting_dispense_excluded": awaiting_dispense,
+        "superseded_dispense_records_excluded": superseded_dispense,
+        "inventory_codes_loaded": len(inventory_lookup),
+        "inventory_last_update": inventory_updated,
+        "inventory_source": INVENTORY_DATA_URL,
+        "inventory_error": inventory_error,
         "chunks": chunks, "default_interval": 20,
         "recurring_until_prescription_end": True,
         "dispense_cutoff": cutoff.isoformat(),
