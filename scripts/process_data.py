@@ -1,7 +1,7 @@
 from pathlib import Path
 from datetime import datetime, timedelta, date
 from collections import defaultdict, Counter
-import csv, json, re, zipfile, xml.etree.ElementTree as ET
+import csv, json, re, zipfile, unicodedata, xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 IN = ROOT / "incoming"
@@ -156,6 +156,30 @@ def load_contact_master(path):
         }
     return contacts
 
+
+def normalize_medication_name(value):
+    """Normalize Medica and NUPCO medication names for safe exact matching."""
+    s = unicodedata.normalize("NFKD", clean(value)).upper()
+    s = s.replace("–", "-").replace("—", "-")
+    s = re.sub(r"\bTRD\b", " ", s)
+    s = re.sub(r"\bOLD\b", " ", s)
+    s = re.sub(r"\bBOX\s*\d+\b", " ", s)
+    s = re.sub(r"[^A-Z0-9.]+", " ", s)
+    return " ".join(s.split())
+
+def load_nupco_codes(path):
+    """Load NUPCO aliases and return a normalized-name lookup."""
+    lookup = {}
+    if not path.exists():
+        return lookup
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    for entry in payload.get("entries", []):
+        name = normalize_medication_name(entry.get("medication_name", ""))
+        code = clean(entry.get("nupco_code", ""))
+        if name and code:
+            lookup[name] = code
+    return lookup
+
 def find_col(headers, names):
     lookup = {clean(h).lower(): h for h in headers}
     return next((lookup[n.lower()] for n in names if n.lower() in lookup), None)
@@ -184,6 +208,8 @@ def main():
         raise SystemExit("No Medica .xlsx or medica-latest-part-*.csv report found in incoming/")
 
     contacts = load_contact_master(DATA / "Patient_Contact_Master.csv")
+    nupco_lookup = load_nupco_codes(DATA / "nupco-codes.json")
+    unmatched_drugs = set()
     latest = {}; demographics = dict(contacts); raw = valid = 0
 
     for f in files:
@@ -211,10 +237,15 @@ def main():
             try: qty = float(qty_raw or 0)
             except Exception: qty = 0
             order = parse_date(row.get(cols["order_date"])) if cols["order_date"] else None
+            normalized_drug = normalize_medication_name(drug)
+            nupco_code = nupco_lookup.get(normalized_drug, "")
+            if not nupco_code:
+                unmatched_drugs.add(drug)
             rec = {
                 "id": pid,
                 "name": clean(row.get(cols["name"])) if cols["name"] else "",
                 "drug": drug,
+                "nupco_code": nupco_code,
                 "last": d.isoformat(),
                 "qty": qty,
                 "speciality": clean(row.get(cols["spec"])) if cols["spec"] else "",
@@ -288,7 +319,7 @@ def main():
         demand.append({
             "id": pid, "name": patient["name"], "speciality": patient["speciality"], "base_last": dom,
             "items": [{
-                "drug": m["drug"], "qty": m["qty"], "last": m["last"],
+                "drug": m["drug"], "nupco_code": m.get("nupco_code", ""), "qty": m["qty"], "last": m["last"],
                 "end": m.get("rx_end", ""), "order_id": m.get("order_id", "")
             } for m in meds]
         })
@@ -318,9 +349,9 @@ def main():
         for x in demand:
             for item in x["items"]:
                 for eligible in recurring_dates(item["last"], item.get("end") or "", interval):
-                    drug = item["drug"]; qty = float(item.get("qty") or 0)
+                    drug = item["drug"]; nupco_code = item.get("nupco_code", ""); qty = float(item.get("qty") or 0)
                     cal[eligible]["patients"].add(x["id"]); cal[eligible]["medications"].add(drug); cal[eligible]["quantity"] += qty
-                    r = day[eligible][drug]; r["patients"].add(x["id"]); r["quantity"] += qty
+                    r = day[eligible][drug]; r["nupco_code"] = nupco_code; r["patients"].add(x["id"]); r["quantity"] += qty
                     r["patientRows"].append({"mrn": x["id"], "name": x["name"], "speciality": x["speciality"], "qty": qty})
         (pre / "calendar.json").write_text(json.dumps({k: {"patients": len(v["patients"]), "medications": len(v["medications"]), "quantity": round(v["quantity"], 2)} for k, v in sorted(cal.items())}, separators=(",", ":")), encoding="utf-8")
         didx = {}
@@ -328,12 +359,15 @@ def main():
             rows = []
             for drug, v in drugs.items():
                 n = len(v["patients"])
-                rows.append({"drug": drug, "patients": n, "qty": round(v["quantity"], 2), "avg": round(v["quantity"] / n, 2) if n else 0, "patientRows": v["patientRows"]})
+                rows.append({"drug": drug, "nupco_code": v.get("nupco_code", ""), "patients": n, "qty": round(v["quantity"], 2), "avg": round(v["quantity"] / n, 2) if n else 0, "patientRows": v["patientRows"]})
             rows.sort(key=lambda r: (-r["qty"], -r["patients"], r["drug"]))
             fn = f"demand-{d}.json"
             (pre / fn).write_text(json.dumps({"date": d, "rows": rows}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
             didx[d] = f"data/precomputed/{interval}/{fn}"
         (pre / "demand-index.json").write_text(json.dumps(didx, separators=(",", ":")), encoding="utf-8")
+
+    unmatched_path = DATA / "unmatched-nupco-medications.json"
+    unmatched_path.write_text(json.dumps(sorted(unmatched_drugs), ensure_ascii=False, indent=2), encoding="utf-8")
 
     meta = {
         "generated_at": datetime.now().isoformat(timespec="seconds"),
@@ -342,6 +376,8 @@ def main():
         "unique_patients": len(patients),
         "patient_medication_records": len(med_latest),
         "contacts_loaded": len(contacts),
+        "nupco_aliases_loaded": len(nupco_lookup),
+        "unmatched_nupco_medications": len(unmatched_drugs),
         "chunks": chunks, "default_interval": 20,
         "recurring_until_prescription_end": True,
         "dispense_cutoff": cutoff.isoformat(),
