@@ -39,3 +39,12 @@ Keep the current live `supabase-config.js`; this package intentionally does not 
 - Dispensed Rate = Dispensed / Scheduled.
 - Existing Supabase users and workflow history are not deleted or replaced.
 - In-app account creation requires the included `supabase/functions/create-user` Edge Function to be deployed once. GitHub Pages deployment cannot deploy Supabase functions.
+
+
+## v2.9 email-ready update
+- Uses `Order ID` to detect a genuinely new Medica Cloud order and prevent duplicate import.
+- Only confirmed `Dispensed` rows update latest dispense dates.
+- Active excluded MRNs are removed from Smart Calendar, preparation lists, and Drug Demand.
+- Drug Demand includes NUPCO codes where an exact normalized medication-name match exists.
+- Existing Supabase work completed today remains untouched when a patient has not yet appeared as dispensed in Medica Cloud.
+- Gmail automation template is available under `email-automation/`.

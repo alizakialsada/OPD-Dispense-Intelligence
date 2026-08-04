@@ -1,0 +1,191 @@
+[
+  {
+    "mrn": "683821",
+    "name": "بشير محمد الصدق",
+    "reason": "رفض الاستلام",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "29627",
+    "name": "مريم يوسف ال يوسف",
+    "reason": "لا تخص المرسل إليه",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "",
+    "name": "عبدالعليم عبد الرحيم القطري",
+    "reason": "رفض الاستلام",
+    "active": false,
+    "validation": "mrn_required"
+  },
+  {
+    "mrn": "112564",
+    "name": "خلود ابراهيم الفندي",
+    "reason": "لا تريد توصيل العلاج عن طريق البريد",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "62537",
+    "name": "حسن الخاطر",
+    "reason": "لا يريد توصيل العلاج عن طريق البريد",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "289309",
+    "name": "بشاير سامر شرقي",
+    "reason": "رفض الاستلام",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "137040",
+    "name": "امنه عيسى البحار",
+    "reason": "رفض الاستلام",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "10910",
+    "name": "عبدالله احمد الفكية",
+    "reason": "لا يريد توصيل العلاج عن طريق البريد",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "804040",
+    "name": "علي صويلح الشراري",
+    "reason": "لا تخص المرسل إليه",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "680191",
+    "name": "حسين محمد الشفيقي",
+    "reason": "رفض الاستلام",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "393609",
+    "name": "حمده محمد مجروشي",
+    "reason": "لا تخص المرسل إليه",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "324937",
+    "name": "فاطمة شرف السادة",
+    "reason": "لا تخص المرسل إليه",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "71505",
+    "name": "عبد رب الشهيد الكعيبي",
+    "reason": "لا تخص المرسل إليه",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "278385",
+    "name": "الزهراء عبد الواحد ال خميس",
+    "reason": "رفض الاستلام",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "506547",
+    "name": "جعفر محمد ال سليمان",
+    "reason": "لا تخص المرسل إليه",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "192328",
+    "name": "أمين محمد أبو الرحي",
+    "reason": "رفض الاستلام",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "337458",
+    "name": "هناء فوزي الجشي",
+    "reason": "لا تخص المرسل إليه",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "155978",
+    "name": "أسيا عبدرب الحسين الشرقي",
+    "reason": "رفض الاستلام",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "186211",
+    "name": "أفراح حسن المادح",
+    "reason": "لا تخص المرسل إليه",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "312679",
+    "name": "عدنان سعيد العوامي",
+    "reason": "لا تخص المرسل إليه",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "522276",
+    "name": "فاطمه عبدالله الغاوي",
+    "reason": "لا تخص المرسل إليه",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "844282",
+    "name": "لطيفه عبدالعزيز الرعوجي",
+    "reason": "الرقم غير مستخدم",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "192829",
+    "name": "ميعاد حسن ال حمود",
+    "reason": "لا يخص المريض",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "769969",
+    "name": "مهدي محمد المؤمن",
+    "reason": "لا تخص المريض",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "13258",
+    "name": "عباس عبدالكريم الخاطر",
+    "reason": "رفض الاستلام",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "182433",
+    "name": "عبدالله احمد الشيخ",
+    "reason": "لا تخص المرسل إليه",
+    "active": true,
+    "validation": "ready"
+  },
+  {
+    "mrn": "324342",
+    "name": "جواد علي ال ابرهيم",
+    "reason": "لا يصله الكود",
+    "active": true,
+    "validation": "ready"
+  }
+]
