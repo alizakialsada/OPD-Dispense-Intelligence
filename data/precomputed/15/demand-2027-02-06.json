@@ -1,1 +1,1 @@
-{"date":"2027-02-06","rows":[{"drug":"AMLODIPINE-AMLOCARD-5 MG TABLET","nupco_code":"5112174300000","patients":1,"qty":30.0,"mosool":"","lc":"","avg":30.0,"patientRows":[{"mrn":"29179","name":"ABDULLAH HASSAN BN ALI ALAMRED","speciality":"Cardiology","qty":30.0}]}]}
+{"date":"2027-02-06","rows":[{"drug":"AMLODIPINE-AMLOCARD-5 MG TABLET","patients":1,"qty":120.0,"avg":120.0,"patientRows":[{"mrn":"29179","name":"ABDULLAH HASSAN BN ALI ALAMRED","speciality":"Cardiology","qty":120.0}]}]}
