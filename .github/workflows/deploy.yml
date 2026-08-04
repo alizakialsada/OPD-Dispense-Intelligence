@@ -2,7 +2,7 @@ name: Update Dispense Lite
 on:
   push:
     branches: [main]
-    paths: ["incoming/**","scripts/**","index.html","supabase-config.js"]
+    paths: ["incoming/**","scripts/**","data/Patient_Contact_Master.csv","index.html","supabase-config.js"]
   workflow_dispatch:
 permissions:
   contents: write
