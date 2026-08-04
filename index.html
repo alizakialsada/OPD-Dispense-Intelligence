@@ -359,7 +359,7 @@
   <div class="demand-kpi"><span>Highest Demand Item</span><b id="demandTop">—</b></div>
  </div>
  <div id="demandLoading" class="panel">Open this page to load medication quantities…</div>
- <div id="demandTableBox" class="tablebox hidden"><table class="demand-table"><thead><tr><th>Priority</th><th>Medication</th><th>Patients</th><th>Required Qty</th><th>Average / Patient</th><th>Patient List</th></tr></thead><tbody id="demandRows"></tbody></table></div>
+ <div id="demandTableBox" class="tablebox hidden"><table class="demand-table"><thead><tr><th>Priority</th><th>NUPCO Code</th><th>Medication</th><th>Patients</th><th>Required Qty</th><th>Mosool</th><th>LC</th><th>Average / Patient</th><th>Patient List</th></tr></thead><tbody id="demandRows"></tbody></table></div>
 </section>
 
 <section id="team" class="view">
@@ -1474,14 +1474,14 @@ async function renderDemand(){if($("#demandInterval"))$("#demandInterval").textC
 function renderDemandTable(){
  if(!Array.isArray(S.demandRows))return;
  const q=($("#qdemand")?.value||"").toLowerCase();
- const rows=S.demandRows.filter(x=>x.drug.toLowerCase().includes(q));
+ const rows=S.demandRows.filter(x=>x.drug.toLowerCase().includes(q)||String(x.nupco_code||"").toLowerCase().includes(q));
  $("#demandMeds").textContent=fmt(rows.length);
  $("#demandPatients").textContent=fmt(S.demandEligiblePatients||0);
  $("#demandQty").textContent=fmt(rows.reduce((s,x)=>s+x.qty,0));
  $("#demandTop").textContent=rows[0]?rows[0].drug:"—";
  $("#demandRows").innerHTML=rows.length
- ? rows.map((x,i)=>`<tr><td>${i+1}</td><td class="drug-name">${x.drug}</td><td>${fmt(x.patients)}</td><td class="qty-big">${fmt(x.qty)}</td><td>${fmt(x.avg)}</td><td><button class="copy" onclick="exportDrugPatients('${encodeURIComponent(x.drug)}')">Excel</button></td></tr>`).join("")
- : `<tr><td colspan="6" style="text-align:center;color:var(--m);padding:28px">No medication demand found for ${iso(S.date)}.</td></tr>`;
+ ? rows.map((x,i)=>`<tr><td>${i+1}</td><td><code>${x.nupco_code||"—"}</code></td><td class="drug-name">${x.drug}</td><td>${fmt(x.patients)}</td><td class="qty-big">${fmt(x.qty)}</td><td>${x.mosool??"—"}</td><td>${x.lc??"—"}</td><td>${fmt(x.avg)}</td><td><button class="copy" onclick="exportDrugPatients('${encodeURIComponent(x.drug)}')">Excel</button></td></tr>`).join("")
+ : `<tr><td colspan="9" style="text-align:center;color:var(--m);padding:28px">No medication demand found for ${iso(S.date)}.</td></tr>`;
 }
 async function loadXLSX(){
  if(window.XLSX)return;
@@ -1493,14 +1493,14 @@ function saveWorkbook(wb,name){XLSX.writeFile(wb,name,{compression:true})}
 window.exportDemandExcel=async()=>{
  await ensureDemandLoaded();await loadXLSX();
  const summary=S.demandRows.map((x,i)=>({
-  Priority:i+1,Medication:x.drug,Patients:x.patients,
-  "Required Quantity":Math.round(x.qty*100)/100,
+  Priority:i+1,"NUPCO Code":x.nupco_code||"",Medication:x.drug,Patients:x.patients,
+  "Required Quantity":Math.round(x.qty*100)/100,Mosool:x.mosool??"",LC:x.lc??"",
   "Average per Patient":Math.round(x.avg*100)/100,
   Date:iso(S.date)
  }));
  const details=[];
  S.demandRows.forEach(x=>(x.patientRows||[]).forEach(p=>details.push({
-  Date:iso(S.date),Medication:x.drug,MRN:p.mrn,"Patient Name":p.name,
+  Date:iso(S.date),"NUPCO Code":x.nupco_code||"",Medication:x.drug,Mosool:x.mosool??"",LC:x.lc??"",MRN:p.mrn,"Patient Name":p.name,
   Specialty:p.speciality,"Required Quantity":p.qty
  })));
  const wb=XLSX.utils.book_new();
@@ -1511,7 +1511,7 @@ window.exportDemandExcel=async()=>{
 window.exportDrugPatients=async encoded=>{
  const drug=decodeURIComponent(encoded);await ensureDemandLoaded();await loadXLSX();
  const x=S.demandRows.find(r=>r.drug===drug);if(!x)return;
- const rows=(x.patientRows||[]).map(p=>({Date:iso(S.date),Medication:drug,MRN:p.mrn,"Patient Name":p.name,Specialty:p.speciality,"Required Quantity":p.qty}));
+ const rows=(x.patientRows||[]).map(p=>({Date:iso(S.date),"NUPCO Code":x.nupco_code||"",Medication:drug,Mosool:x.mosool??"",LC:x.lc??"",MRN:p.mrn,"Patient Name":p.name,Specialty:p.speciality,"Required Quantity":p.qty}));
  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),"Patients");
  saveWorkbook(wb,`${drug.replace(/[\\/:*?"<>|]/g,"-").slice(0,80)}-${iso(S.date)}.xlsx`);
 }

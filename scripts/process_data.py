@@ -253,7 +253,7 @@ def main():
             rows=[]
             for drug_key,v in drugs.items():
                 drug, code = drug_key
-                n=len(v["patients"]); rows.append({"drug":drug,"nupco_code":code,"patients":n,"qty":round(v["quantity"],2),"avg":round(v["quantity"]/n,2) if n else 0,"patientRows":v["patientRows"]})
+                n=len(v["patients"]); rows.append({"drug":drug,"nupco_code":code,"patients":n,"qty":round(v["quantity"],2),"mosool":"","lc":"","avg":round(v["quantity"]/n,2) if n else 0,"patientRows":v["patientRows"]})
             rows.sort(key=lambda r:(-r["qty"],-r["patients"],r["drug"])); fn=f"demand-{d}.json"; (pre/fn).write_text(json.dumps({"date":d,"rows":rows},ensure_ascii=False,separators=(",",":")),encoding="utf-8"); didx[d]=f"data/precomputed/{interval}/{fn}"
         (pre/"demand-index.json").write_text(json.dumps(didx,separators=(",",":")),encoding="utf-8")
     meta={"generated_at":datetime.now().isoformat(timespec="seconds"),"source_file":files[-1].name,"raw_records":raw,"valid_records":valid,"unique_patients":len(patients),"patient_medication_records":len(med_latest),"chunks":chunks,"default_interval":20,"recurring_until_prescription_end":True,"dispense_cutoff":cutoff.isoformat(),"excluded_patients":len(exclusions),"excluded_records":excluded_records,"duplicate_order_items_skipped":duplicate_orders,"order_id_enabled":True,"nupco_mapping_enabled":True,"next_cycles_every_days":30}
