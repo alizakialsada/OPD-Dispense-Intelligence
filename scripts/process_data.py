@@ -1,7 +1,7 @@
 from pathlib import Path
 from datetime import datetime, timedelta, date
 from collections import defaultdict, Counter
-import json, re, zipfile, xml.etree.ElementTree as ET
+import csv, json, re, zipfile, xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 IN = ROOT / "incoming"
@@ -20,9 +20,8 @@ ALIASES = {
     "order_date": ["Order Date", "Prescription Start Date"],
     "prescription": ["Prescription", "Duration"],
     "prescription_no": ["Prescription No", "Prescription Number"],
-    "order_id": ["Order ID", "OrderID"],
-    "disp_status": ["Dispense", "Dispense Status"],
-    "disp_time": ["Disp Time", "Dispense Time"],
+    "order_id": ["Order ID", "Order Id"],
+    "dispense_status": ["Dispense", "Dispense Status"],
 }
 
 def clean(v):
@@ -119,24 +118,47 @@ def read_xlsx_rows(path):
                 if vals: yield {headers[i]: vals.get(i, "") for i in range(len(headers))}
                 elem.clear()
 
+
+def read_csv_rows(path):
+    """Stream a UTF-8 CSV file as dictionaries."""
+    with path.open("r", encoding="utf-8-sig", newline="") as fh:
+        reader = csv.DictReader(fh)
+        if not reader.fieldnames:
+            return
+        for row in reader:
+            yield row
+
+def load_contact_master(path):
+    """Load patient contact details keyed by Patient ID/MRN."""
+    contacts = {}
+    if not path.exists():
+        return contacts
+    for row in read_csv_rows(path):
+        headers = list(row.keys())
+        id_col = find_col(headers, ALIASES["id"])
+        if not id_col:
+            raise ValueError(f"{path.name}: missing Patient ID/MRN column")
+        pid = clean(row.get(id_col))
+        if not pid:
+            continue
+        name_col = find_col(headers, ALIASES["name"])
+        national_id_col = find_col(headers, ALIASES["national_id"])
+        mobile_col = find_col(headers, ALIASES["mobile"])
+        address_col = find_col(headers, ALIASES["national_address"])
+        short_address_col = find_col(headers, ["Short Address", "Short Adress"])
+        contacts[pid] = {
+            "name": clean(row.get(name_col)) if name_col else "",
+            "national_id": clean(row.get(national_id_col)) if national_id_col else "",
+            "mobile": clean(row.get(mobile_col)) if mobile_col else "",
+            "national_address": (
+                clean(row.get(address_col)) if address_col else ""
+            ) or (clean(row.get(short_address_col)) if short_address_col else ""),
+        }
+    return contacts
+
 def find_col(headers, names):
     lookup = {clean(h).lower(): h for h in headers}
     return next((lookup[n.lower()] for n in names if n.lower() in lookup), None)
-
-def normalize_drug_name(value):
-    return re.sub(r"[^a-z0-9]+", " ", clean(value).casefold()).strip()
-
-def load_reference_data():
-    exclusions_path = DATA / "excluded-patients.json"
-    nupco_path = DATA / "nupco-codes.json"
-    exclusions = set()
-    if exclusions_path.exists():
-        exclusions = {clean(x.get("mrn")) for x in json.loads(exclusions_path.read_text(encoding="utf-8")) if x.get("active") and clean(x.get("mrn"))}
-    nupco = {}
-    if nupco_path.exists():
-        obj = json.loads(nupco_path.read_text(encoding="utf-8"))
-        nupco = obj.get("normalized_map", {})
-    return exclusions, nupco
 
 def recurring_dates(last_iso, end_iso, interval):
     if not last_iso or not end_iso: return []
@@ -146,117 +168,185 @@ def recurring_dates(last_iso, end_iso, interval):
     except Exception:
         return []
     out=[]
-    # First preparation is latest dispense + selected interval; later monthly cycles repeat every 30 days.
+    # Keep current/upcoming preparation dates; every new cycle repeats by the selected preparation interval.
     floor=date.today()-timedelta(days=1)
     while d <= end:
         if d >= floor: out.append(d.isoformat())
-        d += timedelta(days=30)
+        d += timedelta(days=interval)
     return out
 
 def main():
-    cutoff = date(2026, 5, 1)
-    files = sorted(IN.glob("*.xlsx"))
-    if not files: raise SystemExit("No .xlsx report found in incoming/")
-    exclusions, nupco_map = load_reference_data()
-    latest = {}; demographics = {}; raw = valid = excluded_records = duplicate_orders = 0
-    seen_order_items = set()
+    cutoff = date(2026, 6, 4)
+    xlsx_files = sorted(IN.glob("*.xlsx"))
+    csv_files = sorted(IN.glob("medica-latest-part-*.csv"))
+    files = csv_files + xlsx_files
+    if not files:
+        raise SystemExit("No Medica .xlsx or medica-latest-part-*.csv report found in incoming/")
+
+    contacts = load_contact_master(DATA / "Patient_Contact_Master.csv")
+    latest = {}; demographics = dict(contacts); raw = valid = 0
+
     for f in files:
-        rows = read_xlsx_rows(f)
+        rows = read_csv_rows(f) if f.suffix.lower() == ".csv" else read_xlsx_rows(f)
         first = next(rows, None)
-        if first is None: continue
-        headers = list(first.keys()); cols = {k: find_col(headers,v) for k,v in ALIASES.items()}
-        if not cols["id"] or not cols["drug"] or not cols["disp"]: raise ValueError(f"{f.name}: missing required columns")
+        if first is None:
+            continue
+        headers = list(first.keys())
+        cols = {k: find_col(headers, v) for k, v in ALIASES.items()}
+        if not cols["id"] or not cols["drug"] or not cols["disp"]:
+            raise ValueError(f"{f.name}: missing required columns")
+
         for row in [first, *rows]:
             raw += 1
-            pid=clean(row.get(cols["id"])); drug=clean(row.get(cols["drug"])); d=parse_date(row.get(cols["disp"]))
-            status=clean(row.get(cols["disp_status"])) if cols.get("disp_status") else ""
-            if status and status.casefold() not in {"dispensed", "dispense"}: continue
-            if not pid or not drug or not d or d < cutoff: continue
-            if pid in exclusions:
-                excluded_records += 1
+            status = clean(row.get(cols["dispense_status"])) if cols.get("dispense_status") else ""
+            if status and status.casefold() not in {"dispensed", "صرف", "تم الصرف"}:
                 continue
-            order_id=clean(row.get(cols["order_id"])) if cols.get("order_id") else ""
-            order_item_key=(pid,order_id,normalize_drug_name(drug),d.isoformat()) if order_id else None
-            if order_item_key and order_item_key in seen_order_items:
-                duplicate_orders += 1
+            pid = clean(row.get(cols["id"]))
+            drug = clean(row.get(cols["drug"]))
+            d = parse_date(row.get(cols["disp"]))
+            if not pid or not drug or not d or d < cutoff:
                 continue
-            if order_item_key: seen_order_items.add(order_item_key)
             valid += 1
-            qty_raw=clean(row.get(cols["qty"])) if cols["qty"] else ""
-            try: qty=float(qty_raw or 0)
-            except: qty=0
-            order=parse_date(row.get(cols["order_date"])) if cols["order_date"] else None
-            rec={"id":pid,"name":clean(row.get(cols["name"])) if cols["name"] else "","drug":drug,"last":d.isoformat(),"qty":qty,
-                 "speciality":clean(row.get(cols["spec"])) if cols["spec"] else "","location":clean(row.get(cols["loc"])) if cols["loc"] else "",
-                 "national_id":clean(row.get(cols["national_id"])) if cols["national_id"] else "","mobile":clean(row.get(cols["mobile"])) if cols["mobile"] else "",
-                 "national_address":clean(row.get(cols["national_address"])) if cols["national_address"] else "","order_date":order.isoformat() if order else "",
-                 "prescription":clean(row.get(cols["prescription"])) if cols["prescription"] else "","prescription_no":clean(row.get(cols["prescription_no"])) if cols["prescription_no"] else "",
-                 "order_id":order_id,"dispense_time":clean(row.get(cols["disp_time"])) if cols.get("disp_time") else "",
-                 "nupco_code":nupco_map.get(normalize_drug_name(drug),"")}
+            qty_raw = clean(row.get(cols["qty"])) if cols["qty"] else ""
+            try: qty = float(qty_raw or 0)
+            except Exception: qty = 0
+            order = parse_date(row.get(cols["order_date"])) if cols["order_date"] else None
+            rec = {
+                "id": pid,
+                "name": clean(row.get(cols["name"])) if cols["name"] else "",
+                "drug": drug,
+                "last": d.isoformat(),
+                "qty": qty,
+                "speciality": clean(row.get(cols["spec"])) if cols["spec"] else "",
+                "location": clean(row.get(cols["loc"])) if cols["loc"] else "",
+                "national_id": clean(row.get(cols["national_id"])) if cols["national_id"] else "",
+                "mobile": clean(row.get(cols["mobile"])) if cols["mobile"] else "",
+                "national_address": clean(row.get(cols["national_address"])) if cols["national_address"] else "",
+                "order_date": order.isoformat() if order else "",
+                "prescription": clean(row.get(cols["prescription"])) if cols["prescription"] else "",
+                "prescription_no": clean(row.get(cols["prescription_no"])) if cols["prescription_no"] else "",
+                "order_id": clean(row.get(cols["order_id"])) if cols.get("order_id") else "",
+            }
             rec["rx_end"] = estimate_rx_end(order, rec["prescription"])
-            demo=demographics.setdefault(pid,{})
-            for k in ("name","national_id","mobile","national_address"):
-                if rec[k]: demo[k]=rec[k]
-            same=(pid,drug.casefold(),rec["last"])
-            if same in latest: latest[same]["qty"] += qty
-            else: latest[same]=rec
-    # Keep latest dispense date per MRN + medication after same-date quantity aggregation.
-    med_latest={}
+
+            demo = demographics.setdefault(pid, {})
+            for k in ("name", "national_id", "mobile", "national_address"):
+                if rec[k] and not demo.get(k):
+                    demo[k] = rec[k]
+
+            # Same order may contain repeated rows. Order ID prevents duplicate counting.
+            identity = rec["order_id"] or rec["last"]
+            same = (pid, drug.casefold(), identity)
+            if same in latest:
+                latest[same]["qty"] += qty
+            else:
+                latest[same] = rec
+
+    med_latest = {}
     for rec in latest.values():
-        k=(rec["id"],rec["drug"].casefold())
-        if k not in med_latest or rec["last"]>med_latest[k]["last"]: med_latest[k]=rec
-    by=defaultdict(list)
-    for x in med_latest.values(): by[x["id"]].append(x)
-    patients=[]; demand=[]
+        k = (rec["id"], rec["drug"].casefold())
+        rank = (rec["last"], rec.get("order_id", ""))
+        old_rank = (med_latest[k]["last"], med_latest[k].get("order_id", "")) if k in med_latest else None
+        if old_rank is None or rank > old_rank:
+            med_latest[k] = rec
+
+    by = defaultdict(list)
+    for rec in med_latest.values():
+        by[rec["id"]].append(rec)
+
+    patients = []; demand = []
     for pid, meds in by.items():
-        counts=Counter(m["last"] for m in meds); top=max(counts.values()); dom=max(d for d,c in counts.items() if c==top)
-        p=max(meds,key=lambda x:x["last"]); demo=demographics.get(pid,{})
-        patient={"id":pid,"name":demo.get("name") or p["name"],"base_last":dom,"meds":len(meds),"aligned":sum(m["last"]==dom for m in meds),
-                 "exceptions":sum(m["last"]!=dom for m in meds),"speciality":p["speciality"],"location":p["location"],
-                 "national_id":demo.get("national_id",p["national_id"]),"mobile":demo.get("mobile",p["mobile"]),
-                 "national_address":demo.get("national_address",p["national_address"]),
-                 "drug_text":" | ".join(sorted({m["drug"] for m in meds})[:10]),"prescription_end":max((m["rx_end"] for m in meds if m["rx_end"]),default="")}
-        schedules={}
-        for interval in (15,20,25,30):
-            dates=set()
+        counts = Counter(m["last"] for m in meds)
+        top = max(counts.values())
+        dom = max(d for d, c in counts.items() if c == top)
+        p = max(meds, key=lambda x: (x["last"], x.get("order_id", "")))
+        demo = demographics.get(pid, {})
+        patient = {
+            "id": pid,
+            "name": demo.get("name") or p["name"],
+            "base_last": dom,
+            "meds": len(meds),
+            "aligned": sum(m["last"] == dom for m in meds),
+            "exceptions": sum(m["last"] != dom for m in meds),
+            "speciality": p["speciality"],
+            "location": p["location"],
+            "national_id": demo.get("national_id", "") or p["national_id"],
+            "mobile": demo.get("mobile", "") or p["mobile"],
+            "national_address": demo.get("national_address", "") or p["national_address"],
+            "drug_text": " | ".join(sorted({m["drug"] for m in meds})[:10]),
+            "prescription_end": max((m["rx_end"] for m in meds if m["rx_end"]), default=""),
+            "latest_order_id": p.get("order_id", ""),
+        }
+        schedules = {}
+        for interval in (15, 20, 25, 30):
+            dates = set()
             for m in meds:
-                dates.update(recurring_dates(m["last"],m.get("rx_end") or "",interval))
-            schedules[str(interval)]=sorted(dates)
-        patient["schedule_dates"]=schedules
+                dates.update(recurring_dates(m["last"], m.get("rx_end") or "", interval))
+            schedules[str(interval)] = sorted(dates)
+        patient["schedule_dates"] = schedules
         patients.append(patient)
-        demand.append({"id":pid,"name":patient["name"],"speciality":patient["speciality"],"base_last":dom,
-                       "items":[{"drug":m["drug"],"nupco_code":m.get("nupco_code",""),"qty":m["qty"],"last":m["last"],"end":m.get("rx_end",""),"order_id":m.get("order_id","")} for m in meds]})
-    patients.sort(key=lambda x:(x["base_last"],x["name"],x["id"]))
+        demand.append({
+            "id": pid, "name": patient["name"], "speciality": patient["speciality"], "base_last": dom,
+            "items": [{
+                "drug": m["drug"], "qty": m["qty"], "last": m["last"],
+                "end": m.get("rx_end", ""), "order_id": m.get("order_id", "")
+            } for m in meds]
+        })
+
+    patients.sort(key=lambda x: (x["base_last"], x["name"], x["id"]))
     for old in DATA.glob("patients-*.json"): old.unlink()
-    chunks=[]
-    for i in range(0,len(patients),750):
-        name=f"patients-{i//750:02d}.json"; (DATA/name).write_text(json.dumps(patients[i:i+750],ensure_ascii=False,separators=(",",":")),encoding="utf-8"); chunks.append(name)
-    demand_dir=DATA/"demand"; demand_dir.mkdir(exist_ok=True)
+    chunks = []
+    for i in range(0, len(patients), 750):
+        name = f"patients-{i//750:02d}.json"
+        (DATA / name).write_text(json.dumps(patients[i:i+750], ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        chunks.append(name)
+
+    demand_dir = DATA / "demand"; demand_dir.mkdir(exist_ok=True)
     for old in demand_dir.glob("demand-*.json"): old.unlink()
-    demand_chunks=[]
-    for i in range(0,len(demand),700):
-        name=f"demand-{i//700:02d}.json"; (demand_dir/name).write_text(json.dumps(demand[i:i+700],ensure_ascii=False,separators=(",",":")),encoding="utf-8"); demand_chunks.append(f"data/demand/{name}")
-    (DATA/"demand-meta.json").write_text(json.dumps({"patients":len(demand),"chunks":demand_chunks},separators=(",",":")),encoding="utf-8")
-    for interval in (15,20,25,30):
-        pre=DATA/"precomputed"/str(interval); pre.mkdir(parents=True,exist_ok=True)
+    demand_chunks = []
+    for i in range(0, len(demand), 700):
+        name = f"demand-{i//700:02d}.json"
+        (demand_dir / name).write_text(json.dumps(demand[i:i+700], ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        demand_chunks.append(f"data/demand/{name}")
+    (DATA / "demand-meta.json").write_text(json.dumps({"patients": len(demand), "chunks": demand_chunks}, separators=(",", ":")), encoding="utf-8")
+
+    for interval in (15, 20, 25, 30):
+        pre = DATA / "precomputed" / str(interval); pre.mkdir(parents=True, exist_ok=True)
         for old in pre.glob("demand-*.json"): old.unlink()
-        cal=defaultdict(lambda:{"patients":set(),"medications":set(),"quantity":0.0})
-        day=defaultdict(lambda:defaultdict(lambda:{"patients":set(),"quantity":0.0,"patientRows":[]}))
+        cal = defaultdict(lambda: {"patients": set(), "medications": set(), "quantity": 0.0})
+        day = defaultdict(lambda: defaultdict(lambda: {"patients": set(), "quantity": 0.0, "patientRows": []}))
         for x in demand:
             for item in x["items"]:
-                for eligible in recurring_dates(item["last"],item.get("end") or "",interval):
-                    drug=item["drug"]; code=item.get("nupco_code",""); qty=float(item.get("qty") or 0); cal[eligible]["patients"].add(x["id"]); cal[eligible]["medications"].add(drug); cal[eligible]["quantity"]+=qty
-                    r=day[eligible][(drug,code)]; r["patients"].add(x["id"]); r["quantity"]+=qty; r["patientRows"].append({"mrn":x["id"],"name":x["name"],"speciality":x["speciality"],"qty":qty})
-        (pre/"calendar.json").write_text(json.dumps({k:{"patients":len(v["patients"]),"medications":len(v["medications"]),"quantity":round(v["quantity"],2)} for k,v in sorted(cal.items())},separators=(",",":")),encoding="utf-8")
-        didx={}
-        for d,drugs in sorted(day.items()):
-            rows=[]
-            for drug_key,v in drugs.items():
-                drug, code = drug_key
-                n=len(v["patients"]); rows.append({"drug":drug,"nupco_code":code,"patients":n,"qty":round(v["quantity"],2),"mosool":"","lc":"","avg":round(v["quantity"]/n,2) if n else 0,"patientRows":v["patientRows"]})
-            rows.sort(key=lambda r:(-r["qty"],-r["patients"],r["drug"])); fn=f"demand-{d}.json"; (pre/fn).write_text(json.dumps({"date":d,"rows":rows},ensure_ascii=False,separators=(",",":")),encoding="utf-8"); didx[d]=f"data/precomputed/{interval}/{fn}"
-        (pre/"demand-index.json").write_text(json.dumps(didx,separators=(",",":")),encoding="utf-8")
-    meta={"generated_at":datetime.now().isoformat(timespec="seconds"),"source_file":files[-1].name,"raw_records":raw,"valid_records":valid,"unique_patients":len(patients),"patient_medication_records":len(med_latest),"chunks":chunks,"default_interval":20,"recurring_until_prescription_end":True,"dispense_cutoff":cutoff.isoformat(),"excluded_patients":len(exclusions),"excluded_records":excluded_records,"duplicate_order_items_skipped":duplicate_orders,"order_id_enabled":True,"nupco_mapping_enabled":True,"next_cycles_every_days":30}
-    (DATA/"meta.json").write_text(json.dumps(meta,ensure_ascii=False,separators=(",",":")),encoding="utf-8")
-    print(json.dumps(meta,indent=2))
+                for eligible in recurring_dates(item["last"], item.get("end") or "", interval):
+                    drug = item["drug"]; qty = float(item.get("qty") or 0)
+                    cal[eligible]["patients"].add(x["id"]); cal[eligible]["medications"].add(drug); cal[eligible]["quantity"] += qty
+                    r = day[eligible][drug]; r["patients"].add(x["id"]); r["quantity"] += qty
+                    r["patientRows"].append({"mrn": x["id"], "name": x["name"], "speciality": x["speciality"], "qty": qty})
+        (pre / "calendar.json").write_text(json.dumps({k: {"patients": len(v["patients"]), "medications": len(v["medications"]), "quantity": round(v["quantity"], 2)} for k, v in sorted(cal.items())}, separators=(",", ":")), encoding="utf-8")
+        didx = {}
+        for d, drugs in sorted(day.items()):
+            rows = []
+            for drug, v in drugs.items():
+                n = len(v["patients"])
+                rows.append({"drug": drug, "patients": n, "qty": round(v["quantity"], 2), "avg": round(v["quantity"] / n, 2) if n else 0, "patientRows": v["patientRows"]})
+            rows.sort(key=lambda r: (-r["qty"], -r["patients"], r["drug"]))
+            fn = f"demand-{d}.json"
+            (pre / fn).write_text(json.dumps({"date": d, "rows": rows}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+            didx[d] = f"data/precomputed/{interval}/{fn}"
+        (pre / "demand-index.json").write_text(json.dumps(didx, separators=(",", ":")), encoding="utf-8")
+
+    meta = {
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "source_files": [f.name for f in files],
+        "raw_records": raw, "valid_records": valid,
+        "unique_patients": len(patients),
+        "patient_medication_records": len(med_latest),
+        "contacts_loaded": len(contacts),
+        "chunks": chunks, "default_interval": 20,
+        "recurring_until_prescription_end": True,
+        "dispense_cutoff": cutoff.isoformat(),
+    }
+    (DATA / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    print(json.dumps(meta, indent=2))
+
 if __name__=="__main__": main()
