@@ -235,20 +235,21 @@ def order_rank(order_date, dispense_date, order_id):
         oid_part = (0, oid)
     return (date_part, oid_part)
 
-def recurring_dates(last_iso, end_iso, interval):
-    if not last_iso or not end_iso: return []
+def preparation_date(last_iso, end_iso, interval):
+    """Return one preparation date only: latest actual dispense + interval."""
+    if not last_iso:
+        return ""
     try:
-        d=date.fromisoformat(last_iso)+timedelta(days=interval)
-        end=date.fromisoformat(end_iso)
+        due = date.fromisoformat(last_iso) + timedelta(days=interval)
     except Exception:
-        return []
-    out=[]
-    # Keep current/upcoming preparation dates; every new cycle repeats by the selected preparation interval.
-    floor=date.today()-timedelta(days=1)
-    while d <= end:
-        if d >= floor: out.append(d.isoformat())
-        d += timedelta(days=interval)
-    return out
+        return ""
+    if end_iso:
+        try:
+            if due > date.fromisoformat(end_iso):
+                return ""
+        except Exception:
+            pass
+    return due.isoformat()
 
 def main():
     cutoff = date(2026, 6, 4)
@@ -401,9 +402,8 @@ def main():
 
     patients = []; demand = []
     for pid, meds in by.items():
-        counts = Counter(m["last"] for m in meds)
-        top = max(counts.values())
-        dom = max(d for d, c in counts.items() if c == top)
+        # Patient cycle is anchored to the newest actual dispensing event.
+        dom = max(m["last"] for m in meds)
         p = max(meds, key=lambda x: (x["last"], x.get("order_id", "")))
         demo = demographics.get(pid, {})
         patient = {
@@ -423,15 +423,15 @@ def main():
             "latest_order_id": p.get("order_id", ""),
         }
         schedules = {}
+        patient_end = patient["prescription_end"]
         for interval in (15, 20, 25, 30):
-            dates = set()
-            for m in meds:
-                dates.update(recurring_dates(m["last"], m.get("rx_end") or "", interval))
-            schedules[str(interval)] = sorted(dates)
+            due = preparation_date(dom, patient_end, interval)
+            schedules[str(interval)] = [due] if due else []
         patient["schedule_dates"] = schedules
         patients.append(patient)
         demand.append({
             "id": pid, "name": patient["name"], "speciality": patient["speciality"], "base_last": dom,
+            "prescription_end": patient["prescription_end"],
             "items": [{
                 "drug": m["drug"], "nupco_code": m.get("nupco_code", ""), "qty": m["qty"], "last": m["last"],
                 "end": m.get("rx_end", ""), "order_id": m.get("order_id", ""),
@@ -463,17 +463,27 @@ def main():
         cal = defaultdict(lambda: {"patients": set(), "medications": set(), "quantity": 0.0})
         day = defaultdict(lambda: defaultdict(lambda: {"patients": set(), "quantity": 0.0, "patientRows": []}))
         for x in demand:
+            eligible = preparation_date(x["base_last"], x.get("prescription_end") or "", interval)
+            if not eligible:
+                continue
             for item in x["items"]:
-                for eligible in recurring_dates(item["last"], item.get("end") or "", interval):
-                    drug = item["drug"]; nupco_code = item.get("nupco_code", ""); qty = float(item.get("qty") or 0)
-                    cal[eligible]["patients"].add(x["id"]); cal[eligible]["medications"].add(drug); cal[eligible]["quantity"] += qty
-                    r = day[eligible][drug]
-                    r["nupco_code"] = nupco_code
-                    stock = inventory_lookup.get(nupco_code, {})
-                    r["mosool"] = stock.get("mosool") if nupco_code in inventory_lookup else None
-                    r["lc"] = stock.get("lc") if nupco_code in inventory_lookup else None
-                    r["patients"].add(x["id"]); r["quantity"] += qty
-                    r["patientRows"].append({"mrn": x["id"], "name": x["name"], "speciality": x["speciality"], "qty": qty})
+                # Do not include a medication whose prescription has already ended before preparation.
+                item_end = item.get("end") or ""
+                if item_end:
+                    try:
+                        if date.fromisoformat(eligible) > date.fromisoformat(item_end):
+                            continue
+                    except Exception:
+                        pass
+                drug = item["drug"]; nupco_code = item.get("nupco_code", ""); qty = float(item.get("qty") or 0)
+                cal[eligible]["patients"].add(x["id"]); cal[eligible]["medications"].add(drug); cal[eligible]["quantity"] += qty
+                r = day[eligible][drug]
+                r["nupco_code"] = nupco_code
+                stock = inventory_lookup.get(nupco_code, {})
+                r["mosool"] = stock.get("mosool") if nupco_code in inventory_lookup else None
+                r["lc"] = stock.get("lc") if nupco_code in inventory_lookup else None
+                r["patients"].add(x["id"]); r["quantity"] += qty
+                r["patientRows"].append({"mrn": x["id"], "name": x["name"], "speciality": x["speciality"], "qty": qty})
         (pre / "calendar.json").write_text(json.dumps({k: {"patients": len(v["patients"]), "medications": len(v["medications"]), "quantity": round(v["quantity"], 2)} for k, v in sorted(cal.items())}, separators=(",", ":")), encoding="utf-8")
         didx = {}
         for d, drugs in sorted(day.items()):
@@ -516,7 +526,8 @@ def main():
         "inventory_source": INVENTORY_DATA_URL,
         "inventory_error": inventory_error,
         "chunks": chunks, "default_interval": 20,
-        "recurring_until_prescription_end": True,
+        "recurring_until_prescription_end": False,
+        "single_preparation_from_latest_dispense": True,
         "dispense_cutoff": cutoff.isoformat(),
     }
     (DATA / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
