@@ -220,6 +220,8 @@
 .patient-copy-item span{display:block;color:var(--m);font-size:8px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
 .patient-copy-item button{width:100%;border:0;background:transparent;color:#eaf7ff;padding:0;text-align:left;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .patient-copy-item button:hover{color:var(--c)}
+.full-address-btn{width:100%;margin-top:2px;border:1px solid #285169;background:#0d2234;color:#dff7ff;border-radius:9px;padding:8px 10px;font-size:9px;font-weight:800;letter-spacing:.02em}.full-address-btn:hover{border-color:var(--c);color:#fff}.full-address-btn:disabled{opacity:.45;cursor:not-allowed}
+.master-filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.master-filter-bar select,.master-filter-bar input{border:1px solid var(--line);background:#0d2234;color:#fff;border-radius:10px;padding:10px}.master-filter-bar input{flex:1;min-width:220px}.master-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:12px 0}.master-kpi{border:1px solid var(--line);background:#0b1d2c;border-radius:12px;padding:10px}.master-kpi span{display:block;color:var(--m);font-size:8px;text-transform:uppercase}.master-kpi b{display:block;font-size:18px;margin-top:5px}.master-table td{font-size:9px}.master-table .missing{color:#ff9ca5;font-weight:800}.master-table .complete{color:#85efc0;font-weight:800}@media(max-width:900px){.master-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .patient-last{display:flex;justify-content:space-between;gap:8px;margin:8px 0;color:var(--m);font-size:10px}.patient-last b{color:#fff}
 @media(max-width:650px){.patient-copy-grid{grid-template-columns:1fr}}
 
@@ -859,6 +861,33 @@
  </article>
 
  <article class="panel" style="margin-top:14px">
+  <div class="section">
+   <div><div class="ey">PATIENT MASTER</div><h3>Data Completeness</h3><p>Patient contact data from Supabase patient_master. Specialty continues to come from Medica only.</p></div>
+   <button class="copy" onclick="loadPatientMasterAdmin(true)">Refresh</button>
+  </div>
+  <div class="master-kpis">
+   <div class="master-kpi"><span>Total Master</span><b id="pmTotal">—</b></div>
+   <div class="master-kpi"><span>Complete</span><b id="pmComplete">—</b></div>
+   <div class="master-kpi"><span>Missing National ID</span><b id="pmMissingNational">—</b></div>
+   <div class="master-kpi"><span>Missing Mobile</span><b id="pmMissingMobile">—</b></div>
+   <div class="master-kpi"><span>Missing Short Address</span><b id="pmMissingAddress">—</b></div>
+  </div>
+  <div class="master-filter-bar">
+   <select id="pmFilter" onchange="renderPatientMasterAdmin()">
+    <option value="complete">Complete</option>
+    <option value="missing_national_id">Missing National ID</option>
+    <option value="missing_mobile">Missing Mobile</option>
+    <option value="missing_short_address">Missing Short Address</option>
+    <option value="any_missing">Any Missing Data</option>
+    <option value="all">All</option>
+   </select>
+   <input id="pmSearch" placeholder="Search MRN, patient name, National ID, mobile or address" oninput="renderPatientMasterAdmin()">
+  </div>
+  <div id="pmStatus" class="muted">Open Admin to load Patient Master.</div>
+  <div class="tablebox"><table class="user-table master-table"><thead><tr><th>MRN</th><th>Patient</th><th>National ID</th><th>Mobile</th><th>Short Address</th><th>Status</th></tr></thead><tbody id="pmRows"></tbody></table></div>
+ </article>
+
+ <article class="panel" style="margin-top:14px">
   <div class="section"><div><div class="ey">USER MANAGEMENT</div><h3>Active Accounts</h3></div><button class="copy" onclick="loadUsers()">Refresh</button></div>
   <div class="tablebox"><table class="user-table"><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Status</th><th>Action</th></tr></thead><tbody id="userRows"></tbody></table></div>
  </article>
@@ -887,6 +916,13 @@
   <div id="authMessage" class="auth-msg"></div><div class="muted" style="font-size:9px;margin-top:8px">Fast sign-in • Operational data loads after login</div>
  </div>
 </div>
+
+<div id="addressModal" class="others-modal hidden" onclick="closeFullAddress(event)"><div class="others-box" onclick="event.stopPropagation()">
+ <div class="ey">PATIENT ADDRESS</div><h2>Full National Address</h2>
+ <p id="fullAddressMrn" class="muted"></p>
+ <div id="fullAddressText" style="white-space:pre-wrap;border:1px solid var(--line);background:#0d2234;border-radius:12px;padding:14px;line-height:1.7;margin:14px 0">—</div>
+ <div class="others-actions"><button onclick="copyCurrentFullAddress(event)">Copy Address</button><button class="primary" onclick="closeFullAddress()">Close</button></div>
+</div></div>
 
 <div id="login" class="login hidden"><div class="loginbox"><div class="ey">WORKSTATION USER</div><h2>Select Pharmacist</h2><div class="staffoptions"><button onclick="selectStaff('bassemah')">👩‍⚕️ Bassemah H. Al Faraj</button><button onclick="selectStaff('batool')">👩‍⚕️ Batool S. T. Alfaraj</button><button onclick="selectStaff('ghada')">👩‍⚕️ Ghada A. Alqudaihi</button><button onclick="selectStaff('rabab')">👩‍⚕️ Rabab Alsheef</button></div></div></div><div id="othersModal" class="others-modal hidden"><div class="others-box">
  <div class="ey">OTHERS</div><h2>Select Reason</h2><p class="muted">This case will not count as Dispensed or employee productivity.</p>
@@ -953,7 +989,7 @@
 <script>
 const $=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)],fmt=n=>new Intl.NumberFormat().format(Math.round(n||0));
 const STAFF={bassemah:"Bassemah H. Al Faraj",batool:"Batool S. T. Alfaraj",ghada:"Ghada A. Alqudaihi",rabab:"Rabab Alsheef",team_import:"Today's Team Total"};
-const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||20,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastAction:null,undoTicker:null,legacy:null,demandPatients:null,demandRows:[],view:"home",calMonth:new Date(),calSelected:new Date(),calendarCache:{},precomputedCalendar:null,demandIndex:null,demandDateLoaded:"",settingsChannel:null,otherMrn:"",otherReason:"",teamProfiles:[],closedBefore:{},performanceCache:{},teamPerformanceRows:[],myPerformanceRange:"today",teamPerformanceRange:"today",realtimeChannel:null,realtimeTimer:null,teamLivePoll:null,teamRefreshBusy:false,specialtyRoutes:[],myPrioritySpecialties:[],exclusions:{},exclusionMrn:"",exclusionReason:"",inventoryMap:null,inventoryInfo:null,inventoryCheckedAt:null,inventoryLoading:false};
+const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||20,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastAction:null,undoTicker:null,legacy:null,demandPatients:null,demandRows:[],view:"home",calMonth:new Date(),calSelected:new Date(),calendarCache:{},precomputedCalendar:null,demandIndex:null,demandDateLoaded:"",settingsChannel:null,otherMrn:"",otherReason:"",teamProfiles:[],closedBefore:{},performanceCache:{},teamPerformanceRows:[],myPerformanceRange:"today",teamPerformanceRange:"today",realtimeChannel:null,realtimeTimer:null,teamLivePoll:null,teamRefreshBusy:false,specialtyRoutes:[],myPrioritySpecialties:[],exclusions:{},exclusionMrn:"",exclusionReason:"",inventoryMap:null,inventoryInfo:null,inventoryCheckedAt:null,inventoryLoading:false,patientMasterMap:new Map(),patientMasterRows:[],patientMasterLoaded:false,patientMasterAdminLoaded:false,currentFullAddress:""};
 const iso=d=>{let x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)},
 pd=s=>new Date(s+"T00:00:00"),
 add=(s,n)=>{let d=pd(s);d.setDate(d.getDate()+n);return iso(d)},
@@ -1552,6 +1588,115 @@ async function loadLegacyImport(){
 }
 
 
+function normalizeMrn(v){return String(v??"").trim()}
+function masterMissing(v){return v===null||v===undefined||String(v).trim()===""}
+function applyPatientMasterRows(rows){
+ if(!Array.isArray(rows))return 0;
+ let matched=0;
+ rows.forEach(r=>{
+  const mrn=normalizeMrn(r.mrn);
+  if(!mrn)return;
+  S.patientMasterMap.set(mrn,r);
+ });
+ (S.p||[]).forEach(p=>{
+  const r=S.patientMasterMap.get(normalizeMrn(p.id));
+  if(!r)return;
+  matched++;
+  // Contact/demographic values come from patient_master. Specialty is intentionally untouched (Medica only).
+  p.national_id=r.national_id||"";
+  p.mobile=r.mobile||"";
+  p.short_national_address=r.short_national_address||"";
+  p.full_address=r.full_address||"";
+  // Backward-compatible alias used by older search/export code.
+  p.national_address=p.short_national_address;
+ });
+ return matched;
+}
+async function loadPatientMasterForMedica(){
+ if(!S.sb||!Array.isArray(S.p)||!S.p.length)return 0;
+ const mrns=[...new Set(S.p.map(p=>normalizeMrn(p.id)).filter(Boolean))];
+ let rows=[];
+ // Keep IN lists reasonably small for URL/query safety.
+ for(let i=0;i<mrns.length;i+=250){
+  const batch=mrns.slice(i,i+250);
+  const {data,error}=await S.sb.from("patient_master")
+   .select("mrn,patient_name,national_id,mobile,short_national_address,full_address")
+   .in("mrn",batch);
+  if(error){console.warn("Patient Master batch failed",error);continue}
+  if(data?.length)rows.push(...data);
+ }
+ const matched=applyPatientMasterRows(rows);
+ S.patientMasterLoaded=true;
+ render();
+ return matched;
+}
+async function loadPatientMasterAdmin(force=false){
+ if(!requireAdmin()||!S.sb)return;
+ if(S.patientMasterAdminLoaded&&!force){renderPatientMasterAdmin();return}
+ const status=$("#pmStatus");if(status)status.textContent="Loading Patient Master from Supabase…";
+ let rows=[],from=0,pageSize=1000;
+ try{
+  while(true){
+   const {data,error}=await S.sb.from("patient_master")
+    .select("mrn,patient_name,national_id,mobile,short_national_address,full_address")
+    .order("mrn",{ascending:true})
+    .range(from,from+pageSize-1);
+   if(error)throw error;
+   rows.push(...(data||[]));
+   if(!data||data.length<pageSize)break;
+   from+=pageSize;
+  }
+  S.patientMasterRows=rows;
+  S.patientMasterAdminLoaded=true;
+  applyPatientMasterRows(rows);
+  renderPatientMasterAdmin();
+ }catch(e){
+  console.error("Patient Master admin load failed",e);
+  if(status)status.textContent="Could not load patient_master. Check SELECT/RLS permission for authenticated users.";
+ }
+}
+window.loadPatientMasterAdmin=loadPatientMasterAdmin;
+function patientMasterComplete(r){return !masterMissing(r.national_id)&&!masterMissing(r.mobile)&&!masterMissing(r.short_national_address)}
+function renderPatientMasterAdmin(){
+ const rows=S.patientMasterRows||[],filter=$("#pmFilter")?.value||"complete",q=($("#pmSearch")?.value||"").trim().toLowerCase();
+ const counts={
+  total:rows.length,
+  complete:rows.filter(patientMasterComplete).length,
+  national:rows.filter(r=>masterMissing(r.national_id)).length,
+  mobile:rows.filter(r=>masterMissing(r.mobile)).length,
+  address:rows.filter(r=>masterMissing(r.short_national_address)).length
+ };
+ [["pmTotal",counts.total],["pmComplete",counts.complete],["pmMissingNational",counts.national],["pmMissingMobile",counts.mobile],["pmMissingAddress",counts.address]].forEach(([id,v])=>{const e=$("#"+id);if(e)e.textContent=fmt(v)});
+ let a=rows.filter(r=>{
+  if(filter==="complete"&&!patientMasterComplete(r))return false;
+  if(filter==="missing_national_id"&&!masterMissing(r.national_id))return false;
+  if(filter==="missing_mobile"&&!masterMissing(r.mobile))return false;
+  if(filter==="missing_short_address"&&!masterMissing(r.short_national_address))return false;
+  if(filter==="any_missing"&&patientMasterComplete(r))return false;
+  if(q&&!([r.mrn,r.patient_name,r.national_id,r.mobile,r.short_national_address,r.full_address].join(" ").toLowerCase().includes(q)))return false;
+  return true;
+ });
+ const status=$("#pmStatus");if(status)status.textContent=S.patientMasterAdminLoaded?`${fmt(a.length)} matching records • showing first ${Math.min(a.length,500)}`:"Patient Master not loaded yet.";
+ const body=$("#pmRows");if(!body)return;
+ body.innerHTML=a.slice(0,500).map(r=>{
+  const complete=patientMasterComplete(r),cell=v=>masterMissing(v)?'<span class="missing">Missing</span>':String(v);
+  return `<tr><td>${r.mrn||"—"}</td><td>${r.patient_name||"—"}</td><td>${cell(r.national_id)}</td><td>${cell(r.mobile)}</td><td>${cell(r.short_national_address)}</td><td><span class="${complete?'complete':'missing'}">${complete?'Complete':'Missing data'}</span></td></tr>`;
+ }).join("")||'<tr><td colspan="6" class="muted">No matching records.</td></tr>';
+}
+window.renderPatientMasterAdmin=renderPatientMasterAdmin;
+window.openFullAddress=(mrn)=>{
+ const p=S.p.find(x=>normalizeMrn(x.id)===normalizeMrn(mrn));
+ const r=S.patientMasterMap.get(normalizeMrn(mrn));
+ const full=(p?.full_address||r?.full_address||"").trim();
+ S.currentFullAddress=full;
+ const t=$("#fullAddressText"),m=$("#fullAddressMrn");
+ if(t)t.textContent=full||"Full address is not available in Patient Master.";
+ if(m)m.textContent=`MRN: ${mrn}`;
+ $("#addressModal")?.classList.remove("hidden");
+}
+window.closeFullAddress=(e)=>{if(e&&e.target!==$("#addressModal"))return;$("#addressModal")?.classList.add("hidden")}
+window.copyCurrentFullAddress=(e)=>{if(e)e.stopPropagation();if(!S.currentFullAddress)return toast("Full address is not available");copyValue(encodeURIComponent(S.currentFullAddress),"Full address",e)}
+
 async function loadCorePatientData(){
  if(S.meta&&Array.isArray(S.p)&&S.p.length)return true;
  try{
@@ -1596,6 +1741,7 @@ async function loadPostLoginData(){
   loadShared(),
   loadExclusions(),
   loadSpecialtyRouting(),
+  loadPatientMasterForMedica(),
   loadSharedInterval(),
   loadLegacyImport()
  ];
@@ -1675,7 +1821,7 @@ async function go(v){
  if(v==="demand")await renderDemand();
  if(v==="excluded"){await loadExclusions();renderExcludedPatients()}
  if(v==="team")await refreshTeamLiveNow("open team");
- if(v==="admin"){renderMedicaUpdateStatus();await loadUsers();await loadAuditLog();await loadSpecialtyRouting()}
+ if(v==="admin"){renderMedicaUpdateStatus();await loadUsers();await loadAuditLog();await loadSpecialtyRouting();await loadPatientMasterAdmin()}
 }
 function openLogin(){$("#authScreen").classList.remove("hidden")}function selectStaff(id){S.staff=id;localStorage.setItem("dip-staff",id);$("#who").textContent=STAFF[id];$("#login").classList.add("hidden");toast("👋 Signed in successfully")}
 async function copyValue(encoded,label="Value",e){
@@ -2381,7 +2527,7 @@ function updateMotivationBanner(scheduled,dispensed,others,remaining,completion)
 function renderLiveProgress(){let a=activePatients().filter(p=>next(p)===iso(S.date)),scheduled=a.length,dispensed=a.filter(p=>ast(p.id)==="dispensed").length,others=a.filter(p=>ast(p.id)==="others").length,working=a.filter(p=>ast(p.id)==="in_progress").length,remaining=Math.max(0,scheduled-dispensed-others),completion=scheduled?Math.round((dispensed+others)/scheduled*100):0,dispensedRate=scheduled?Math.round(dispensed/scheduled*100):0;[["liveScheduled",scheduled],["liveDispensed",dispensed],["liveOthers",others],["liveWorking",working],["liveRemaining",remaining],["liveCompletion",completion+"%"],["liveDispensedRate",dispensedRate+"%"]].forEach(([id,v])=>{let el=$("#"+id);if(el)el.textContent=(id==="liveCompletion"||id==="liveDispensedRate")?v:fmt(v)});let done=$("#workComplete");if(done)done.classList.toggle("hidden",scheduled===0||remaining!==0);updateMotivationBanner(scheduled,dispensed,others,remaining,completion)}
 function qlist(){
  let m=$("#mode").value,q=$("#qqueue").value.toLowerCase(),sf=$("#qspecialty")?.value||"priority";
- let a=activePatients().filter(p=>(m==="week"?["today","tomorrow","week"].includes(state(p)):state(p)===m)&&(!q||[p.id,p.name,p.drug_text,p.speciality].join(" ").toLowerCase().includes(q)));
+ let a=activePatients().filter(p=>(m==="week"?["today","tomorrow","week"].includes(state(p)):state(p)===m)&&(!q||[p.id,p.name,p.drug_text,p.speciality,p.national_id,p.mobile,p.short_national_address,p.full_address].join(" ").toLowerCase().includes(q)));
  if(sf!=="priority"&&sf!=="all"){
   const wanted=normSpecialty(decodeURIComponent(sf));
   a=a.filter(p=>normSpecialty(p.speciality)===wanted);
@@ -2430,8 +2576,9 @@ function renderQueue(){
     ${patientCopyItem("MRN",p.id)}
     ${patientCopyItem("National ID",p.national_id)}
     ${patientCopyItem("Mobile",p.mobile)}
-    ${patientCopyItem("National Address",p.national_address)}
+    ${patientCopyItem("Short Address",p.short_national_address||p.national_address)}
    </div>
+   <button class="full-address-btn" onclick="openFullAddress('${p.id}')" ${p.full_address?'':'disabled'}>${p.full_address?'View Full Address':'Full Address Unavailable'}</button>
    ${u?`<div class="staff">👩‍⚕️ ${STAFF[u]||u}</div>`:""}
    <div class="drugs">${p.drug_text}</div>
    <div class="btns"><button class="primary" onclick="start('${p.id}')" ${locked||["dispensed","others"].includes(st)?"disabled":""}>${st==="in_progress"&&u===S.staff?"Continue":"Start"}</button><button onclick="finish('${p.id}','dispensed')" ${locked||st==="others"?"disabled":""}>Dispensed</button><button onclick="openOthers('${p.id}')" ${locked||st==="dispensed"?"disabled":""}>Others</button><button class="exclude-btn" title="Exclude patient" onclick="openExclusion('${p.id}')" ${locked?"disabled":""}>⊘</button></div>
@@ -2472,7 +2619,7 @@ async function finish(id,status){
  if(status==="dispensed")setTimeout(showDispensedEncouragement,120);
 }
 function saveLocal(){localStorage.setItem("dip-a",JSON.stringify(S.a))}
-function renderRegistry(){let q=$("#qreg").value.toLowerCase(),a=S.p.filter(p=>!q||[p.id,p.name,p.drug_text,p.national_id,p.mobile,p.national_address].join(" ").toLowerCase().includes(q)),pages=Math.max(1,Math.ceil(a.length/S.size));S.page=Math.min(S.page,pages);let x=a.slice((S.page-1)*S.size,S.page*S.size);$("#rows").innerHTML=x.map(p=>`<tr><td><button style="border:0;background:transparent;color:inherit;padding:0" onclick="copyValue('${encodeURIComponent(p.name||"Unknown")}','Patient name',event)">${p.name||"Unknown"}</button></td><td><button class="copy" onclick="copy('${p.id}',event)">⧉ ${p.id}</button></td><td>${p.meds}</td><td>${p.base_last}</td><td>${next(p)}</td><td>${label(state(p))}</td></tr>`).join("");$("#count").textContent=fmt(a.length)+" patients";$("#pg").textContent=`${S.page}/${pages}`}
+function renderRegistry(){let q=$("#qreg").value.toLowerCase(),a=S.p.filter(p=>!q||[p.id,p.name,p.drug_text,p.national_id,p.mobile,p.short_national_address,p.full_address].join(" ").toLowerCase().includes(q)),pages=Math.max(1,Math.ceil(a.length/S.size));S.page=Math.min(S.page,pages);let x=a.slice((S.page-1)*S.size,S.page*S.size);$("#rows").innerHTML=x.map(p=>`<tr><td><button style="border:0;background:transparent;color:inherit;padding:0" onclick="copyValue('${encodeURIComponent(p.name||"Unknown")}','Patient name',event)">${p.name||"Unknown"}</button></td><td><button class="copy" onclick="copy('${p.id}',event)">⧉ ${p.id}</button></td><td>${p.meds}</td><td>${p.base_last}</td><td>${next(p)}</td><td>${label(state(p))}</td></tr>`).join("");$("#count").textContent=fmt(a.length)+" patients";$("#pg").textContent=`${S.page}/${pages}`}
 function page(n){S.page=Math.max(1,S.page+n);renderRegistry()}
 
 window.openLiveOperations=()=>{
@@ -2958,7 +3105,7 @@ window.exportQueueExcel=async()=>{
 }
 window.exportRegistryExcel=async()=>{
  await loadXLSX();const q=($("#qreg").value||"").toLowerCase();
- const rows=S.p.filter(p=>!q||[p.id,p.name,p.drug_text,p.national_id,p.mobile,p.national_address].join(" ").toLowerCase().includes(q)).map(p=>({
+ const rows=S.p.filter(p=>!q||[p.id,p.name,p.drug_text,p.national_id,p.mobile,p.short_national_address,p.full_address].join(" ").toLowerCase().includes(q)).map(p=>({
   MRN:p.id,"Patient Name":p.name||"",Medications:p.meds,
   "Medication List":p.drug_text,"Last Dispense":p.base_last,
   "Next Eligible":next(p),Status:label(state(p)),Specialty:p.speciality||""

@@ -1,0 +1,21 @@
+Patient Master integration update
+
+Implemented:
+- Reads patient_master from Supabase using existing supabase-config.js.
+- Matches patient_master to Medica patients by MRN only.
+- Patient cards show National ID, Mobile, and Short Address.
+- Full Address is available through a View Full Address button/modal.
+- Specialty remains from Medica and is not overwritten from patient_master.
+- Admin includes Patient Master completeness filters:
+  Complete
+  Missing National ID
+  Missing Mobile
+  Missing Short Address
+  Any Missing Data
+  All
+- Admin shows total and missing-data counts and searchable rows.
+
+Expected patient_master columns:
+mrn, patient_name, national_id, mobile, short_national_address, full_address
+
+Keep your existing supabase-config.js in the project root beside index.html.
