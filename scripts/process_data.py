@@ -23,6 +23,7 @@ ALIASES = {
     "prescription_no": ["Prescription No", "Prescription Number"],
     "order_id": ["Order ID", "Order Id"],
     "dispense_status": ["Dispense", "Dispense Status"],
+    "prescription_status": ["Status", "Order Status", "Prescription Status"],
 }
 
 def clean(v):
@@ -211,8 +212,6 @@ def recurring_dates(last_iso, end_iso, interval):
         return []
 
     d = adjust_weekend(d)
-    # Preserve past preparation dates in the calendar after every data refresh.
-    # Overdue cases must remain visible; the interface handles their status.
     return [d.isoformat()]
 
 def load_previous_patients():
@@ -249,6 +248,8 @@ def patient_compare_signature(p):
 
 def main():
     previous_patients = load_previous_patients()
+    # Historical reports are stored separately from active MCC forecasting.
+    # Never mix archived plans into active work queues.
     cutoff = date(2026, 6, 4)
     xlsx_files = sorted(IN.glob("*.xlsx"))
     csv_files = sorted(IN.glob("medica-latest-part-*.csv"))
@@ -260,6 +261,7 @@ def main():
     nupco_lookup = load_nupco_codes(DATA / "nupco-codes.json")
     unmatched_drugs = set()
     latest = {}; demographics = dict(contacts); raw = valid = 0
+    stopped_orders = set()
 
     for f in files:
         rows = read_csv_rows(f) if f.suffix.lower() == ".csv" else read_xlsx_rows(f)
@@ -278,6 +280,11 @@ def main():
                 continue
             pid = clean(row.get(cols["id"]))
             drug = clean(row.get(cols["drug"]))
+            order_id = clean(row.get(cols["order_id"])) if cols.get("order_id") else ""
+            rx_status = clean(row.get(cols["prescription_status"])).casefold() if cols.get("prescription_status") else ""
+            if rx_status in {"stopped", "stop", "discontinued", "cancelled", "canceled", "expired"}:
+                if pid and order_id: stopped_orders.add((pid, order_id))
+                continue
             d = parse_date(row.get(cols["disp"]))
             if not pid or not drug or not d or d < cutoff:
                 continue
@@ -321,6 +328,11 @@ def main():
                 latest[same]["qty"] += qty
             else:
                 latest[same] = rec
+
+    # A stopped order in the recent MCC file must not be revived by historical CSVs.
+    if stopped_orders:
+        latest = {k: v for k, v in latest.items()
+                  if (v["id"], v.get("order_id", "")) not in stopped_orders}
 
     med_latest = {}
     for rec in latest.values():

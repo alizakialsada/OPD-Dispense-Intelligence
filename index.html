@@ -2721,9 +2721,10 @@ function adjustedCalendarStats(key){
   return a;
  },{patients:0,meds:0,qty:0,overdue:0});
 
- // Use the live patient schedule as the authoritative patient count.
- // This keeps Overview / Queue / Smart Calendar aligned.
- if(Array.isArray(S.p)&&S.p.length){
+ // Keep the precomputed calendar count whenever a date exists there.
+ // A live-only forecast should not erase the historical calendar.
+ if(!keys.some(k=>S.precomputedCalendar && Object.prototype.hasOwnProperty.call(S.precomputedCalendar,k))
+    && Array.isArray(S.p)&&S.p.length){
   merged.patients=activePatients().filter(p=>next(p)===key).length;
  }
  return merged;
