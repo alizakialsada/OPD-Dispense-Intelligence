@@ -211,8 +211,9 @@ def recurring_dates(last_iso, end_iso, interval):
         return []
 
     d = adjust_weekend(d)
-    floor = date.today() - timedelta(days=1)
-    return [d.isoformat()] if d >= floor else []
+    # Preserve past preparation dates in the calendar after every data refresh.
+    # Overdue cases must remain visible; the interface handles their status.
+    return [d.isoformat()]
 
 def load_previous_patients():
     """Read the previously generated patient dataset before replacing it."""
