@@ -23,7 +23,7 @@ ALIASES = {
     "prescription_no": ["Prescription No", "Prescription Number"],
     "order_id": ["Order ID", "Order Id"],
     "dispense_status": ["Dispense", "Dispense Status"],
-    "prescription_status": ["Status", "Order Status", "Prescription Status"],
+    "prescription_status": ["Prescription Status", "Order Status", "Medication Status", "Rx Status", "Status"],
 }
 
 def clean(v):
@@ -212,7 +212,8 @@ def recurring_dates(last_iso, end_iso, interval):
         return []
 
     d = adjust_weekend(d)
-    return [d.isoformat()]
+    floor = date.today() - timedelta(days=1)
+    return [d.isoformat()] if d >= floor else []
 
 def load_previous_patients():
     """Read the previously generated patient dataset before replacing it."""
@@ -235,6 +236,41 @@ def load_previous_patients():
         return {}
     return old
 
+def load_preserved_medications():
+    """Load latest generated demand and optional pre-outage baseline without exposing patient data."""
+    saved = {}
+    source_files = []
+    demand_meta = DATA / "demand-meta.json"
+    if demand_meta.exists():
+        try:
+            for name in json.loads(demand_meta.read_text(encoding="utf-8")).get("chunks", []):
+                path = ROOT / name
+                if not path.is_file():
+                    raise FileNotFoundError(path)
+                source_files.append(path)
+        except Exception as exc:
+            raise RuntimeError(f"Cannot read previous demand: {exc}") from exc
+    baseline = DATA / "recovery-baseline-2026-10-09.json"
+    if baseline.is_file():
+        source_files.insert(0, baseline)  # latest demand overrides older baseline
+    for path in source_files:
+        for patient in json.loads(path.read_text(encoding="utf-8")):
+            pid = clean(patient.get("id"))
+            for item in patient.get("items", []):
+                drug = clean(item.get("drug"))
+                if not pid or not drug or not clean(item.get("last")):
+                    continue
+                row = {"id": pid, "name": clean(patient.get("name")), "drug": drug,
+                    "nupco_code": clean(item.get("nupco_code")), "last": clean(item.get("last")),
+                    "qty": item.get("qty") or 0, "speciality": clean(patient.get("speciality")),
+                    "location": "", "national_id": "", "mobile": "", "national_address": "",
+                    "order_date": "", "prescription": "", "prescription_no": "",
+                    "order_id": clean(item.get("order_id")), "rx_end": clean(item.get("end"))}
+                key = (pid, drug.casefold())
+                if key not in saved or (row["last"], row["order_id"]) > (saved[key]["last"], saved[key]["order_id"]):
+                    saved[key] = row
+    return saved
+
 def patient_compare_signature(p):
     return {
         "base_last": p.get("base_last", ""),
@@ -248,8 +284,7 @@ def patient_compare_signature(p):
 
 def main():
     previous_patients = load_previous_patients()
-    # Historical reports are stored separately from active MCC forecasting.
-    # Never mix archived plans into active work queues.
+    preserved_meds = load_preserved_medications()
     cutoff = date(2026, 6, 4)
     xlsx_files = sorted(IN.glob("*.xlsx"))
     csv_files = sorted(IN.glob("medica-latest-part-*.csv"))
@@ -261,7 +296,7 @@ def main():
     nupco_lookup = load_nupco_codes(DATA / "nupco-codes.json")
     unmatched_drugs = set()
     latest = {}; demographics = dict(contacts); raw = valid = 0
-    stopped_orders = set()
+    stopped_keys = set()
 
     for f in files:
         rows = read_csv_rows(f) if f.suffix.lower() == ".csv" else read_xlsx_rows(f)
@@ -276,14 +311,13 @@ def main():
         for row in chain([first], rows):
             raw += 1
             status = clean(row.get(cols["dispense_status"])) if cols.get("dispense_status") else ""
-            if status and status.casefold() not in {"dispensed", "صرف", "تم الصرف"}:
-                continue
             pid = clean(row.get(cols["id"]))
             drug = clean(row.get(cols["drug"]))
-            order_id = clean(row.get(cols["order_id"])) if cols.get("order_id") else ""
-            rx_status = clean(row.get(cols["prescription_status"])).casefold() if cols.get("prescription_status") else ""
-            if rx_status in {"stopped", "stop", "discontinued", "cancelled", "canceled", "expired"}:
-                if pid and order_id: stopped_orders.add((pid, order_id))
+            rx_status = clean(row.get(cols["prescription_status"])) if cols.get("prescription_status") else ""
+            if pid and drug and rx_status.upper() in {"STOPPED", "STOP", "DISCONTINUED", "CANCELLED", "CANCELED"}:
+                stopped_keys.add((pid, drug.casefold()))
+                continue
+            if status and status.casefold() not in {"dispensed", "صرف", "تم الصرف"}:
                 continue
             d = parse_date(row.get(cols["disp"]))
             if not pid or not drug or not d or d < cutoff:
@@ -329,11 +363,6 @@ def main():
             else:
                 latest[same] = rec
 
-    # A stopped order in the recent MCC file must not be revived by historical CSVs.
-    if stopped_orders:
-        latest = {k: v for k, v in latest.items()
-                  if (v["id"], v.get("order_id", "")) not in stopped_orders}
-
     med_latest = {}
     for rec in latest.values():
         k = (rec["id"], rec["drug"].casefold())
@@ -341,6 +370,27 @@ def main():
         old_rank = (med_latest[k]["last"], med_latest[k].get("order_id", "")) if k in med_latest else None
         if old_rank is None or rank > old_rank:
             med_latest[k] = rec
+
+    # Merge by patient and medication, never replace the complete historic dataset
+    # with a short incremental MCC file. Newer actual dispense takes precedence.
+    incoming_count = len(med_latest)
+    for key, old in preserved_meds.items():
+        if key not in med_latest or (old["last"], old.get("order_id", "")) > (med_latest[key]["last"], med_latest[key].get("order_id", "")):
+            med_latest[key] = old
+    for key in stopped_keys:
+        med_latest.pop(key, None)
+    # Stopped medications must not reappear from the archive on subsequent runs.
+    # Persist tombstones separately, before regenerating the demand chunks.
+    stopped_path = DATA / "stopped-medications.json"
+    previous_stopped = set()
+    if stopped_path.exists():
+        previous_stopped = {tuple(x) for x in json.loads(stopped_path.read_text(encoding="utf-8"))}
+    # A newer recorded dispense reactivates a previously stopped drug only if
+    # it occurs after the stored stop event; without dates require manual review.
+    all_stopped = previous_stopped | stopped_keys
+    for key in all_stopped:
+        med_latest.pop(key, None)
+    stopped_path.write_text(json.dumps(sorted([list(x) for x in all_stopped]), ensure_ascii=False), encoding="utf-8")
 
     by = defaultdict(list)
     for rec in med_latest.values():
@@ -463,6 +513,9 @@ def main():
         "patients_removed_since_previous_update": len(removed_ids),
         "currently_schedulable_patients_20": schedulable_20,
         "latest_dispense_date": latest_dispense_date,
+        "incoming_medication_pairs": incoming_count,
+        "historic_medication_pairs_loaded": len(preserved_meds),
+        "stopped_medication_pairs": len(all_stopped),
     }
     (DATA / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print(json.dumps(meta, indent=2))
