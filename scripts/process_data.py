@@ -296,7 +296,7 @@ def main():
     nupco_lookup = load_nupco_codes(DATA / "nupco-codes.json")
     unmatched_drugs = set()
     latest = {}; demographics = dict(contacts); raw = valid = 0
-    stopped_keys = set()
+    stopped_events = {}
 
     for f in files:
         rows = read_csv_rows(f) if f.suffix.lower() == ".csv" else read_xlsx_rows(f)
@@ -315,7 +315,10 @@ def main():
             drug = clean(row.get(cols["drug"]))
             rx_status = clean(row.get(cols["prescription_status"])) if cols.get("prescription_status") else ""
             if pid and drug and rx_status.upper() in {"STOPPED", "STOP", "DISCONTINUED", "CANCELLED", "CANCELED"}:
-                stopped_keys.add((pid, drug.casefold()))
+                event_date = (parse_date(row.get(cols["order_date"])) if cols.get("order_date") else None) or (parse_date(row.get(cols["disp"])) if cols.get("disp") else None)
+                if event_date:
+                    key = (pid, drug.casefold())
+                    stopped_events[key] = max(stopped_events.get(key, date.min), event_date)
                 continue
             if status and status.casefold() not in {"dispensed", "صرف", "تم الصرف"}:
                 continue
@@ -377,20 +380,15 @@ def main():
     for key, old in preserved_meds.items():
         if key not in med_latest or (old["last"], old.get("order_id", "")) > (med_latest[key]["last"], med_latest[key].get("order_id", "")):
             med_latest[key] = old
-    for key in stopped_keys:
-        med_latest.pop(key, None)
-    # Stopped medications must not reappear from the archive on subsequent runs.
-    # Persist tombstones separately, before regenerating the demand chunks.
-    stopped_path = DATA / "stopped-medications.json"
-    previous_stopped = set()
-    if stopped_path.exists():
-        previous_stopped = {tuple(x) for x in json.loads(stopped_path.read_text(encoding="utf-8"))}
-    # A newer recorded dispense reactivates a previously stopped drug only if
-    # it occurs after the stored stop event; without dates require manual review.
-    all_stopped = previous_stopped | stopped_keys
-    for key in all_stopped:
-        med_latest.pop(key, None)
-    stopped_path.write_text(json.dumps(sorted([list(x) for x in all_stopped]), ensure_ascii=False), encoding="utf-8")
+    # Do not permanently suppress a medication due to an older STOPPED row:
+    # compare stop event with the most recent actual dispense. Missing stop dates
+    # are not safely actionable and require review.
+    stopped_removed = 0
+    for key, event_date in stopped_events.items():
+        med = med_latest.get(key)
+        if med and event_date >= date.fromisoformat(med["last"]):
+            med_latest.pop(key, None)
+            stopped_removed += 1
 
     by = defaultdict(list)
     for rec in med_latest.values():
@@ -515,7 +513,8 @@ def main():
         "latest_dispense_date": latest_dispense_date,
         "incoming_medication_pairs": incoming_count,
         "historic_medication_pairs_loaded": len(preserved_meds),
-        "stopped_medication_pairs": len(all_stopped),
+        "baseline_restoration_enabled": True,
+        "stopped_medication_pairs": stopped_removed,
     }
     (DATA / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print(json.dumps(meta, indent=2))
