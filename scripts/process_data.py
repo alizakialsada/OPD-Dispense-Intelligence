@@ -251,8 +251,29 @@ def load_preserved_medications():
         except Exception as exc:
             raise RuntimeError(f"Cannot read previous demand: {exc}") from exc
     baseline = DATA / "recovery-baseline-2026-10-09.json"
-    if baseline.is_file():
-        source_files.insert(0, baseline)  # latest demand overrides older baseline
+    # Recovery safety check: the October 9 snapshot MUST be present on this branch.
+    # Previous builds silently continued without it and produced empty Oct 11-21 calendars.
+    if not baseline.is_file():
+        raise RuntimeError(
+            "RECOVERY BLOCKED: data/recovery-baseline-2026-10-09.json is missing. "
+            "Upload the complete baseline to the test branch before building."
+        )
+    try:
+        historic = json.loads(baseline.read_text(encoding="utf-8"))
+        historic_pairs = {
+            (clean(p.get("id")), clean(i.get("drug")).casefold())
+            for p in historic for i in p.get("items", [])
+            if clean(p.get("id")) and clean(i.get("drug"))
+        }
+    except Exception as exc:
+        raise RuntimeError(f"RECOVERY BLOCKED: invalid baseline JSON: {exc}") from exc
+    if len(historic_pairs) < 70000:
+        raise RuntimeError(
+            f"RECOVERY BLOCKED: baseline has only {len(historic_pairs)} patient-drug pairs; "
+            "expected at least 70,000 from October 9 backup. Check for truncated/wrong file."
+        )
+    print(f"Verified Oct 9 baseline: {len(historic)} patients, {len(historic_pairs)} medication pairs")
+    source_files.insert(0, baseline)  # newer actual dispensing still wins
     for path in source_files:
         for patient in json.loads(path.read_text(encoding="utf-8")):
             pid = clean(patient.get("id"))
