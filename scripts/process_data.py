@@ -208,12 +208,14 @@ def recurring_dates(last_iso, end_iso, interval):
     except Exception:
         return []
 
+    # Retain the single due date even when it becomes overdue. A routine daily
+    # rebuild must NOT remove a patient merely because the calendar moved on.
+    # Only a newer actual dispense (handled by the per-drug merge), a confirmed
+    # stop event, or a documented expiry can change eligibility.
+    d = adjust_weekend(d)
     if end and d > end:
         return []
-
-    d = adjust_weekend(d)
-    floor = date.today() - timedelta(days=1)
-    return [d.isoformat()] if d >= floor else []
+    return [d.isoformat()]
 
 def load_previous_patients():
     """Read the previously generated patient dataset before replacing it."""
@@ -398,6 +400,10 @@ def main():
     # Merge by patient and medication, never replace the complete historic dataset
     # with a short incremental MCC file. Newer actual dispense takes precedence.
     incoming_count = len(med_latest)
+    # The incoming MCC snapshots are the ONLY source of active scheduling.
+    # The archived records remain available for patient medication history.
+    incoming_latest = dict(med_latest)
+    schedule_floor = date.today()  # No historic overdue work in active queue/calendar.
     for key, old in preserved_meds.items():
         if key not in med_latest or (old["last"], old.get("order_id", "")) > (med_latest[key]["last"], med_latest[key].get("order_id", "")):
             med_latest[key] = old
@@ -411,11 +417,21 @@ def main():
             med_latest.pop(key, None)
             stopped_removed += 1
 
+    # Do not schedule an archived-only medication. If a historical record is
+    # newer than its current incoming counterpart, keep it in history but
+    # require reconciliation rather than projecting an outdated dispense.
+    active_keys = {
+        key for key, incoming in incoming_latest.items()
+        if key in med_latest
+        and (med_latest[key]["last"], med_latest[key].get("order_id", ""))
+            == (incoming["last"], incoming.get("order_id", ""))
+    }
     by = defaultdict(list)
     for rec in med_latest.values():
         by[rec["id"]].append(rec)
 
     patients = []; demand = []
+    active_patients = set()
     for pid, meds in by.items():
         counts = Counter(m["last"] for m in meds)
         top = max(counts.values())
@@ -438,11 +454,15 @@ def main():
             "prescription_end": max((m["rx_end"] for m in meds if m["rx_end"]), default=""),
             "latest_order_id": p.get("order_id", ""),
         }
+        active_meds = [m for m in meds if (pid, m["drug"].casefold()) in active_keys]
+        if active_meds:
+            active_patients.add(pid)
         schedules = {}
         for interval in (15, 20, 25, 30):
             dates = set()
-            for m in meds:
-                dates.update(recurring_dates(m["last"], m.get("rx_end") or "", interval))
+            for m in active_meds:
+                dates.update(d for d in recurring_dates(m["last"], m.get("rx_end") or "", interval)
+                             if d >= schedule_floor.isoformat())
             schedules[str(interval)] = sorted(dates)
         patient["schedule_dates"] = schedules
         patients.append(patient)
@@ -451,7 +471,8 @@ def main():
             "items": [{
                 "drug": m["drug"], "nupco_code": m.get("nupco_code", ""), "qty": m["qty"], "last": m["last"],
                 "end": m.get("rx_end", ""), "order_id": m.get("order_id", "")
-            } for m in meds]
+            } for m in meds],
+            "active_items": [m["drug"] for m in active_meds],
         })
 
     patients.sort(key=lambda x: (x["base_last"], x["name"], x["id"]))
@@ -477,8 +498,13 @@ def main():
         cal = defaultdict(lambda: {"patients": set(), "medications": set(), "quantity": 0.0})
         day = defaultdict(lambda: defaultdict(lambda: {"patients": set(), "quantity": 0.0, "patientRows": []}))
         for x in demand:
+            active_names = set(x["active_items"])
             for item in x["items"]:
+                if item["drug"] not in active_names:
+                    continue
                 for eligible in recurring_dates(item["last"], item.get("end") or "", interval):
+                    if eligible < schedule_floor.isoformat():
+                        continue
                     drug = item["drug"]; nupco_code = item.get("nupco_code", ""); qty = float(item.get("qty") or 0)
                     cal[eligible]["patients"].add(x["id"]); cal[eligible]["medications"].add(drug); cal[eligible]["quantity"] += qty
                     r = day[eligible][drug]; r["nupco_code"] = nupco_code; r["patients"].add(x["id"]); r["quantity"] += qty
@@ -533,6 +559,10 @@ def main():
         "currently_schedulable_patients_20": schedulable_20,
         "latest_dispense_date": latest_dispense_date,
         "incoming_medication_pairs": incoming_count,
+        "active_scheduling_medication_pairs": len(active_keys),
+        "active_scheduling_patients": len(active_patients),
+        "active_schedule_floor": schedule_floor.isoformat(),
+        "scheduling_source": "incoming_MCC_only__historical_archived_not_scheduled",
         "historic_medication_pairs_loaded": len(preserved_meds),
         "baseline_restoration_enabled": True,
         "stopped_medication_pairs": stopped_removed,
