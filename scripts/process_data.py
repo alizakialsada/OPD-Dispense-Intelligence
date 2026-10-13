@@ -249,17 +249,22 @@ def patient_compare_signature(p):
 
 def main():
     previous_patients = load_previous_patients()
-    cutoff = date(2026, 6, 4)
+    cutoff = date(2026, 8, 31)  # New trusted MCC baseline: ignore older historical dispense data
+    # Active scheduling now uses ONLY the new Medica Excel stream.
+    # Historical split CSV parts are intentionally ignored so the old MCC-gap period
+    # cannot repopulate the live calendar.
     xlsx_files = sorted(IN.glob("*.xlsx"))
-    csv_files = sorted(IN.glob("medica-latest-part-*.csv"))
-    files = csv_files + xlsx_files
+    files = xlsx_files
     if not files:
-        raise SystemExit("No Medica .xlsx or medica-latest-part-*.csv report found in incoming/")
+        raise SystemExit("No Medica .xlsx report found in incoming/")
 
     contacts = load_contact_master(DATA / "Patient_Contact_Master.csv")
     nupco_lookup = load_nupco_codes(DATA / "nupco-codes.json")
     unmatched_drugs = set()
     latest = {}; demographics = dict(contacts); raw = valid = 0
+    # Prevent the same Medica row from being counted twice when duplicate Excel
+    # files are present in incoming/.
+    seen_dispense_rows = set()
 
     for f in files:
         rows = read_csv_rows(f) if f.suffix.lower() == ".csv" else read_xlsx_rows(f)
@@ -314,8 +319,23 @@ def main():
                 if rec[k] and not demo.get(k):
                     demo[k] = rec[k]
 
-            # Same order may contain repeated rows. Order ID prevents duplicate counting.
+            # Exact duplicate protection across repeated Medica files.
+            # Include quantity in the source-row identity so truly separate rows within
+            # the same order can still be retained, but an identical uploaded copy is ignored.
             identity = rec["order_id"] or rec["last"]
+            source_row_key = (
+                pid,
+                drug.casefold(),
+                identity,
+                rec["last"],
+                rec.get("prescription_no", ""),
+                rec.get("location", ""),
+                float(qty or 0),
+            )
+            if source_row_key in seen_dispense_rows:
+                continue
+            seen_dispense_rows.add(source_row_key)
+
             same = (pid, drug.casefold(), identity)
             if same in latest:
                 latest[same]["qty"] += qty
