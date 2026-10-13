@@ -484,6 +484,21 @@
   border:1px solid rgba(255,184,95,.28);background:rgba(255,184,95,.09);
   color:var(--o);border-radius:999px;font-size:9px;font-weight:900
 }
+.vip-badge{
+ display:inline-flex;
+ align-items:center;
+ gap:5px;
+ padding:6px 10px;
+ border-radius:999px;
+ background:rgba(255,197,61,.14);
+ border:1px solid rgba(255,197,61,.55);
+ color:#ffd56a;
+ font-size:11px;
+ font-weight:900;
+ letter-spacing:.04em;
+ box-shadow:0 0 0 1px rgba(255,197,61,.06) inset;
+}
+
 .exclude-btn{flex:0 0 auto!important;max-width:42px;color:#ff91a1!important}
 .excluded-nav-count{
   margin-left:auto;min-width:20px;text-align:center;padding:2px 6px;border-radius:999px;
@@ -653,7 +668,7 @@
 </div>
 
 <div id="workComplete" class="work-complete hidden">🎉 Today’s work is complete — Remaining: 0</div><div class="live-progress"><div class="live-card"><i class="live-dot"></i><span>Scheduled</span><b id="liveScheduled">0</b></div><div class="live-card dispensed"><span>Dispensed</span><b id="liveDispensed">0</b></div><div class="live-card others"><span>Others</span><b id="liveOthers">0</b></div><div class="live-card working"><span>In Progress</span><b id="liveWorking">0</b></div><div class="live-card remaining"><span>Remaining</span><b id="liveRemaining">0</b></div><div class="live-card"><span>Completion</span><b id="liveCompletion">0%</b></div><div class="live-card dispensed"><span>Dispensed Rate</span><b id="liveDispensedRate">0%</b></div></div><div class="hero"><div><div class="ey">TODAY'S DISPENSING</div><h2 id="hello">Good Morning, Pharmacist.</h2><p>Fast, focused, and ready for daily dispensing.</p><div class="num" id="heroCount">0</div><p id="heroDate">—</p></div><button class="copy" onclick="go('queue')">Start Queue →</button></div><div class="kpis"><div class="kpi red"><span>Overdue</span><b id="over">0</b></div><div class="kpi green"><span>Today</span><b id="today">0</b></div><div class="kpi orange"><span>Tomorrow</span><b id="tomorrow">0</b></div><div class="kpi cyan"><span>Next 7 Days</span><b id="week">0</b></div><div class="kpi"><span>Unique Patients</span><b id="all">0</b></div></div></section>
-<section id="queue" class="view"><div class="section"><div><div class="ey">DAILY WORKLIST</div><h2>Dispense Queue</h2><p>Priority specialties appear first. Preparation Due is calculated from the latest actual Medica dispense only.</p></div><div class="toolbar"><select id="mode"><option value="today">Today</option><option value="overdue">Overdue</option><option value="tomorrow">Tomorrow</option><option value="week">Next 7 Days</option></select><select id="qspecialty"><option value="priority">★ Priority First</option><option value="all">All Specialties</option></select><input id="qqueue" class="search" placeholder="Search MRN, patient, medication…"></div></div><div id="priorityStrip" class="priority-strip">★ My priority specialties: <b>Not assigned</b> — all patients remain visible.</div><div class="summary"><div><span>Scheduled</span><b id="scheduled">0</b></div><div><span>Dispensed</span><b id="done">0</b></div><div><span>Others</span><b id="queueOthers">0</b></div><div><span>In Progress</span><b id="working">0</b></div><div><span>Remaining</span><b id="queueRemaining">0</b></div><div><span>Completion</span><b id="rate">0%</b></div><div><span>Dispensed Rate</span><b id="dispensedRate">0%</b></div></div><div class="progress"><i id="bar"></i></div><div id="cards" class="cards"></div></section>
+<section id="queue" class="view"><div class="section"><div><div class="ey">DAILY WORKLIST</div><h2>Dispense Queue</h2><p>VIP patients appear first, followed by your priority specialties. Preparation Due is calculated from the latest actual Medica dispense only.</p></div><div class="toolbar"><select id="mode"><option value="today">Today</option><option value="overdue">Overdue</option><option value="tomorrow">Tomorrow</option><option value="week">Next 7 Days</option></select><select id="qspecialty"><option value="priority">★ Priority First</option><option value="all">All Specialties</option></select><input id="qqueue" class="search" placeholder="Search MRN, patient, medication…"></div></div><div id="priorityStrip" class="priority-strip">★ My priority specialties: <b>Not assigned</b> — all patients remain visible.</div><div class="summary"><div><span>Scheduled</span><b id="scheduled">0</b></div><div><span>Dispensed</span><b id="done">0</b></div><div><span>Others</span><b id="queueOthers">0</b></div><div><span>In Progress</span><b id="working">0</b></div><div><span>Remaining</span><b id="queueRemaining">0</b></div><div><span>Completion</span><b id="rate">0%</b></div><div><span>Dispensed Rate</span><b id="dispensedRate">0%</b></div></div><div class="progress"><i id="bar"></i></div><div id="cards" class="cards"></div></section>
 
 <section id="excluded" class="view">
  <div class="section">
@@ -989,7 +1004,7 @@
 <script>
 const $=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)],fmt=n=>new Intl.NumberFormat().format(Math.round(n||0));
 const STAFF={bassemah:"Bassemah H. Al Faraj",batool:"Batool S. T. Alfaraj",ghada:"Ghada A. Alqudaihi",rabab:"Rabab Alsheef",team_import:"Today's Team Total"};
-const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||20,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastAction:null,undoTicker:null,legacy:null,demandPatients:null,demandRows:[],view:"home",calMonth:new Date(),calSelected:new Date(),calendarCache:{},precomputedCalendar:null,demandIndex:null,demandDateLoaded:"",settingsChannel:null,otherMrn:"",otherReason:"",teamProfiles:[],closedBefore:{},performanceCache:{},teamPerformanceRows:[],myPerformanceRange:"today",teamPerformanceRange:"today",realtimeChannel:null,realtimeTimer:null,teamLivePoll:null,teamRefreshBusy:false,specialtyRoutes:[],myPrioritySpecialties:[],exclusions:{},exclusionMrn:"",exclusionReason:"",inventoryMap:null,inventoryInfo:null,inventoryCheckedAt:null,inventoryLoading:false,patientMasterMap:new Map(),patientMasterRows:[],patientMasterLoaded:false,patientMasterAdminLoaded:false,currentFullAddress:""};
+const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||20,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastAction:null,undoTicker:null,legacy:null,demandPatients:null,demandRows:[],view:"home",calMonth:new Date(),calSelected:new Date(),calendarCache:{},precomputedCalendar:null,demandIndex:null,demandDateLoaded:"",settingsChannel:null,otherMrn:"",otherReason:"",teamProfiles:[],closedBefore:{},performanceCache:{},teamPerformanceRows:[],myPerformanceRange:"today",teamPerformanceRange:"today",realtimeChannel:null,realtimeTimer:null,teamLivePoll:null,teamRefreshBusy:false,specialtyRoutes:[],myPrioritySpecialties:[],exclusions:{},exclusionMrn:"",exclusionReason:"",inventoryMap:null,inventoryInfo:null,inventoryCheckedAt:null,inventoryLoading:false,patientMasterMap:new Map(),patientMasterRows:[],patientMasterLoaded:false,patientMasterAdminLoaded:false,currentFullAddress:"",vipPatients:{},vipLoaded:false};
 const iso=d=>{let x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)},
 pd=s=>new Date(s+"T00:00:00"),
 add=(s,n)=>{let d=pd(s);d.setDate(d.getDate()+n);return iso(d)},
@@ -1741,6 +1756,7 @@ async function loadPostLoginData(){
   loadShared(),
   loadExclusions(),
   loadSpecialtyRouting(),
+  loadVipPatients(),
   loadPatientMasterForMedica(),
   loadSharedInterval(),
   loadLegacyImport()
@@ -1871,13 +1887,37 @@ function isPriorityPatient(p){
  const s=normSpecialty(p?.speciality);
  return !!s&&S.myPrioritySpecialties.some(x=>normSpecialty(x)===s);
 }
+function isVipPatient(pOrMrn){
+ const mrn=typeof pOrMrn==="object"?String(pOrMrn?.id||"").trim():String(pOrMrn||"").trim();
+ return !!mrn && !!S.vipPatients[mrn]?.active;
+}
+async function loadVipPatients(){
+ if(!S.sb||!S.user)return;
+ try{
+  const {data,error}=await S.sb.from("vip_patients")
+   .select("mrn,patient_name,note,active")
+   .eq("active",true);
+  if(error)throw error;
+  S.vipPatients={};
+  (data||[]).forEach(r=>{
+   const mrn=String(r.mrn||"").trim();
+   if(mrn)S.vipPatients[mrn]={...r,active:r.active!==false};
+  });
+  S.vipLoaded=true;
+  refreshSpecialtyOptions();
+  renderQueue();
+ }catch(e){
+  console.warn("VIP patients not available",e);
+  S.vipLoaded=false;
+ }
+}
 function activePatients(){return S.p.filter(p=>!isExcludedPatient(p))}
 function refreshSpecialtyOptions(){
  const sel=$("#qspecialty"),routeSel=$("#routeSpecialty");
  const specs=[...new Set(S.p.map(p=>String(p.speciality||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
  if(sel){
   const current=sel.value||"priority";
-  sel.innerHTML='<option value="priority">★ Priority First</option><option value="all">All Specialties</option>'+
+  sel.innerHTML='<option value="priority">★ Priority First</option><option value="vip">★ VIP Only</option><option value="all">All Specialties</option>'+
    specs.map(s=>`<option value="${encodeURIComponent(s)}">${s}</option>`).join("");
   sel.value=[...sel.options].some(o=>o.value===current)?current:"priority";
  }
@@ -1887,7 +1927,10 @@ function refreshSpecialtyOptions(){
   if(current&&[...routeSel.options].some(o=>o.value===current))routeSel.value=current;
  }
  const strip=$("#priorityStrip");
- if(strip)strip.innerHTML=`★ My priority specialties: <b>${S.myPrioritySpecialties.length?S.myPrioritySpecialties.join(" • "):"Not assigned"}</b> — all patients remain visible.`;
+ if(strip){
+  const vipCount=Object.values(S.vipPatients||{}).filter(x=>x?.active).length;
+  strip.innerHTML=`★ VIP: <b>${vipCount}</b> patients • My priority specialties: <b>${S.myPrioritySpecialties.length?S.myPrioritySpecialties.join(" • "):"Not assigned"}</b> — VIP patients are always sorted first.`;
+ }
 }
 async function loadSpecialtyRouting(){
  if(!S.sb)return;
@@ -2528,13 +2571,16 @@ function renderLiveProgress(){let a=activePatients().filter(p=>next(p)===iso(S.d
 function qlist(){
  let m=$("#mode").value,q=$("#qqueue").value.toLowerCase(),sf=$("#qspecialty")?.value||"priority";
  let a=activePatients().filter(p=>(m==="week"?["today","tomorrow","week"].includes(state(p)):state(p)===m)&&(!q||[p.id,p.name,p.drug_text,p.speciality,p.national_id,p.mobile,p.short_national_address,p.full_address].join(" ").toLowerCase().includes(q)));
- if(sf!=="priority"&&sf!=="all"){
+ if(sf==="vip"){
+  a=a.filter(p=>isVipPatient(p));
+ }else if(sf!=="priority"&&sf!=="all"){
   const wanted=normSpecialty(decodeURIComponent(sf));
   a=a.filter(p=>normSpecialty(p.speciality)===wanted);
  }
  if(sf==="priority"){
   a.sort((x,y)=>{
-   const px=isPriorityPatient(x)?0:1,py=isPriorityPatient(y)?0:1;
+   const rank=p=>isVipPatient(p)?0:(isPriorityPatient(p)?1:2);
+   const px=rank(x),py=rank(y);
    if(px!==py)return px-py;
    return String(next(x)).localeCompare(String(next(y)))||String(x.name||"").localeCompare(String(y.name||""));
   });
@@ -2569,6 +2615,7 @@ function renderQueue(){
   return `<article class="card ${st}">
    <span class="badge ${state(p)}">${st==="waiting"?label(state(p)):st.replace("_"," ")}</span>
    ${p.speciality?`<span class="badge">${p.speciality}</span>`:""}
+   ${isVipPatient(p)?`<span class="vip-badge">★ VIP</span>`:""}
    ${isPriorityPatient(p)?`<span class="priority-badge">★ MY PRIORITY</span>`:""}
    <h4><button style="border:0;background:transparent;color:inherit;padding:0;font-weight:inherit;text-align:left" title="Copy patient name" onclick="copyValue('${encodeURIComponent(p.name||"Unknown")}','Patient name',event)">${p.name||"Unknown"}</button></h4>
    <div class="patient-last"><span>Last Dispense</span><b>${p.base_last||"—"}</b></div><div class="patient-last"><span>Preparation Due</span><b>${next(p)||"—"}</b></div>
