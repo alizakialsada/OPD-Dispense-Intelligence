@@ -1627,39 +1627,51 @@ function applyPatientMasterRows(rows){
  });
  return matched;
 }
-async function fetchPatientMasterRows(mrns){
- if(!S.sb||!mrns?.length)return [];
- const rows=[];
- // Smaller batches are more reliable with PostgREST URL/query limits.
- for(let i=0;i<mrns.length;i+=100){
-  const batch=mrns.slice(i,i+100);
-  const {data,error}=await S.sb.from("patient_master")
-   .select("mrn,patient_name,national_id,mobile,short_national_address,full_address")
-   .in("mrn",batch);
-  if(error){
-   console.error("Patient Master batch failed",batch,error);
-   throw error;
-  }
-  if(data?.length)rows.push(...data);
- }
- return rows;
+async function fetchPatientMasterBatch(batch){
+ if(!S.sb||!batch?.length)return [];
+ const {data,error}=await S.sb.from("patient_master")
+  .select("mrn,patient_name,national_id,mobile,short_national_address,full_address")
+  .in("mrn",batch);
+ if(error)throw error;
+ return data||[];
 }
 async function loadPatientMasterForMedica(){
  if(!S.sb||!Array.isArray(S.p)||!S.p.length)return 0;
  const mrns=[...new Set(S.p.map(p=>normalizeMrn(p.id)).filter(Boolean))];
- try{
-  const rows=await fetchPatientMasterRows(mrns);
-  const matched=applyPatientMasterRows(rows);
-  S.patientMasterLoaded=true;
-  renderQueue();
-  renderRegistry();
-  return matched;
- }catch(e){
-  S.patientMasterLoaded=false;
-  console.error("Patient Master load failed",e);
-  toast("Patient Master could not be loaded. Please refresh.");
-  return 0;
+ let matched=0,failed=[];
+
+ // Apply each successful batch immediately. One failed request must never
+ // discard all previously fetched Patient Master rows.
+ for(let i=0;i<mrns.length;i+=75){
+  const batch=mrns.slice(i,i+75);
+  try{
+   const rows=await fetchPatientMasterBatch(batch);
+   matched+=applyPatientMasterRows(rows);
+  }catch(e){
+   console.warn("Patient Master batch will retry",batch,e);
+   failed.push(batch);
+  }
  }
+
+ // Retry failed batches once in smaller groups.
+ if(failed.length){
+  const retry=failed.flat();
+  for(let i=0;i<retry.length;i+=25){
+   const batch=retry.slice(i,i+25);
+   try{
+    const rows=await fetchPatientMasterBatch(batch);
+    matched+=applyPatientMasterRows(rows);
+   }catch(e){
+    console.error("Patient Master retry failed",batch,e);
+   }
+  }
+ }
+
+ S.patientMasterLoaded=S.patientMasterMap.size>0;
+ renderQueue();
+ renderRegistry();
+ if(!S.patientMasterLoaded)toast("Patient Master could not be loaded. Please refresh.");
+ return matched;
 }
 async function loadPatientMasterAdmin(force=false){
  if(!requireAdmin()||!S.sb)return;
@@ -1715,10 +1727,28 @@ function renderPatientMasterAdmin(){
  }).join("")||'<tr><td colspan="6" class="muted">No matching records.</td></tr>';
 }
 window.renderPatientMasterAdmin=renderPatientMasterAdmin;
-window.openFullAddress=(mrn)=>{
- const p=S.p.find(x=>normalizeMrn(x.id)===normalizeMrn(mrn));
- const r=S.patientMasterMap.get(normalizeMrn(mrn));
- const full=(p?.full_address||r?.full_address||"").trim();
+window.openFullAddress=async(mrn)=>{
+ const key=normalizeMrn(mrn);
+ let p=S.p.find(x=>normalizeMrn(x.id)===key);
+ let r=S.patientMasterMap.get(key);
+
+ // If this MRN was missed during bulk loading, fetch it directly from Supabase.
+ if(S.sb && (!r || !String(r.full_address||"").trim())){
+  try{
+   const {data,error}=await S.sb.from("patient_master")
+    .select("mrn,patient_name,national_id,mobile,short_national_address,full_address")
+    .eq("mrn",key)
+    .maybeSingle();
+   if(!error&&data){
+    applyPatientMasterRows([data]);
+    r=data;
+    p=S.p.find(x=>normalizeMrn(x.id)===key);
+    renderQueue();
+   }
+  }catch(e){console.warn("Direct Patient Master lookup failed",e)}
+ }
+
+ const full=(p?.full_address||S.vipPatients[key]?.full_address||r?.full_address||"").trim();
  S.currentFullAddress=full;
  const t=$("#fullAddressText"),m=$("#fullAddressMrn");
  if(t)t.textContent=full||"Full address is not available in Patient Master.";
@@ -1913,20 +1943,31 @@ function isVipPatient(pOrMrn){
 async function loadVipPatients(){
  if(!S.sb||!S.user)return;
  try{
-  const {data,error}=await S.sb.from("vip_patients")
-   .select("mrn,patient_name,note,active")
+  const {data,error}=await S.sb.from("vip_patient_details")
+   .select("mrn,patient_name,note,active,national_id,mobile,short_national_address,full_address")
    .eq("active",true);
   if(error)throw error;
   S.vipPatients={};
   (data||[]).forEach(r=>{
    const mrn=String(r.mrn||"").trim();
-   if(mrn)S.vipPatients[mrn]={...r,active:r.active!==false};
+   if(!mrn)return;
+   S.vipPatients[mrn]={...r,active:r.active!==false};
+
+   // VIP demographics are enriched directly from the joined Patient Master view.
+   const p=(S.p||[]).find(x=>normalizeMrn(x.id)===mrn);
+   if(p){
+    p.national_id=r.national_id||p.national_id||"";
+    p.mobile=r.mobile||p.mobile||"";
+    p.short_national_address=r.short_national_address||"";
+    p.national_address=p.short_national_address;
+    p.full_address=r.full_address||"";
+   }
   });
   S.vipLoaded=true;
   refreshSpecialtyOptions();
   renderQueue();
  }catch(e){
-  console.warn("VIP patients not available",e);
+  console.warn("VIP patient details not available",e);
   S.vipLoaded=false;
  }
 }
@@ -2640,12 +2681,12 @@ function renderQueue(){
    <div class="patient-last"><span>Last Dispense</span><b>${p.base_last||"—"}</b></div><div class="patient-last"><span>Preparation Due</span><b>${next(p)||"—"}</b></div>
    <div class="patient-copy-grid">
     ${patientCopyItem("MRN",p.id)}
-    ${patientCopyItem("National ID",p.national_id||S.patientMasterMap.get(normalizeMrn(p.id))?.national_id)}
-    ${patientCopyItem("Mobile",p.mobile||S.patientMasterMap.get(normalizeMrn(p.id))?.mobile)}
-    ${patientCopyItem("Short Address",p.short_national_address||p.national_address||S.patientMasterMap.get(normalizeMrn(p.id))?.short_national_address)}
+    ${patientCopyItem("National ID",p.national_id||S.vipPatients[normalizeMrn(p.id)]?.national_id||S.patientMasterMap.get(normalizeMrn(p.id))?.national_id)}
+    ${patientCopyItem("Mobile",p.mobile||S.vipPatients[normalizeMrn(p.id)]?.mobile||S.patientMasterMap.get(normalizeMrn(p.id))?.mobile)}
+    ${patientCopyItem("Short Address",p.short_national_address||p.national_address||S.vipPatients[normalizeMrn(p.id)]?.short_national_address||S.patientMasterMap.get(normalizeMrn(p.id))?.short_national_address)}
    </div>
    ${(()=>{
-      const fa=(p.full_address||S.patientMasterMap.get(normalizeMrn(p.id))?.full_address||"").trim();
+      const fa=(p.full_address||S.vipPatients[normalizeMrn(p.id)]?.full_address||S.patientMasterMap.get(normalizeMrn(p.id))?.full_address||"").trim();
       return `<button class="full-address-btn" onclick="openFullAddress('${p.id}')" ${fa?'':'disabled'}>${fa?'View Full Address':'Full Address Unavailable'}</button>`;
     })()}
    ${u?`<div class="staff">👩‍⚕️ ${STAFF[u]||u}</div>`:""}
