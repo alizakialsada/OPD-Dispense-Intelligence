@@ -1627,23 +1627,39 @@ function applyPatientMasterRows(rows){
  });
  return matched;
 }
-async function loadPatientMasterForMedica(){
- if(!S.sb||!Array.isArray(S.p)||!S.p.length)return 0;
- const mrns=[...new Set(S.p.map(p=>normalizeMrn(p.id)).filter(Boolean))];
- let rows=[];
- // Keep IN lists reasonably small for URL/query safety.
- for(let i=0;i<mrns.length;i+=250){
-  const batch=mrns.slice(i,i+250);
+async function fetchPatientMasterRows(mrns){
+ if(!S.sb||!mrns?.length)return [];
+ const rows=[];
+ // Smaller batches are more reliable with PostgREST URL/query limits.
+ for(let i=0;i<mrns.length;i+=100){
+  const batch=mrns.slice(i,i+100);
   const {data,error}=await S.sb.from("patient_master")
    .select("mrn,patient_name,national_id,mobile,short_national_address,full_address")
    .in("mrn",batch);
-  if(error){console.warn("Patient Master batch failed",error);continue}
+  if(error){
+   console.error("Patient Master batch failed",batch,error);
+   throw error;
+  }
   if(data?.length)rows.push(...data);
  }
- const matched=applyPatientMasterRows(rows);
- S.patientMasterLoaded=true;
- render();
- return matched;
+ return rows;
+}
+async function loadPatientMasterForMedica(){
+ if(!S.sb||!Array.isArray(S.p)||!S.p.length)return 0;
+ const mrns=[...new Set(S.p.map(p=>normalizeMrn(p.id)).filter(Boolean))];
+ try{
+  const rows=await fetchPatientMasterRows(mrns);
+  const matched=applyPatientMasterRows(rows);
+  S.patientMasterLoaded=true;
+  renderQueue();
+  renderRegistry();
+  return matched;
+ }catch(e){
+  S.patientMasterLoaded=false;
+  console.error("Patient Master load failed",e);
+  toast("Patient Master could not be loaded. Please refresh.");
+  return 0;
+ }
 }
 async function loadPatientMasterAdmin(force=false){
  if(!requireAdmin()||!S.sb)return;
@@ -1750,14 +1766,17 @@ async function loadCorePatientData(){
 async function loadPostLoginData(){
  const ok=await loadCorePatientData();
 
- // Non-blocking platform services after the main patient list is available.
+ // Load VIP and Patient Master first so queue cards always receive fresh
+ // National ID, Mobile, Short Address and Full Address from Supabase.
+ await loadVipPatients();
+ await loadPatientMasterForMedica();
+
+ // Remaining services can load in parallel after demographic enrichment.
  const tasks=[
   loadTeamProfiles(),
   loadShared(),
   loadExclusions(),
   loadSpecialtyRouting(),
-  loadVipPatients(),
-  loadPatientMasterForMedica(),
   loadSharedInterval(),
   loadLegacyImport()
  ];
@@ -2621,11 +2640,14 @@ function renderQueue(){
    <div class="patient-last"><span>Last Dispense</span><b>${p.base_last||"—"}</b></div><div class="patient-last"><span>Preparation Due</span><b>${next(p)||"—"}</b></div>
    <div class="patient-copy-grid">
     ${patientCopyItem("MRN",p.id)}
-    ${patientCopyItem("National ID",p.national_id)}
-    ${patientCopyItem("Mobile",p.mobile)}
-    ${patientCopyItem("Short Address",p.short_national_address||p.national_address)}
+    ${patientCopyItem("National ID",p.national_id||S.patientMasterMap.get(normalizeMrn(p.id))?.national_id)}
+    ${patientCopyItem("Mobile",p.mobile||S.patientMasterMap.get(normalizeMrn(p.id))?.mobile)}
+    ${patientCopyItem("Short Address",p.short_national_address||p.national_address||S.patientMasterMap.get(normalizeMrn(p.id))?.short_national_address)}
    </div>
-   <button class="full-address-btn" onclick="openFullAddress('${p.id}')" ${p.full_address?'':'disabled'}>${p.full_address?'View Full Address':'Full Address Unavailable'}</button>
+   ${(()=>{
+      const fa=(p.full_address||S.patientMasterMap.get(normalizeMrn(p.id))?.full_address||"").trim();
+      return `<button class="full-address-btn" onclick="openFullAddress('${p.id}')" ${fa?'':'disabled'}>${fa?'View Full Address':'Full Address Unavailable'}</button>`;
+    })()}
    ${u?`<div class="staff">👩‍⚕️ ${STAFF[u]||u}</div>`:""}
    <div class="drugs">${p.drug_text}</div>
    <div class="btns"><button class="primary" onclick="start('${p.id}')" ${locked||["dispensed","others"].includes(st)?"disabled":""}>${st==="in_progress"&&u===S.staff?"Continue":"Start"}</button><button onclick="finish('${p.id}','dispensed')" ${locked||st==="others"?"disabled":""}>Dispensed</button><button onclick="openOthers('${p.id}')" ${locked||st==="dispensed"?"disabled":""}>Others</button><button class="exclude-btn" title="Exclude patient" onclick="openExclusion('${p.id}')" ${locked?"disabled":""}>⊘</button></div>
