@@ -614,10 +614,18 @@
 .data-modal{position:fixed;inset:0;z-index:160;background:#02070dd9;backdrop-filter:blur(12px);display:grid;place-items:center;padding:18px}.data-modal.hidden{display:none}.data-modal-box{width:min(720px,96vw);max-height:88vh;overflow:auto;border:1px solid #2a536e;background:#091a2a;border-radius:20px;padding:20px;box-shadow:0 30px 100px #0009}.master-editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.master-editor-grid .wide{grid-column:1/-1}.data-modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}.data-modal-actions button{border:1px solid var(--line);background:#10263a;color:#fff;border-radius:9px;padding:9px 12px}.data-modal-actions .primary{border:0;background:linear-gradient(135deg,var(--c),var(--b));color:#04111c;font-weight:900}
 @media(max-width:1000px){.vip-admin-kpis{grid-template-columns:repeat(2,1fr)}.vip-editor{grid-template-columns:1fr 1fr}.vip-editor .vip-actions{grid-column:1/-1}}
 @media(max-width:650px){.vip-admin-kpis{grid-template-columns:1fr}.vip-editor,.master-editor-grid{grid-template-columns:1fr}.master-editor-grid .wide{grid-column:auto}.admin-data-head{display:block}.admin-tabs{margin-top:10px}}
+
+/* ===== ADMIN EXCLUSION LOOKUP + DAILY REPORT ===== */
+.exclusion-lookup-panel{border:1px solid #2a536e;background:linear-gradient(135deg,#0d2639,#091b2a);border-radius:16px;padding:15px;margin:0 0 14px}
+.exclusion-lookup-panel h3{margin:3px 0 4px}.exclusion-lookup-panel p{margin:0;color:var(--m);font-size:10px}
+.exclusion-lookup-bar{display:flex;gap:8px;margin-top:12px}.exclusion-lookup-bar input{flex:1;border:1px solid var(--line);background:#0b1f31;color:#fff;border-radius:10px;padding:11px}
+.exclusion-lookup-result{margin-top:10px}.exclusion-found{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid rgba(69,230,170,.3);background:rgba(69,230,170,.07);border-radius:12px;padding:12px}.exclusion-found strong{display:block}.exclusion-found small{display:block;color:var(--m);margin-top:3px}
+.daily-report-panel{border:1px solid var(--line);background:linear-gradient(180deg,#0c2235,#091b2b);border-radius:18px;padding:18px;margin:16px 0}.daily-report-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:12px}.daily-report-head p{color:var(--m);font-size:10px;margin:4px 0 0}.daily-report-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px}.daily-report-kpis>div{border:1px solid var(--line);background:#081a29;border-radius:12px;padding:11px}.daily-report-kpis span{display:block;color:var(--m);font-size:8px;text-transform:uppercase}.daily-report-kpis b{display:block;font-size:21px;margin-top:5px}.daily-report-table th,.daily-report-table td{text-align:center}.daily-report-table td:first-child,.daily-report-table th:first-child{text-align:left}
+@media(max-width:720px){.exclusion-lookup-bar,.daily-report-head{flex-direction:column;align-items:stretch}.daily-report-kpis{grid-template-columns:repeat(2,1fr)}.exclusion-found{align-items:flex-start;flex-direction:column}}
 </style></head><body>
 <div class="shell"><aside class="side"><div class="brand"><div class="logo">DI</div><div><b>Dispense Lite</b><small>Daily Operations</small></div></div>
 <button class="nav active" data-v="home">◈ <span>Overview</span></button><button class="nav" data-v="queue">▷ <span>Dispense Queue</span></button><button class="nav" data-v="registry">◎ <span>Patient Registry</span></button><button class="nav" data-v="calendar">▦ <span>Smart Calendar</span></button><button class="nav" data-v="demand">◆ <span>Drug Demand</span></button><button id="teamNav" class="nav" data-v="team">♟ <span>Team</span></button><button id="adminNav" class="nav hidden" data-v="admin">⚙ <span>Admin</span></button><div class="sidefoot">Created by Automation Supervisor Ali Alsada</div></aside>
-<main class="main"><header class="top"><div><div class="ey">PHARMACY OPERATIONS</div><h1 id="title">Overview</h1></div><div class="actions"><div id="live" class="live"><span class="dot"></span><small id="sync">Local mode</small></div><div class="user"><small id="roleLabel">User</small><b id="who">Not signed in</b></div><button class="logout-btn" onclick="signOutUser()">Sign Out</button><button class="copy" onclick="exportCurrentView()">Export Excel</button><input id="date" type="date"></div></header>
+<main class="main"><header class="top"><div><div class="ey">PHARMACY OPERATIONS</div><h1 id="title">Overview</h1></div><div class="actions"><div id="live" class="live"><span class="dot"></span><small id="sync">Local mode</small></div><div class="user"><small id="roleLabel">User</small><b id="who">Not signed in</b></div><button class="logout-btn" onclick="signOutUser()">Sign Out</button><button class="copy" onclick="exportCurrentView()">Export Excel</button><input id="date" type="date" class="calendar-only" onclick="openDatePicker(this)" onfocus="openDatePicker(this)" onkeydown="calendarKeyGuard(event)" onpaste="return false" autocomplete="off" title="Choose date from calendar"></div></header>
 <section id="home" class="view active">
 <div id="myPerformance" class="my-performance hidden">
   <div class="my-performance-head">
@@ -764,6 +772,8 @@
    <option value="week">This Week</option>
    <option value="lastweek">Last Week</option>
    <option value="month">This Month</option>
+   <option value="last30">Last 30 Days</option>
+   <option value="prevmonth">Previous Month</option>
    <option value="custom">Custom Range</option>
    <option value="all">All History</option>
   </select>
@@ -780,6 +790,20 @@
   <div><span>Work Days</span><b id="teamWorkDays">0</b></div>
   <div><span>Active Staff</span><b id="activeStaff">0</b></div>
   <div><span>Average / Work Day</span><b id="teamAverage">0</b></div>
+ </div>
+
+ <div class="daily-report-panel">
+  <div class="daily-report-head">
+   <div><div class="ey">DAILY OPERATIONS REPORT</div><h3>Daily Closed Cases</h3><p>Day-by-day Dispensed, Others and total closed cases for the selected period.</p></div>
+   <button class="copy" onclick="exportTeamDailyExcel()">Export Daily Report</button>
+  </div>
+  <div class="daily-report-kpis">
+   <div><span>Days in Report</span><b id="dailyReportDays">0</b></div>
+   <div><span>Dispensed</span><b id="dailyReportDispensed">0</b></div>
+   <div><span>Not Dispensed / Others</span><b id="dailyReportOthers">0</b></div>
+   <div><span>Total Closed</span><b id="dailyReportClosed">0</b></div>
+  </div>
+  <div class="tablebox"><table class="daily-report-table"><thead><tr><th>Date</th><th>Day</th><th>Dispensed</th><th>Not Dispensed / Others</th><th>Total Closed</th><th>Dispense Rate</th></tr></thead><tbody id="dailyReportRows"></tbody></table></div>
  </div>
 
  <div class="performance-analytics">
@@ -913,7 +937,12 @@
   </div>
 
   <div id="adminPaneExclusions" class="admin-pane">
-   <div class="section"><div><div class="ey">PATIENT EXCLUSIONS</div><h3>Excluded Patients</h3><p>Manage patients excluded from future preparation queues.</p></div><div class="toolbar"><input id="qexcluded" class="search" placeholder="Search MRN, patient, reason…"><button class="copy" onclick="exportExcludedExcel()">Export Excel</button></div></div>
+   <div class="section"><div><div class="ey">PATIENT EXCLUSIONS</div><h3>Excluded Patients</h3><p>Search the full Patient Master and exclude a patient even if the case was already dispensed or is no longer in today’s queue.</p></div><div class="toolbar"><input id="qexcluded" class="search" placeholder="Search existing exclusions…"><button class="copy" onclick="exportExcludedExcel()">Export Excel</button></div></div>
+   <div class="exclusion-lookup-panel">
+    <div><div class="ey">ADD EXCLUSION</div><h3>Find Patient</h3><p>Search by MRN, patient name, National ID or mobile.</p></div>
+    <div class="exclusion-lookup-bar"><input id="excludeLookup" placeholder="MRN, name, National ID or mobile" onkeydown="if(event.key==='Enter')findPatientForExclusion()"><button class="copy" onclick="findPatientForExclusion()">Find Patient</button></div>
+    <div id="excludeLookupResult" class="exclusion-lookup-result muted">Enter patient details to search Patient Master.</div>
+   </div>
    <div class="excluded-kpis"><div><span>Active Exclusions</span><b id="excludedActiveCount">0</b></div><div><span>Specialties</span><b id="excludedSpecialtyCount">0</b></div><div><span>Excluded This Month</span><b id="excludedMonthCount">0</b></div></div>
    <div class="tablebox"><table><thead><tr><th>Patient</th><th>MRN</th><th>Specialty</th><th>Reason</th><th>Note</th><th>Excluded By</th><th>Date</th><th>Action</th></tr></thead><tbody id="excludedRows"></tbody></table></div>
   </div>
@@ -1004,6 +1033,7 @@
   <div class="ey">EXCLUDE PATIENT</div><h2 id="exclusionPatientTitle">Exclude Patient</h2>
   <p class="muted">This patient will be removed from future work queues until restored.</p>
   <div class="exclusion-options">
+   <button onclick="chooseExclusionReason(this,'Patient requested no future postal delivery')">Patient requested no future postal delivery</button>
    <button onclick="chooseExclusionReason(this,'Patient Declined Postal Delivery')">Patient Declined Postal Delivery</button>
    <button onclick="chooseExclusionReason(this,'Wrong / Unavailable National Address')">Wrong / Unavailable National Address</button>
    <button onclick="chooseExclusionReason(this,'Wrong Recipient / Contact Information')">Wrong Recipient / Contact Information</button>
@@ -1048,7 +1078,7 @@
 <script>
 const $=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)],fmt=n=>new Intl.NumberFormat().format(Math.round(n||0));
 const STAFF={bassemah:"Bassemah H. Al Faraj",batool:"Batool S. T. Alfaraj",ghada:"Ghada A. Alqudaihi",rabab:"Rabab Alsheef",team_import:"Today's Team Total"};
-const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||20,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastAction:null,undoTicker:null,legacy:null,demandPatients:null,demandRows:[],view:"home",calMonth:new Date(),calSelected:new Date(),calendarCache:{},precomputedCalendar:null,demandIndex:null,demandDateLoaded:"",settingsChannel:null,otherMrn:"",otherReason:"",teamProfiles:[],closedBefore:{},performanceCache:{},teamPerformanceRows:[],myPerformanceRange:"today",teamPerformanceRange:"today",realtimeChannel:null,realtimeTimer:null,teamLivePoll:null,teamRefreshBusy:false,specialtyRoutes:[],myPrioritySpecialties:[],exclusions:{},exclusionMrn:"",exclusionReason:"",inventoryMap:null,inventoryInfo:null,inventoryCheckedAt:null,inventoryLoading:false,patientMasterMap:new Map(),patientMasterRows:[],patientMasterLoaded:false,patientMasterAdminLoaded:false,currentFullAddress:"",vipPatients:{},vipLoaded:false,vipAdminRows:[],vipAdminLoaded:false,masterEditMrn:"",adminPane:"vip"};
+const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||20,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastAction:null,undoTicker:null,legacy:null,demandPatients:null,demandRows:[],view:"home",calMonth:new Date(),calSelected:new Date(),calendarCache:{},precomputedCalendar:null,demandIndex:null,demandDateLoaded:"",settingsChannel:null,otherMrn:"",otherReason:"",teamProfiles:[],closedBefore:{},performanceCache:{},teamPerformanceRows:[],teamDailyRows:[],teamDailyRange:null,myPerformanceRange:"today",teamPerformanceRange:"today",realtimeChannel:null,realtimeTimer:null,teamLivePoll:null,teamRefreshBusy:false,specialtyRoutes:[],myPrioritySpecialties:[],exclusions:{},exclusionMrn:"",exclusionReason:"",inventoryMap:null,inventoryInfo:null,inventoryCheckedAt:null,inventoryLoading:false,patientMasterMap:new Map(),patientMasterRows:[],patientMasterLoaded:false,patientMasterAdminLoaded:false,currentFullAddress:"",vipPatients:{},vipLoaded:false,vipAdminRows:[],vipAdminLoaded:false,masterEditMrn:"",adminPane:"vip"};
 const iso=d=>{let x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)},
 pd=s=>new Date(s+"T00:00:00"),
 add=(s,n)=>{let d=pd(s);d.setDate(d.getDate()+n);return iso(d)},
@@ -2197,11 +2227,27 @@ async function loadExclusions(){
   render();
  }catch(e){console.warn("Patient exclusions not available",e)}
 }
-window.openExclusion=mrn=>{
+function exclusionPatientRecord(mrn){
+ const key=normalizeMrn(mrn);
+ const live=S.p.find(x=>normalizeMrn(x.id)===key);
+ if(live)return {id:String(live.id),name:live.name||"",speciality:live.speciality||"",mobile:live.mobile||"",national_id:live.national_id||""};
+ const master=S.patientMasterMap.get(key)||(S.patientMasterRows||[]).find(x=>normalizeMrn(x.mrn)===key);
+ if(master)return {id:String(master.mrn),name:master.patient_name||"",speciality:"",mobile:master.mobile||"",national_id:master.national_id||""};
+ return null;
+}
+window.findPatientForExclusion=async()=>{
+ if(!S.patientMasterAdminLoaded)await loadPatientMasterAdmin();
+ const raw=$("#excludeLookup")?.value?.trim()||"",box=$("#excludeLookupResult");if(!raw){if(box)box.textContent="Enter MRN, name, National ID or mobile.";return}
+ const q=raw.toLowerCase(),n=norm(raw);
+ const candidates=(S.patientMasterRows||[]).filter(r=>[r.mrn,r.patient_name,r.national_id,r.mobile].some(v=>String(v||"").toLowerCase().includes(q))||norm(r.mobile)===n).slice(0,8);
+ if(!candidates.length){if(box)box.innerHTML='<span style="color:var(--o)">No matching patient found in Patient Master.</span>';return}
+ if(box)box.innerHTML=candidates.map(r=>`<div class="exclusion-found"><div><strong>${r.patient_name||"Unknown Patient"}</strong><small>MRN ${r.mrn} • Mobile ${r.mobile||"—"} • National ID ${r.national_id||"—"}</small></div><button class="copy" onclick="openExclusion('${encodeURIComponent(String(r.mrn))}',true)">Exclude Patient</button></div>`).join("<div style='height:7px'></div>");
+}
+window.openExclusion=(mrn,encoded=false)=>{
  if(!S.user||!S.profile)return openLogin();
- const p=S.p.find(x=>String(x.id)===String(mrn));
- if(!p)return toast("Patient not found");
- S.exclusionMrn=String(mrn);S.exclusionReason="";
+ const raw=encoded?decodeURIComponent(mrn):mrn,p=exclusionPatientRecord(raw);
+ if(!p)return toast("Patient not found in Queue or Patient Master");
+ S.exclusionMrn=String(p.id);S.exclusionReason="";
  $("#exclusionPatientTitle").textContent=`Exclude ${p.name||"Patient"} • MRN ${p.id}`;
  $("#exclusionNote").value="";$("#exclusionMessage").textContent="";
  document.querySelectorAll(".exclusion-options button").forEach(b=>b.classList.remove("active"));
@@ -2216,8 +2262,8 @@ window.closeExclusion=()=>$("#exclusionModal").classList.add("hidden")
 window.confirmExclusion=async()=>{
  if(!S.sb)return toast("Shared database is not connected");
  if(!S.exclusionReason){$("#exclusionMessage").textContent="Select a reason.";return}
- const p=S.p.find(x=>String(x.id)===String(S.exclusionMrn));
- if(!p)return;
+ const p=exclusionPatientRecord(S.exclusionMrn);
+ if(!p){$("#exclusionMessage").textContent="Patient record not found.";return}
  const note=$("#exclusionNote").value.trim(),now=new Date().toISOString();
  const row={
   mrn:String(p.id),patient_name:p.name||"",speciality:p.speciality||"",
@@ -2296,6 +2342,11 @@ function performanceRange(type,prefix){
   label="Last Week";
  }else if(type==="month"){
   from=new Date(today.getFullYear(),today.getMonth(),1);label="This Month";
+ }else if(type==="last30"){
+  from=new Date(today);from.setDate(from.getDate()-29);from.setHours(0,0,0,0);label="Last 30 Days";
+ }else if(type==="prevmonth"){
+  from=new Date(today.getFullYear(),today.getMonth()-1,1);
+  to=endOfDay(new Date(today.getFullYear(),today.getMonth(),0));label="Previous Month";
  }else if(type==="custom"){
   const f=$("#"+prefix+"From")?.value,t=$("#"+prefix+"To")?.value;
   if(!f||!t)return null;
@@ -2585,6 +2636,29 @@ function buildDailyPerformance(rows,adjustments){
  Object.values(days).forEach(x=>x.closed=x.dispensed+x.others);
  return Object.values(days).sort((a,b)=>a.day.localeCompare(b.day));
 }
+function fillDailyPerformanceRange(daily,range){
+ const map=new Map((daily||[]).map(x=>[x.day,x]));
+ if(!range?.from||!range?.to)return daily||[];
+ const start=new Date(range.from);start.setHours(0,0,0,0);
+ const end=new Date(range.to);end.setHours(0,0,0,0);
+ const span=Math.round((end-start)/86400000)+1;
+ if(span>370)return daily||[];
+ const out=[];
+ for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
+  const key=iso(d),x=map.get(key)||{day:key,dispensed:0,others:0,closed:0};out.push(x);
+ }
+ return out;
+}
+function renderDailyOperationsReport(rows,adjustments,range){
+ const daily=fillDailyPerformanceRange(buildDailyPerformance(rows,adjustments),range);
+ S.teamDailyRows=daily;S.teamDailyRange=range;
+ const td=(id,val)=>{const el=$(id);if(el)el.textContent=val};
+ const disp=daily.reduce((a,x)=>a+Number(x.dispensed||0),0),oth=daily.reduce((a,x)=>a+Number(x.others||0),0);
+ td("#dailyReportDays",fmt(daily.length));td("#dailyReportDispensed",fmt(disp));td("#dailyReportOthers",fmt(oth));td("#dailyReportClosed",fmt(disp+oth));
+ const box=$("#dailyReportRows");if(!box)return;
+ box.innerHTML=daily.map(x=>{const total=Number(x.closed||0),rate=total?Math.round(Number(x.dispensed||0)/total*100):0;const d=pd(x.day);return `<tr><td>${x.day}</td><td>${d.toLocaleDateString("en-GB",{weekday:"long"})}</td><td>${fmt(x.dispensed)}</td><td>${fmt(x.others)}</td><td><b>${fmt(total)}</b></td><td>${rate}%</td></tr>`}).join("")||'<tr><td colspan="6">No records in this period.</td></tr>';
+}
+
 function renderStaffRankingChart(list){
  const el=$("#staffRankingChart");if(!el)return;
  const rows=(list||[]).filter(x=>x.closed>0).sort((a,b)=>b.closed-a.closed).slice(0,10);
@@ -2691,6 +2765,7 @@ window.loadTeamPerformance=async()=>{
  $("#activeStaff").textContent=summary.list.filter(x=>x.closed>0).length;
  $("#teamAverage").textContent=summary.workDays?((summary.totalDispensed+summary.totalOthers)/summary.workDays).toFixed(1):"0";
  renderTeamAnalytics(summary,rows,adjustments,range);
+ renderDailyOperationsReport(rows,adjustments,range);
  if($("#teamLastUpdated"))$("#teamLastUpdated").textContent=`Last updated ${new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"})}`;
  let profiles=(S.teamProfiles||[]).filter(p=>p.is_active!==false);
  const cards=profiles.map(profile=>{
@@ -3358,13 +3433,23 @@ window.exportRegistryExcel=async()=>{
 window.exportTeamExcel=async()=>{
  await loadXLSX();
  const range=performanceRange($("#teamPerfRange")?.value||"today","teamPerf");if(!range)return;
- const rows=(S.teamPerformanceRows||[]).map(x=>({
+ const staffRows=(S.teamPerformanceRows||[]).map(x=>({
   Period:range.label,Pharmacist:x.name,Dispensed:x.dispensed,Others:x.others,
   "Closed Cases":x.closed,"Work Days":x.workDays,
   "Average per Work Day":x.workDays?Number((x.closed/x.workDays).toFixed(1)):0
  }));
- const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),"Team Performance");
+ const dailyRows=(S.teamDailyRows||[]).map(x=>{const total=Number(x.closed||0);return {Date:x.day,Day:pd(x.day).toLocaleDateString("en-GB",{weekday:"long"}),Dispensed:x.dispensed,"Not Dispensed / Others":x.others,"Total Closed":total,"Dispense Rate %":total?Math.round(Number(x.dispensed||0)/total*100):0}});
+ const wb=XLSX.utils.book_new();
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(dailyRows),"Daily Report");
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(staffRows),"Staff Performance");
  saveWorkbook(wb,`team-performance-${range.type}-${iso(new Date())}.xlsx`);
+}
+window.exportTeamDailyExcel=async()=>{
+ await loadXLSX();
+ const range=S.teamDailyRange||performanceRange($("#teamPerfRange")?.value||"today","teamPerf");if(!range)return;
+ const rows=(S.teamDailyRows||[]).map(x=>{const total=Number(x.closed||0);return {Period:range.label,Date:x.day,Day:pd(x.day).toLocaleDateString("en-GB",{weekday:"long"}),Dispensed:x.dispensed,"Not Dispensed / Others":x.others,"Total Closed":total,"Dispense Rate %":total?Math.round(Number(x.dispensed||0)/total*100):0}});
+ const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),"Daily Report");
+ saveWorkbook(wb,`daily-operations-${range.type}-${iso(new Date())}.xlsx`);
 }
 
 window.exportCurrentView=()=>({
