@@ -592,9 +592,31 @@
  .sync-status-head{align-items:flex-start}
 }
 
+
+/* ===== PREMIUM PATIENT CARDS + ADMIN DATA CENTER ===== */
+.card{position:relative;overflow:hidden;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.card:hover{transform:translateY(-2px);box-shadow:0 16px 38px rgba(0,0,0,.20)}
+.card.vip-card{border-color:rgba(255,208,92,.72);background:linear-gradient(145deg,rgba(52,43,20,.92),rgba(13,31,45,.98));box-shadow:0 0 0 1px rgba(255,208,92,.08) inset,0 12px 34px rgba(0,0,0,.18)}
+.card.vip-card:before{content:"VIP";position:absolute;right:-31px;top:16px;width:110px;text-align:center;transform:rotate(42deg);padding:4px 0;background:linear-gradient(90deg,#f2b83f,#ffe59a);color:#3a2600;font-size:8px;font-weight:1000;letter-spacing:.15em;box-shadow:0 4px 16px #0004}
+.card.vip-card h4{color:#fff7d2}
+.card-topline{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding-right:22px}
+.vip-badge{background:linear-gradient(135deg,rgba(255,198,55,.22),rgba(255,226,142,.12));border-color:rgba(255,211,98,.78);color:#ffe394;box-shadow:0 0 20px rgba(255,204,79,.10)}
+.card.vip-card .patient-copy-item{border-color:rgba(255,211,98,.20);background:rgba(25,26,26,.35)}
+.card.vip-card .full-address-btn{border-color:rgba(255,211,98,.32)}
+.admin-data-center{border:1px solid #2b5873;background:linear-gradient(135deg,#0d2b40,#091b2b);border-radius:20px;padding:18px;margin:14px 0}
+.admin-data-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}.admin-data-head p{margin:5px 0 0;color:var(--m);font-size:10px}
+.admin-tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}.admin-tab{border:1px solid var(--line);background:#0b2031;color:#b9cddd;border-radius:10px;padding:9px 12px;font-size:10px;font-weight:900}.admin-tab.active{border-color:var(--c);background:#103147;color:#fff;box-shadow:0 0 0 1px #58e7ff18 inset}
+.admin-pane{display:none}.admin-pane.active{display:block}
+.vip-admin-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px}.vip-admin-kpis>div{border:1px solid var(--line);background:#081a29;border-radius:12px;padding:11px}.vip-admin-kpis span{display:block;color:var(--m);font-size:8px;text-transform:uppercase}.vip-admin-kpis b{display:block;font-size:20px;margin-top:5px}
+.vip-editor{display:grid;grid-template-columns:1fr 1.25fr 1fr 1.4fr auto;gap:8px;align-items:end;margin:12px 0}.vip-editor label,.master-editor-grid label{display:block;color:var(--m);font-size:8px;margin-bottom:4px}.vip-editor input,.vip-editor textarea,.master-editor-grid input,.master-editor-grid textarea{width:100%;border:1px solid var(--line);background:#0b1f31;color:#fff;border-radius:9px;padding:9px}.vip-editor textarea{min-height:38px;resize:vertical}.vip-actions{display:flex;gap:6px}.vip-action-btn{border:1px solid var(--line);background:#10263a;color:#fff;border-radius:8px;padding:7px 9px;font-size:9px;font-weight:900}.vip-action-btn.good{border-color:#45e6aa55;color:var(--g);background:#45e6aa0c}.vip-action-btn.warn{border-color:#ffb85f55;color:var(--o);background:#ffb85f0c}.vip-action-btn.danger{border-color:#ff687f55;color:var(--r);background:#ff687f0c}
+.data-source-chip{display:inline-flex;padding:4px 6px;border-radius:999px;font-size:8px;font-weight:900}.data-source-chip.override{color:#ffe394;border:1px solid #ffd05c55;background:#ffd05c0f}.data-source-chip.master{color:#9fe8ff;border:1px solid #58e7ff44;background:#58e7ff0d}.data-source-chip.missing{color:#ff9ca5;border:1px solid #ff687f44;background:#ff687f0d}
+.master-table .edit-cell{white-space:nowrap}.master-edit-btn{border:1px solid #58e7ff44;background:#58e7ff0d;color:var(--c);border-radius:7px;padding:6px 8px;font-size:8px;font-weight:900}
+.data-modal{position:fixed;inset:0;z-index:160;background:#02070dd9;backdrop-filter:blur(12px);display:grid;place-items:center;padding:18px}.data-modal.hidden{display:none}.data-modal-box{width:min(720px,96vw);max-height:88vh;overflow:auto;border:1px solid #2a536e;background:#091a2a;border-radius:20px;padding:20px;box-shadow:0 30px 100px #0009}.master-editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.master-editor-grid .wide{grid-column:1/-1}.data-modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}.data-modal-actions button{border:1px solid var(--line);background:#10263a;color:#fff;border-radius:9px;padding:9px 12px}.data-modal-actions .primary{border:0;background:linear-gradient(135deg,var(--c),var(--b));color:#04111c;font-weight:900}
+@media(max-width:1000px){.vip-admin-kpis{grid-template-columns:repeat(2,1fr)}.vip-editor{grid-template-columns:1fr 1fr}.vip-editor .vip-actions{grid-column:1/-1}}
+@media(max-width:650px){.vip-admin-kpis{grid-template-columns:1fr}.vip-editor,.master-editor-grid{grid-template-columns:1fr}.master-editor-grid .wide{grid-column:auto}.admin-data-head{display:block}.admin-tabs{margin-top:10px}}
 </style></head><body>
 <div class="shell"><aside class="side"><div class="brand"><div class="logo">DI</div><div><b>Dispense Lite</b><small>Daily Operations</small></div></div>
-<button class="nav active" data-v="home">◈ <span>Overview</span></button><button class="nav" data-v="queue">▷ <span>Dispense Queue</span></button><button class="nav" data-v="excluded">⊘ <span>Excluded Patients</span><span id="excludedNavCount" class="excluded-nav-count">0</span></button><button class="nav" data-v="registry">◎ <span>Patient Registry</span></button><button class="nav" data-v="calendar">▦ <span>Smart Calendar</span></button><button class="nav" data-v="demand">◆ <span>Drug Demand</span></button><button id="teamNav" class="nav" data-v="team">♟ <span>Team</span></button><button id="adminNav" class="nav hidden" data-v="admin">⚙ <span>Admin</span></button><div class="sidefoot">Created by Automation Supervisor Ali Alsada</div></aside>
+<button class="nav active" data-v="home">◈ <span>Overview</span></button><button class="nav" data-v="queue">▷ <span>Dispense Queue</span></button><button class="nav" data-v="registry">◎ <span>Patient Registry</span></button><button class="nav" data-v="calendar">▦ <span>Smart Calendar</span></button><button class="nav" data-v="demand">◆ <span>Drug Demand</span></button><button id="teamNav" class="nav" data-v="team">♟ <span>Team</span></button><button id="adminNav" class="nav hidden" data-v="admin">⚙ <span>Admin</span></button><div class="sidefoot">Created by Automation Supervisor Ali Alsada</div></aside>
 <main class="main"><header class="top"><div><div class="ey">PHARMACY OPERATIONS</div><h1 id="title">Overview</h1></div><div class="actions"><div id="live" class="live"><span class="dot"></span><small id="sync">Local mode</small></div><div class="user"><small id="roleLabel">User</small><b id="who">Not signed in</b></div><button class="logout-btn" onclick="signOutUser()">Sign Out</button><button class="copy" onclick="exportCurrentView()">Export Excel</button><input id="date" type="date"></div></header>
 <section id="home" class="view active">
 <div id="myPerformance" class="my-performance hidden">
@@ -669,24 +691,6 @@
 
 <div id="workComplete" class="work-complete hidden">🎉 Today’s work is complete — Remaining: 0</div><div class="live-progress"><div class="live-card"><i class="live-dot"></i><span>Scheduled</span><b id="liveScheduled">0</b></div><div class="live-card dispensed"><span>Dispensed</span><b id="liveDispensed">0</b></div><div class="live-card others"><span>Others</span><b id="liveOthers">0</b></div><div class="live-card working"><span>In Progress</span><b id="liveWorking">0</b></div><div class="live-card remaining"><span>Remaining</span><b id="liveRemaining">0</b></div><div class="live-card"><span>Completion</span><b id="liveCompletion">0%</b></div><div class="live-card dispensed"><span>Dispensed Rate</span><b id="liveDispensedRate">0%</b></div></div><div class="hero"><div><div class="ey">TODAY'S DISPENSING</div><h2 id="hello">Good Morning, Pharmacist.</h2><p>Fast, focused, and ready for daily dispensing.</p><div class="num" id="heroCount">0</div><p id="heroDate">—</p></div><button class="copy" onclick="go('queue')">Start Queue →</button></div><div class="kpis"><div class="kpi red"><span>Overdue</span><b id="over">0</b></div><div class="kpi green"><span>Today</span><b id="today">0</b></div><div class="kpi orange"><span>Tomorrow</span><b id="tomorrow">0</b></div><div class="kpi cyan"><span>Next 7 Days</span><b id="week">0</b></div><div class="kpi"><span>Unique Patients</span><b id="all">0</b></div></div></section>
 <section id="queue" class="view"><div class="section"><div><div class="ey">DAILY WORKLIST</div><h2>Dispense Queue</h2><p>VIP patients appear first, followed by your priority specialties. Preparation Due is calculated from the latest actual Medica dispense only.</p></div><div class="toolbar"><select id="mode"><option value="today">Today</option><option value="overdue">Overdue</option><option value="tomorrow">Tomorrow</option><option value="week">Next 7 Days</option></select><select id="qspecialty"><option value="priority">★ Priority First</option><option value="all">All Specialties</option></select><input id="qqueue" class="search" placeholder="Search MRN, patient, medication…"></div></div><div id="priorityStrip" class="priority-strip">★ My priority specialties: <b>Not assigned</b> — all patients remain visible.</div><div class="summary"><div><span>Scheduled</span><b id="scheduled">0</b></div><div><span>Dispensed</span><b id="done">0</b></div><div><span>Others</span><b id="queueOthers">0</b></div><div><span>In Progress</span><b id="working">0</b></div><div><span>Remaining</span><b id="queueRemaining">0</b></div><div><span>Completion</span><b id="rate">0%</b></div><div><span>Dispensed Rate</span><b id="dispensedRate">0%</b></div></div><div class="progress"><i id="bar"></i></div><div id="cards" class="cards"></div></section>
-
-<section id="excluded" class="view">
- <div class="section">
-  <div><div class="ey">PATIENT EXCLUSIONS</div><h2>Excluded Patients</h2><p>Patients excluded from future preparation queues, with reason and audit details.</p></div>
-  <div class="toolbar"><input id="qexcluded" class="search" placeholder="Search MRN, patient, reason…"><button class="copy" onclick="exportExcludedExcel()">Export Excel</button></div>
- </div>
- <div class="excluded-kpis">
-  <div><span>Active Exclusions</span><b id="excludedActiveCount">0</b></div>
-  <div><span>Specialties</span><b id="excludedSpecialtyCount">0</b></div>
-  <div><span>Excluded This Month</span><b id="excludedMonthCount">0</b></div>
- </div>
- <div class="tablebox">
-  <table>
-   <thead><tr><th>Patient</th><th>MRN</th><th>Specialty</th><th>Reason</th><th>Note</th><th>Excluded By</th><th>Date</th><th>Action</th></tr></thead>
-   <tbody id="excludedRows"></tbody>
-  </table>
- </div>
-</section>
 
 <section id="registry" class="view"><div class="section"><div><div class="ey">PATIENT INDEX</div><h2>Patient Registry</h2></div><input id="qreg" class="search" placeholder="Search MRN, patient, medication…"></div><div class="tablebox"><table><thead><tr><th>Patient</th><th>MRN</th><th>Medications</th><th>Last Dispense</th><th>Next Eligible</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table><div class="pager"><span id="count"></span><div><button onclick="page(-1)">←</button> <span id="pg"></span> <button onclick="page(1)">→</button></div></div></div></section>
 
@@ -809,7 +813,7 @@
 </section>
 
 <section id="admin" class="view">
- <div class="section"><div><div class="ey">ADMINISTRATION</div><h2>System Administration</h2><p>Only administrators can access this page.</p></div></div>
+ <div class="section"><div><div class="ey">ADMINISTRATION</div><h2>System Administration</h2><p>Manage patient data, VIP status, exclusions and system settings from one place.</p></div></div>
  <article class="panel" style="margin-bottom:14px">
   <div class="section">
    <div><div class="ey">LATEST DATA UPDATE</div><h3>Medica Update Status</h3><p>Summary of the latest processed Medica file compared with the previous platform dataset.</p></div>
@@ -862,6 +866,59 @@
   </article>
  </div>
 
+ <section class="admin-data-center">
+  <div class="admin-data-head">
+   <div><div class="ey">PATIENT DATA CENTER</div><h3>VIP, Patient Master & Exclusions</h3><p>One admin workspace for patient contact details, VIP overrides and exclusion management.</p></div>
+   <button class="copy" onclick="refreshAdminDataCenter()">Refresh Data</button>
+  </div>
+  <div class="admin-tabs">
+   <button id="adminTabVip" class="admin-tab active" onclick="showAdminPane('vip')">★ VIP Management</button>
+   <button id="adminTabMaster" class="admin-tab" onclick="showAdminPane('master')">◎ Patient Master</button>
+   <button id="adminTabExclusions" class="admin-tab" onclick="showAdminPane('exclusions')">⊘ Exclusions</button>
+  </div>
+
+  <div id="adminPaneVip" class="admin-pane active">
+   <div class="vip-admin-kpis">
+    <div><span>Active VIP</span><b id="vipAdminActive">—</b></div>
+    <div><span>VIP Mobile Overrides</span><b id="vipAdminOverrides">—</b></div>
+    <div><span>Missing MRN Match</span><b id="vipAdminMissingMatch">—</b></div>
+    <div><span>Inactive VIP</span><b id="vipAdminInactive">—</b></div>
+   </div>
+   <div class="vip-editor">
+    <div><label>MRN</label><input id="vipEditMrn" placeholder="MRN"></div>
+    <div><label>Patient Name</label><input id="vipEditName" placeholder="Patient name"></div>
+    <div><label>VIP Mobile Override</label><input id="vipEditMobile" placeholder="Optional VIP mobile"></div>
+    <div><label>Note</label><input id="vipEditNote" placeholder="VIP note"></div>
+    <div class="vip-actions"><button class="copy" onclick="saveVipPatient()">Save VIP</button><button class="vip-action-btn" onclick="matchVipByMobile()">Find MRN</button></div>
+   </div>
+   <div class="master-filter-bar"><input id="vipAdminSearch" placeholder="Search VIP by MRN, name, mobile or note" oninput="renderVipAdmin()"></div>
+   <div id="vipAdminStatus" class="muted">VIP data will load when Admin opens.</div>
+   <div class="tablebox"><table class="user-table"><thead><tr><th>VIP</th><th>MRN</th><th>Patient</th><th>Mobile Used</th><th>Source</th><th>Master Mobile</th><th>Note</th><th>Status</th><th>Action</th></tr></thead><tbody id="vipAdminRows"></tbody></table></div>
+  </div>
+
+  <div id="adminPaneMaster" class="admin-pane">
+   <div class="master-kpis">
+    <div class="master-kpi"><span>Total Master</span><b id="pmTotal">—</b></div>
+    <div class="master-kpi"><span>Complete</span><b id="pmComplete">—</b></div>
+    <div class="master-kpi"><span>Missing National ID</span><b id="pmMissingNational">—</b></div>
+    <div class="master-kpi"><span>Missing Mobile</span><b id="pmMissingMobile">—</b></div>
+    <div class="master-kpi"><span>Missing Short Address</span><b id="pmMissingAddress">—</b></div>
+   </div>
+   <div class="master-filter-bar">
+    <select id="pmFilter" onchange="renderPatientMasterAdmin()"><option value="any_missing">Any Missing Data</option><option value="complete">Complete</option><option value="missing_national_id">Missing National ID</option><option value="missing_mobile">Missing Mobile</option><option value="missing_short_address">Missing Short Address</option><option value="all">All</option></select>
+    <input id="pmSearch" placeholder="Search MRN, patient name, National ID, mobile or address" oninput="renderPatientMasterAdmin()">
+   </div>
+   <div id="pmStatus" class="muted">Patient Master will load when Admin opens.</div>
+   <div class="tablebox"><table class="user-table master-table"><thead><tr><th>MRN</th><th>Patient</th><th>National ID</th><th>Mobile</th><th>Short Address</th><th>Status</th><th>Action</th></tr></thead><tbody id="pmRows"></tbody></table></div>
+  </div>
+
+  <div id="adminPaneExclusions" class="admin-pane">
+   <div class="section"><div><div class="ey">PATIENT EXCLUSIONS</div><h3>Excluded Patients</h3><p>Manage patients excluded from future preparation queues.</p></div><div class="toolbar"><input id="qexcluded" class="search" placeholder="Search MRN, patient, reason…"><button class="copy" onclick="exportExcludedExcel()">Export Excel</button></div></div>
+   <div class="excluded-kpis"><div><span>Active Exclusions</span><b id="excludedActiveCount">0</b></div><div><span>Specialties</span><b id="excludedSpecialtyCount">0</b></div><div><span>Excluded This Month</span><b id="excludedMonthCount">0</b></div></div>
+   <div class="tablebox"><table><thead><tr><th>Patient</th><th>MRN</th><th>Specialty</th><th>Reason</th><th>Note</th><th>Excluded By</th><th>Date</th><th>Action</th></tr></thead><tbody id="excludedRows"></tbody></table></div>
+  </div>
+ </section>
+
  <article class="panel" style="margin-top:14px">
   <div class="section">
    <div><div class="ey">SPECIALTY ROUTING</div><h3>Priority Assignment</h3><p>Assign one or more specialties to each employee. This changes priority order only; it never hides other patients.</p></div>
@@ -873,33 +930,6 @@
    <button class="copy" onclick="addSpecialtyRoute()">Add Priority</button>
   </div>
   <div id="specialtyRouteList" class="specialty-route-list"></div>
- </article>
-
- <article class="panel" style="margin-top:14px">
-  <div class="section">
-   <div><div class="ey">PATIENT MASTER</div><h3>Data Completeness</h3><p>Patient contact data from Supabase patient_master. Specialty continues to come from Medica only.</p></div>
-   <button class="copy" onclick="loadPatientMasterAdmin(true)">Refresh</button>
-  </div>
-  <div class="master-kpis">
-   <div class="master-kpi"><span>Total Master</span><b id="pmTotal">—</b></div>
-   <div class="master-kpi"><span>Complete</span><b id="pmComplete">—</b></div>
-   <div class="master-kpi"><span>Missing National ID</span><b id="pmMissingNational">—</b></div>
-   <div class="master-kpi"><span>Missing Mobile</span><b id="pmMissingMobile">—</b></div>
-   <div class="master-kpi"><span>Missing Short Address</span><b id="pmMissingAddress">—</b></div>
-  </div>
-  <div class="master-filter-bar">
-   <select id="pmFilter" onchange="renderPatientMasterAdmin()">
-    <option value="complete">Complete</option>
-    <option value="missing_national_id">Missing National ID</option>
-    <option value="missing_mobile">Missing Mobile</option>
-    <option value="missing_short_address">Missing Short Address</option>
-    <option value="any_missing">Any Missing Data</option>
-    <option value="all">All</option>
-   </select>
-   <input id="pmSearch" placeholder="Search MRN, patient name, National ID, mobile or address" oninput="renderPatientMasterAdmin()">
-  </div>
-  <div id="pmStatus" class="muted">Open Admin to load Patient Master.</div>
-  <div class="tablebox"><table class="user-table master-table"><thead><tr><th>MRN</th><th>Patient</th><th>National ID</th><th>Mobile</th><th>Short Address</th><th>Status</th></tr></thead><tbody id="pmRows"></tbody></table></div>
  </article>
 
  <article class="panel" style="margin-top:14px">
@@ -920,6 +950,20 @@
 </section>
 </main></div>
 
+
+<div id="masterEditModal" class="data-modal hidden" onclick="closeMasterEditor(event)"><div class="data-modal-box" onclick="event.stopPropagation()">
+ <div class="ey">PATIENT MASTER EDITOR</div><h2>Edit Patient Data</h2><p class="muted">Changes are saved directly to Supabase patient_master.</p>
+ <div class="master-editor-grid">
+  <div><label>MRN</label><input id="masterEditMrn" readonly></div>
+  <div><label>Patient Name</label><input id="masterEditName"></div>
+  <div><label>National ID</label><input id="masterEditNational"></div>
+  <div><label>Mobile</label><input id="masterEditMobile"></div>
+  <div><label>Short Address</label><input id="masterEditShort"></div>
+  <div class="wide"><label>Full Address</label><textarea id="masterEditFull" rows="4"></textarea></div>
+ </div>
+ <div class="data-modal-actions"><button onclick="closeMasterEditor()">Cancel</button><button class="primary" onclick="savePatientMasterEdit()">Save Changes</button></div>
+ <div id="masterEditMessage" class="auth-msg"></div>
+</div></div>
 <div id="authScreen" class="auth-screen">
  <div class="auth-box">
   <div class="ey">SECURE ACCESS</div>
@@ -1004,7 +1048,7 @@
 <script>
 const $=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)],fmt=n=>new Intl.NumberFormat().format(Math.round(n||0));
 const STAFF={bassemah:"Bassemah H. Al Faraj",batool:"Batool S. T. Alfaraj",ghada:"Ghada A. Alqudaihi",rabab:"Rabab Alsheef",team_import:"Today's Team Total"};
-const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||20,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastAction:null,undoTicker:null,legacy:null,demandPatients:null,demandRows:[],view:"home",calMonth:new Date(),calSelected:new Date(),calendarCache:{},precomputedCalendar:null,demandIndex:null,demandDateLoaded:"",settingsChannel:null,otherMrn:"",otherReason:"",teamProfiles:[],closedBefore:{},performanceCache:{},teamPerformanceRows:[],myPerformanceRange:"today",teamPerformanceRange:"today",realtimeChannel:null,realtimeTimer:null,teamLivePoll:null,teamRefreshBusy:false,specialtyRoutes:[],myPrioritySpecialties:[],exclusions:{},exclusionMrn:"",exclusionReason:"",inventoryMap:null,inventoryInfo:null,inventoryCheckedAt:null,inventoryLoading:false,patientMasterMap:new Map(),patientMasterRows:[],patientMasterLoaded:false,patientMasterAdminLoaded:false,currentFullAddress:"",vipPatients:{},vipLoaded:false};
+const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||20,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastAction:null,undoTicker:null,legacy:null,demandPatients:null,demandRows:[],view:"home",calMonth:new Date(),calSelected:new Date(),calendarCache:{},precomputedCalendar:null,demandIndex:null,demandDateLoaded:"",settingsChannel:null,otherMrn:"",otherReason:"",teamProfiles:[],closedBefore:{},performanceCache:{},teamPerformanceRows:[],myPerformanceRange:"today",teamPerformanceRange:"today",realtimeChannel:null,realtimeTimer:null,teamLivePoll:null,teamRefreshBusy:false,specialtyRoutes:[],myPrioritySpecialties:[],exclusions:{},exclusionMrn:"",exclusionReason:"",inventoryMap:null,inventoryInfo:null,inventoryCheckedAt:null,inventoryLoading:false,patientMasterMap:new Map(),patientMasterRows:[],patientMasterLoaded:false,patientMasterAdminLoaded:false,currentFullAddress:"",vipPatients:{},vipLoaded:false,vipAdminRows:[],vipAdminLoaded:false,masterEditMrn:"",adminPane:"vip"};
 const iso=d=>{let x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)},
 pd=s=>new Date(s+"T00:00:00"),
 add=(s,n)=>{let d=pd(s);d.setDate(d.getDate()+n);return iso(d)},
@@ -1723,8 +1767,8 @@ function renderPatientMasterAdmin(){
  const body=$("#pmRows");if(!body)return;
  body.innerHTML=a.slice(0,500).map(r=>{
   const complete=patientMasterComplete(r),cell=v=>masterMissing(v)?'<span class="missing">Missing</span>':String(v);
-  return `<tr><td>${r.mrn||"—"}</td><td>${r.patient_name||"—"}</td><td>${cell(r.national_id)}</td><td>${cell(r.mobile)}</td><td>${cell(r.short_national_address)}</td><td><span class="${complete?'complete':'missing'}">${complete?'Complete':'Missing data'}</span></td></tr>`;
- }).join("")||'<tr><td colspan="6" class="muted">No matching records.</td></tr>';
+  return `<tr><td>${r.mrn||"—"}</td><td>${r.patient_name||"—"}</td><td>${cell(r.national_id)}</td><td>${cell(r.mobile)}</td><td>${cell(r.short_national_address)}</td><td><span class="${complete?'complete':'missing'}">${complete?'Complete':'Missing data'}</span></td><td class="edit-cell"><button class="master-edit-btn" onclick="editPatientMaster('${encodeURIComponent(normalizeMrn(r.mrn))}')">Edit</button></td></tr>`;
+ }).join("")||'<tr><td colspan="7" class="muted">No matching records.</td></tr>';
 }
 window.renderPatientMasterAdmin=renderPatientMasterAdmin;
 window.openFullAddress=async(mrn)=>{
@@ -1748,7 +1792,7 @@ window.openFullAddress=async(mrn)=>{
   }catch(e){console.warn("Direct Patient Master lookup failed",e)}
  }
 
- const full=(p?.full_address||S.vipPatients[key]?.full_address||r?.full_address||"").trim();
+ const full=getPatientField(p||{id:key},"full_address");
  S.currentFullAddress=full;
  const t=$("#fullAddressText"),m=$("#fullAddressMrn");
  if(t)t.textContent=full||"Full address is not available in Patient Master.";
@@ -1865,7 +1909,7 @@ function bind(){$$(".nav").forEach(b=>b.onclick=()=>go(b.dataset.v));$("#date").
   S.calMonth=new Date(S.date.getFullYear(),S.date.getMonth(),1);
   await renderCalendar();
  }
-};$("#mode").onchange=renderQueue;$("#qspecialty").onchange=renderQueue;$("#qqueue").oninput=renderQueue;$("#qexcluded").oninput=renderExcludedPatients;$("#qreg").oninput=()=>{S.page=1;renderRegistry()};$("#qdemand").oninput=renderDemandTable}
+};$("#mode").onchange=renderQueue;$("#qspecialty").onchange=renderQueue;$("#qqueue").oninput=renderQueue;if($("#qexcluded"))$("#qexcluded").oninput=renderExcludedPatients;$("#qreg").oninput=()=>{S.page=1;renderRegistry()};$("#qdemand").oninput=renderDemandTable}
 async function go(v){
  if(v==="admin"&&!requireAdmin())return;
   if(v==="team"&&!["admin","supervisor"].includes(S.profile?.role)){
@@ -1886,7 +1930,7 @@ async function go(v){
  if(v==="demand")await renderDemand();
  if(v==="excluded"){await loadExclusions();renderExcludedPatients()}
  if(v==="team")await refreshTeamLiveNow("open team");
- if(v==="admin"){renderMedicaUpdateStatus();await loadUsers();await loadAuditLog();await loadSpecialtyRouting();await loadPatientMasterAdmin()}
+ if(v==="admin"){renderMedicaUpdateStatus();await loadUsers();await loadAuditLog();await loadSpecialtyRouting();await loadPatientMasterAdmin();await loadVipAdmin();await loadExclusions();renderExcludedPatients();showAdminPane(S.adminPane||"vip")}
 }
 function openLogin(){$("#authScreen").classList.remove("hidden")}function selectStaff(id){S.staff=id;localStorage.setItem("dip-staff",id);$("#who").textContent=STAFF[id];$("#login").classList.add("hidden");toast("👋 Signed in successfully")}
 async function copyValue(encoded,label="Value",e){
@@ -1944,7 +1988,7 @@ async function loadVipPatients(){
  if(!S.sb||!S.user)return;
  try{
   const {data,error}=await S.sb.from("vip_patient_details")
-   .select("mrn,patient_name,note,active,national_id,mobile,short_national_address,full_address")
+   .select("mrn,patient_name,note,active,national_id,mobile,mobile_override,master_mobile,short_national_address,full_address")
    .eq("active",true);
   if(error)throw error;
   S.vipPatients={};
@@ -1957,7 +2001,7 @@ async function loadVipPatients(){
    const p=(S.p||[]).find(x=>normalizeMrn(x.id)===mrn);
    if(p){
     p.national_id=r.national_id||p.national_id||"";
-    p.mobile=r.mobile||p.mobile||"";
+    p.mobile=p.mobile||r.master_mobile||r.mobile||"";
     p.short_national_address=r.short_national_address||"";
     p.national_address=p.short_national_address;
     p.full_address=r.full_address||"";
@@ -1970,6 +2014,94 @@ async function loadVipPatients(){
   console.warn("VIP patient details not available",e);
   S.vipLoaded=false;
  }
+}
+function getPatientField(p,field){
+ const key=normalizeMrn(p?.id||p?.mrn||"");
+ const vip=S.vipPatients[key]||{};
+ const master=S.patientMasterMap.get(key)||{};
+ if(field==="mobile")return String(vip.mobile_override||master.mobile||vip.mobile||p?.mobile||"").trim();
+ if(field==="national_id")return String(master.national_id||vip.national_id||p?.national_id||"").trim();
+ if(field==="short_national_address")return String(master.short_national_address||vip.short_national_address||p?.short_national_address||p?.national_address||"").trim();
+ if(field==="full_address")return String(master.full_address||vip.full_address||p?.full_address||"").trim();
+ return "";
+}
+window.showAdminPane=async pane=>{
+ S.adminPane=pane;
+ ["vip","master","exclusions"].forEach(x=>{
+  $("#adminPane"+x.charAt(0).toUpperCase()+x.slice(1))?.classList.toggle("active",x===pane);
+  $("#adminTab"+x.charAt(0).toUpperCase()+x.slice(1))?.classList.toggle("active",x===pane);
+ });
+ if(pane==="vip")await loadVipAdmin();
+ if(pane==="master")await loadPatientMasterAdmin();
+ if(pane==="exclusions"){await loadExclusions();renderExcludedPatients()}
+}
+window.refreshAdminDataCenter=async()=>{
+ await Promise.all([loadVipPatients(),loadVipAdmin(true),loadPatientMasterAdmin(true),loadExclusions()]);
+ renderExcludedPatients();toast("Admin data refreshed ✓");
+}
+async function loadVipAdmin(force=false){
+ if(!requireAdmin()||!S.sb)return;
+ if(S.vipAdminLoaded&&!force){renderVipAdmin();return}
+ const status=$("#vipAdminStatus");if(status)status.textContent="Loading VIP records…";
+ try{
+  const {data,error}=await S.sb.from("vip_patients").select("mrn,patient_name,note,active,mobile_override,created_at,updated_at").order("patient_name",{ascending:true});
+  if(error)throw error;
+  S.vipAdminRows=data||[];S.vipAdminLoaded=true;renderVipAdmin();
+ }catch(e){console.error("VIP admin load failed",e);if(status)status.textContent="VIP editor needs the one-time Supabase migration for mobile_override."}
+}
+window.loadVipAdmin=loadVipAdmin;
+function renderVipAdmin(){
+ const q=($("#vipAdminSearch")?.value||"").trim().toLowerCase();
+ const rows=(S.vipAdminRows||[]).filter(r=>!q||[r.mrn,r.patient_name,r.mobile_override,r.note,S.patientMasterMap.get(normalizeMrn(r.mrn))?.mobile].join(" ").toLowerCase().includes(q));
+ const active=(S.vipAdminRows||[]).filter(r=>r.active!==false).length;
+ const inactive=(S.vipAdminRows||[]).length-active;
+ const overrides=(S.vipAdminRows||[]).filter(r=>String(r.mobile_override||"").trim()).length;
+ const missing=(S.vipAdminRows||[]).filter(r=>!S.patientMasterMap.get(normalizeMrn(r.mrn))).length;
+ [["vipAdminActive",active],["vipAdminOverrides",overrides],["vipAdminMissingMatch",missing],["vipAdminInactive",inactive]].forEach(([id,v])=>{const e=$("#"+id);if(e)e.textContent=fmt(v)});
+ const body=$("#vipAdminRows");if(!body)return;
+ body.innerHTML=rows.slice(0,700).map(r=>{
+  const key=normalizeMrn(r.mrn),master=S.patientMasterMap.get(key)||{},override=String(r.mobile_override||"").trim(),used=override||master.mobile||"";
+  return `<tr><td><span class="vip-badge">★ VIP</span></td><td>${key||"—"}</td><td>${r.patient_name||master.patient_name||"—"}</td><td>${used||'<span class="missing">Missing</span>'}</td><td>${override?'<span class="data-source-chip override">VIP Override</span>':used?'<span class="data-source-chip master">Patient Master</span>':'<span class="data-source-chip missing">Missing</span>'}</td><td>${master.mobile||"—"}</td><td>${r.note||"—"}</td><td>${r.active!==false?'<span class="complete">Active</span>':'<span class="missing">Inactive</span>'}</td><td><div class="vip-actions"><button class="vip-action-btn" onclick="editVipPatient('${encodeURIComponent(key)}')">Edit</button><button class="vip-action-btn ${r.active!==false?'warn':'good'}" onclick="toggleVipPatient('${encodeURIComponent(key)}',${r.active!==false?'false':'true'})">${r.active!==false?'Deactivate':'Activate'}</button></div></td></tr>`;
+ }).join("")||'<tr><td colspan="9" class="muted">No VIP records found.</td></tr>';
+ const st=$("#vipAdminStatus");if(st)st.textContent=`${fmt(rows.length)} matching VIP records`;
+}
+window.renderVipAdmin=renderVipAdmin;
+window.editVipPatient=encoded=>{
+ const mrn=decodeURIComponent(encoded),r=(S.vipAdminRows||[]).find(x=>normalizeMrn(x.mrn)===mrn)||{},master=S.patientMasterMap.get(mrn)||{};
+ $("#vipEditMrn").value=mrn;$("#vipEditName").value=r.patient_name||master.patient_name||"";$("#vipEditMobile").value=r.mobile_override||"";$("#vipEditNote").value=r.note||"";$("#vipEditMrn").focus();
+}
+window.matchVipByMobile=async()=>{
+ const raw=String($("#vipEditMobile")?.value||"").replace(/\D/g,"");if(!raw)return toast("Enter a mobile number first");
+ const norm=x=>String(x||"").replace(/\D/g,"").replace(/^966/,"0");
+ const wanted=norm(raw),matches=(S.patientMasterRows||[]).filter(r=>norm(r.mobile)===wanted);
+ if(matches.length===1){const r=matches[0];$("#vipEditMrn").value=r.mrn||"";$("#vipEditName").value=r.patient_name||"";toast(`Unique Patient Master match: MRN ${r.mrn}`)}
+ else if(matches.length>1)toast(`More than one Patient Master match found (${matches.length}) — review manually`);else toast("No Patient Master match found for this mobile");
+}
+window.saveVipPatient=async()=>{
+ if(!requireAdmin()||!S.sb)return;
+ const mrn=normalizeMrn($("#vipEditMrn")?.value),patient_name=$("#vipEditName")?.value.trim()||null,mobile_override=$("#vipEditMobile")?.value.trim()||null,note=$("#vipEditNote")?.value.trim()||null;
+ if(!mrn)return toast("MRN is required. Use Find MRN if you only have a mobile number.");
+ try{
+  const {error}=await S.sb.from("vip_patients").upsert({mrn,patient_name,mobile_override,note,active:true,updated_at:new Date().toISOString()},{onConflict:"mrn"});if(error)throw error;
+  $("#vipEditMrn").value="";$("#vipEditName").value="";$("#vipEditMobile").value="";$("#vipEditNote").value="";
+  S.vipAdminLoaded=false;await loadVipPatients();await loadVipAdmin(true);renderQueue();toast("VIP saved ✓");
+ }catch(e){console.error(e);toast("Could not save VIP — run the VIP admin migration once in Supabase")}
+}
+window.toggleVipPatient=async(encoded,active)=>{
+ if(!requireAdmin()||!S.sb)return;const mrn=decodeURIComponent(encoded);
+ try{const {error}=await S.sb.from("vip_patients").update({active,updated_at:new Date().toISOString()}).eq("mrn",mrn);if(error)throw error;S.vipAdminLoaded=false;await loadVipPatients();await loadVipAdmin(true);renderQueue();toast(active?"VIP activated":"VIP deactivated")}catch(e){console.error(e);toast("Could not update VIP status")}
+}
+window.editPatientMaster=encoded=>{
+ const mrn=decodeURIComponent(encoded),r=S.patientMasterMap.get(mrn)||(S.patientMasterRows||[]).find(x=>normalizeMrn(x.mrn)===mrn);if(!r)return toast("Patient Master record not found");
+ S.masterEditMrn=mrn;$("#masterEditMrn").value=mrn;$("#masterEditName").value=r.patient_name||"";$("#masterEditNational").value=r.national_id||"";$("#masterEditMobile").value=r.mobile||"";$("#masterEditShort").value=r.short_national_address||"";$("#masterEditFull").value=r.full_address||"";$("#masterEditMessage").textContent="";$("#masterEditModal").classList.remove("hidden");
+}
+window.closeMasterEditor=e=>{if(e&&e.target!==$("#masterEditModal"))return;$("#masterEditModal").classList.add("hidden")}
+window.savePatientMasterEdit=async()=>{
+ if(!requireAdmin()||!S.sb)return;const mrn=S.masterEditMrn;if(!mrn)return;
+ const patch={patient_name:$("#masterEditName").value.trim()||null,national_id:$("#masterEditNational").value.trim()||null,mobile:$("#masterEditMobile").value.trim()||null,short_national_address:$("#masterEditShort").value.trim()||null,full_address:$("#masterEditFull").value.trim()||null,updated_at:new Date().toISOString()};
+ try{const {data,error}=await S.sb.from("patient_master").update(patch).eq("mrn",mrn).select("mrn,patient_name,national_id,mobile,short_national_address,full_address").maybeSingle();if(error)throw error;if(data){applyPatientMasterRows([data]);const i=S.patientMasterRows.findIndex(x=>normalizeMrn(x.mrn)===mrn);if(i>=0)S.patientMasterRows[i]={...S.patientMasterRows[i],...data};}
+  closeMasterEditor();renderPatientMasterAdmin();renderVipAdmin();renderQueue();toast("Patient Master updated ✓");
+ }catch(e){console.error(e);$("#masterEditMessage").textContent="Could not save. Check Admin UPDATE/RLS permission on patient_master."}
 }
 function activePatients(){return S.p.filter(p=>!isExcludedPatient(p))}
 function refreshSpecialtyOptions(){
@@ -2672,21 +2804,21 @@ function renderQueue(){
  $("#scheduled").textContent=fmt(a.length);$("#done").textContent=fmt(done);$("#queueOthers").textContent=fmt(others);$("#working").textContent=fmt(working);$("#queueRemaining").textContent=fmt(remaining);$("#rate").textContent=rate+"%";let dispRate=a.length?Math.round(done/a.length*100):0;let dr=$("#dispensedRate");if(dr)dr.textContent=dispRate+"%";$("#bar").style.width=rate+"%";
  $("#cards").innerHTML=a.slice(0,300).map(p=>{
   let st=ast(p.id),u=au(p.id),locked=st==="in_progress"&&u&&u!==S.staff;
-  return `<article class="card ${st}">
-   <span class="badge ${state(p)}">${st==="waiting"?label(state(p)):st.replace("_"," ")}</span>
+  return `<article class="card ${st} ${isVipPatient(p)?"vip-card":""}">
+   <div class="card-topline"><span class="badge ${state(p)}">${st==="waiting"?label(state(p)):st.replace("_"," ")}</span>
    ${p.speciality?`<span class="badge">${p.speciality}</span>`:""}
-   ${isVipPatient(p)?`<span class="vip-badge">★ VIP</span>`:""}
-   ${isPriorityPatient(p)?`<span class="priority-badge">★ MY PRIORITY</span>`:""}
+   ${isVipPatient(p)?`<span class="vip-badge">★ VIP PATIENT</span>`:""}
+   ${isPriorityPatient(p)?`<span class="priority-badge">★ MY PRIORITY</span>`:""}</div>
    <h4><button style="border:0;background:transparent;color:inherit;padding:0;font-weight:inherit;text-align:left" title="Copy patient name" onclick="copyValue('${encodeURIComponent(p.name||"Unknown")}','Patient name',event)">${p.name||"Unknown"}</button></h4>
    <div class="patient-last"><span>Last Dispense</span><b>${p.base_last||"—"}</b></div><div class="patient-last"><span>Preparation Due</span><b>${next(p)||"—"}</b></div>
    <div class="patient-copy-grid">
     ${patientCopyItem("MRN",p.id)}
-    ${patientCopyItem("National ID",p.national_id||S.vipPatients[normalizeMrn(p.id)]?.national_id||S.patientMasterMap.get(normalizeMrn(p.id))?.national_id)}
-    ${patientCopyItem("Mobile",p.mobile||S.vipPatients[normalizeMrn(p.id)]?.mobile||S.patientMasterMap.get(normalizeMrn(p.id))?.mobile)}
-    ${patientCopyItem("Short Address",p.short_national_address||p.national_address||S.vipPatients[normalizeMrn(p.id)]?.short_national_address||S.patientMasterMap.get(normalizeMrn(p.id))?.short_national_address)}
+    ${patientCopyItem("National ID",getPatientField(p,"national_id"))}
+    ${patientCopyItem("Mobile",getPatientField(p,"mobile"))}
+    ${patientCopyItem("Short Address",getPatientField(p,"short_national_address"))}
    </div>
    ${(()=>{
-      const fa=(p.full_address||S.vipPatients[normalizeMrn(p.id)]?.full_address||S.patientMasterMap.get(normalizeMrn(p.id))?.full_address||"").trim();
+      const fa=getPatientField(p,"full_address");
       return `<button class="full-address-btn" onclick="openFullAddress('${p.id}')" ${fa?'':'disabled'}>${fa?'View Full Address':'Full Address Unavailable'}</button>`;
     })()}
    ${u?`<div class="staff">👩‍⚕️ ${STAFF[u]||u}</div>`:""}
