@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#07111d"><title>Dispense Intelligence Lite</title>
+<meta name="theme-color" content="#07111d"><title>Dispense Intelligence Lite — Public Exclusions + Shared VIP Mobile</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4"></script><script src="supabase-config.js"></script>
 <style>
 :root{--bg:#07111d;--p:#0c1c2b;--p2:#10273a;--line:#1d374b;--t:#f5f9fc;--m:#8ea6b9;--c:#58e7ff;--b:#6283ff;--g:#45e6aa;--o:#ffb85f;--r:#ff687f;--v:#ad86ff}
@@ -615,6 +615,8 @@
 @media(max-width:1000px){.vip-admin-kpis{grid-template-columns:repeat(2,1fr)}.vip-editor{grid-template-columns:1fr 1fr}.vip-editor .vip-actions{grid-column:1/-1}}
 @media(max-width:650px){.vip-admin-kpis{grid-template-columns:1fr}.vip-editor,.master-editor-grid{grid-template-columns:1fr}.master-editor-grid .wide{grid-column:auto}.admin-data-head{display:block}.admin-tabs{margin-top:10px}}
 
+.vip-mobile-matches{margin:8px 0 12px;display:grid;gap:7px}.vip-mobile-match{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid #2a536e;background:#0b2031;border-radius:11px;padding:10px}.vip-mobile-match strong{display:block}.vip-mobile-match small{display:block;color:var(--m);margin-top:3px}.vip-mobile-match button{border:1px solid #58e7ff55;background:#58e7ff10;color:var(--c);border-radius:8px;padding:7px 10px;font-size:9px;font-weight:900}@media(max-width:650px){.vip-mobile-match{align-items:flex-start;flex-direction:column}}
+
 /* ===== ADMIN EXCLUSION LOOKUP + DAILY REPORT ===== */
 .exclusion-lookup-panel{border:1px solid #2a536e;background:linear-gradient(135deg,#0d2639,#091b2a);border-radius:16px;padding:15px;margin:0 0 14px}
 .exclusion-lookup-panel h3{margin:3px 0 4px}.exclusion-lookup-panel p{margin:0;color:var(--m);font-size:10px}
@@ -624,7 +626,7 @@
 @media(max-width:720px){.exclusion-lookup-bar,.daily-report-head{flex-direction:column;align-items:stretch}.daily-report-kpis{grid-template-columns:repeat(2,1fr)}.exclusion-found{align-items:flex-start;flex-direction:column}}
 </style></head><body>
 <div class="shell"><aside class="side"><div class="brand"><div class="logo">DI</div><div><b>Dispense Lite</b><small>Daily Operations</small></div></div>
-<button class="nav active" data-v="home">◈ <span>Overview</span></button><button class="nav" data-v="queue">▷ <span>Dispense Queue</span></button><button class="nav" data-v="registry">◎ <span>Patient Registry</span></button><button class="nav" data-v="calendar">▦ <span>Smart Calendar</span></button><button class="nav" data-v="demand">◆ <span>Drug Demand</span></button><button id="teamNav" class="nav" data-v="team">♟ <span>Team</span></button><button id="adminNav" class="nav hidden" data-v="admin">⚙ <span>Admin</span></button><div class="sidefoot">Created by Automation Supervisor Ali Alsada</div></aside>
+<button class="nav active" data-v="home">◈ <span>Overview</span></button><button class="nav" data-v="queue">▷ <span>Dispense Queue</span></button><button class="nav" data-v="excluded">⊘ <span>Exclusions</span><span id="excludedNavCount" class="excluded-nav-count">0</span></button><button class="nav" data-v="registry">◎ <span>Patient Registry</span></button><button class="nav" data-v="calendar">▦ <span>Smart Calendar</span></button><button class="nav" data-v="demand">◆ <span>Drug Demand</span></button><button id="teamNav" class="nav" data-v="team">♟ <span>Team</span></button><button id="adminNav" class="nav hidden" data-v="admin">⚙ <span>Admin</span></button><div class="sidefoot">Created by Automation Supervisor Ali Alsada</div></aside>
 <main class="main"><header class="top"><div><div class="ey">PHARMACY OPERATIONS</div><h1 id="title">Overview</h1></div><div class="actions"><div id="live" class="live"><span class="dot"></span><small id="sync">Local mode</small></div><div class="user"><small id="roleLabel">User</small><b id="who">Not signed in</b></div><button class="logout-btn" onclick="signOutUser()">Sign Out</button><button class="copy" onclick="exportCurrentView()">Export Excel</button><input id="date" type="date" class="calendar-only" onclick="openDatePicker(this)" onfocus="openDatePicker(this)" onkeydown="calendarKeyGuard(event)" onpaste="return false" autocomplete="off" title="Choose date from calendar"></div></header>
 <section id="home" class="view active">
 <div id="myPerformance" class="my-performance hidden">
@@ -699,6 +701,20 @@
 
 <div id="workComplete" class="work-complete hidden">🎉 Today’s work is complete — Remaining: 0</div><div class="live-progress"><div class="live-card"><i class="live-dot"></i><span>Scheduled</span><b id="liveScheduled">0</b></div><div class="live-card dispensed"><span>Dispensed</span><b id="liveDispensed">0</b></div><div class="live-card others"><span>Others</span><b id="liveOthers">0</b></div><div class="live-card working"><span>In Progress</span><b id="liveWorking">0</b></div><div class="live-card remaining"><span>Remaining</span><b id="liveRemaining">0</b></div><div class="live-card"><span>Completion</span><b id="liveCompletion">0%</b></div><div class="live-card dispensed"><span>Dispensed Rate</span><b id="liveDispensedRate">0%</b></div></div><div class="hero"><div><div class="ey">TODAY'S DISPENSING</div><h2 id="hello">Good Morning, Pharmacist.</h2><p>Fast, focused, and ready for daily dispensing.</p><div class="num" id="heroCount">0</div><p id="heroDate">—</p></div><button class="copy" onclick="go('queue')">Start Queue →</button></div><div class="kpis"><div class="kpi red"><span>Overdue</span><b id="over">0</b></div><div class="kpi green"><span>Today</span><b id="today">0</b></div><div class="kpi orange"><span>Tomorrow</span><b id="tomorrow">0</b></div><div class="kpi cyan"><span>Next 7 Days</span><b id="week">0</b></div><div class="kpi"><span>Unique Patients</span><b id="all">0</b></div></div></section>
 <section id="queue" class="view"><div class="section"><div><div class="ey">DAILY WORKLIST</div><h2>Dispense Queue</h2><p>VIP patients appear first, followed by your priority specialties. Preparation Due is calculated from the latest actual Medica dispense only.</p></div><div class="toolbar"><select id="mode"><option value="today">Today</option><option value="overdue">Overdue</option><option value="tomorrow">Tomorrow</option><option value="week">Next 7 Days</option></select><select id="qspecialty"><option value="priority">★ Priority First</option><option value="all">All Specialties</option></select><input id="qqueue" class="search" placeholder="Search MRN, patient, medication…"></div></div><div id="priorityStrip" class="priority-strip">★ My priority specialties: <b>Not assigned</b> — all patients remain visible.</div><div class="summary"><div><span>Scheduled</span><b id="scheduled">0</b></div><div><span>Dispensed</span><b id="done">0</b></div><div><span>Others</span><b id="queueOthers">0</b></div><div><span>In Progress</span><b id="working">0</b></div><div><span>Remaining</span><b id="queueRemaining">0</b></div><div><span>Completion</span><b id="rate">0%</b></div><div><span>Dispensed Rate</span><b id="dispensedRate">0%</b></div></div><div class="progress"><i id="bar"></i></div><div id="cards" class="cards"></div></section>
+
+<section id="excluded" class="view">
+ <div class="section">
+  <div><div class="ey">PATIENT EXCLUSIONS</div><h2>Exclude Patient</h2><p>Available to all signed-in staff. Search the Patient Master by MRN and exclude the patient even if there are no medications or the case was already dispensed.</p></div>
+  <div class="toolbar"><input id="qexcluded" class="search" placeholder="Search existing exclusions…"><button class="copy" onclick="exportExcludedExcel()">Export Excel</button></div>
+ </div>
+ <div class="exclusion-lookup-panel">
+  <div><div class="ey">FIND FROM PATIENT MASTER</div><h3>Search by MRN</h3><p>Enter the medical record number exactly. This search does not depend on today’s queue or Medica medications.</p></div>
+  <div class="exclusion-lookup-bar"><input id="excludeLookup" inputmode="numeric" placeholder="Enter MRN" onkeydown="if(event.key==='Enter')findPatientForExclusion()"><button class="copy" onclick="findPatientForExclusion()">Find Patient</button></div>
+  <div id="excludeLookupResult" class="exclusion-lookup-result muted">Enter MRN to search Patient Master.</div>
+ </div>
+ <div class="excluded-kpis"><div><span>Active Exclusions</span><b id="excludedActiveCount">0</b></div><div><span>Specialties</span><b id="excludedSpecialtyCount">0</b></div><div><span>Excluded This Month</span><b id="excludedMonthCount">0</b></div></div>
+ <div class="tablebox"><table><thead><tr><th>Patient</th><th>MRN</th><th>Specialty</th><th>Reason</th><th>Note</th><th>Excluded By</th><th>Date</th><th>Action</th></tr></thead><tbody id="excludedRows"></tbody></table></div>
+</section>
 
 <section id="registry" class="view"><div class="section"><div><div class="ey">PATIENT INDEX</div><h2>Patient Registry</h2></div><input id="qreg" class="search" placeholder="Search MRN, patient, medication…"></div><div class="tablebox"><table><thead><tr><th>Patient</th><th>MRN</th><th>Medications</th><th>Last Dispense</th><th>Next Eligible</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table><div class="pager"><span id="count"></span><div><button onclick="page(-1)">←</button> <span id="pg"></span> <button onclick="page(1)">→</button></div></div></div></section>
 
@@ -892,13 +908,12 @@
 
  <section class="admin-data-center">
   <div class="admin-data-head">
-   <div><div class="ey">PATIENT DATA CENTER</div><h3>VIP, Patient Master & Exclusions</h3><p>One admin workspace for patient contact details, VIP overrides and exclusion management.</p></div>
+   <div><div class="ey">PATIENT DATA CENTER</div><h3>VIP & Patient Master</h3><p>Admin workspace for patient contact details and VIP management. Exclusions are available to all signed-in staff from the main menu.</p></div>
    <button class="copy" onclick="refreshAdminDataCenter()">Refresh Data</button>
   </div>
   <div class="admin-tabs">
    <button id="adminTabVip" class="admin-tab active" onclick="showAdminPane('vip')">★ VIP Management</button>
    <button id="adminTabMaster" class="admin-tab" onclick="showAdminPane('master')">◎ Patient Master</button>
-   <button id="adminTabExclusions" class="admin-tab" onclick="showAdminPane('exclusions')">⊘ Exclusions</button>
   </div>
 
   <div id="adminPaneVip" class="admin-pane active">
@@ -909,12 +924,13 @@
     <div><span>Inactive VIP</span><b id="vipAdminInactive">—</b></div>
    </div>
    <div class="vip-editor">
-    <div><label>MRN</label><input id="vipEditMrn" placeholder="MRN"></div>
-    <div><label>Patient Name</label><input id="vipEditName" placeholder="Patient name"></div>
-    <div><label>VIP Mobile Override</label><input id="vipEditMobile" placeholder="Optional VIP mobile"></div>
+    <div><label>MRN</label><input id="vipEditMrn" placeholder="Selected MRN"></div>
+    <div><label>Patient Name</label><input id="vipEditName" placeholder="Selected patient"></div>
+    <div><label>Mobile Number</label><input id="vipEditMobile" inputmode="tel" placeholder="Search / edit mobile"></div>
     <div><label>Note</label><input id="vipEditNote" placeholder="VIP note"></div>
-    <div class="vip-actions"><button class="copy" onclick="saveVipPatient()">Save VIP</button><button class="vip-action-btn" onclick="matchVipByMobile()">Find MRN</button></div>
+    <div class="vip-actions"><button class="vip-action-btn" onclick="matchVipByMobile()">Find by Mobile</button><button class="copy" onclick="saveVipPatient()">Save VIP</button></div>
    </div>
+   <div id="vipMobileMatches" class="vip-mobile-matches muted">Enter a mobile number and choose Find by Mobile. Shared family mobile numbers are allowed.</div>
    <div class="master-filter-bar"><input id="vipAdminSearch" placeholder="Search VIP by MRN, name, mobile or note" oninput="renderVipAdmin()"></div>
    <div id="vipAdminStatus" class="muted">VIP data will load when Admin opens.</div>
    <div class="tablebox"><table class="user-table"><thead><tr><th>VIP</th><th>MRN</th><th>Patient</th><th>Mobile Used</th><th>Source</th><th>Master Mobile</th><th>Note</th><th>Status</th><th>Action</th></tr></thead><tbody id="vipAdminRows"></tbody></table></div>
@@ -936,16 +952,6 @@
    <div class="tablebox"><table class="user-table master-table"><thead><tr><th>MRN</th><th>Patient</th><th>National ID</th><th>Mobile</th><th>Short Address</th><th>Status</th><th>Action</th></tr></thead><tbody id="pmRows"></tbody></table></div>
   </div>
 
-  <div id="adminPaneExclusions" class="admin-pane">
-   <div class="section"><div><div class="ey">PATIENT EXCLUSIONS</div><h3>Excluded Patients</h3><p>Search the full Patient Master and exclude a patient even if the case was already dispensed or is no longer in today’s queue.</p></div><div class="toolbar"><input id="qexcluded" class="search" placeholder="Search existing exclusions…"><button class="copy" onclick="exportExcludedExcel()">Export Excel</button></div></div>
-   <div class="exclusion-lookup-panel">
-    <div><div class="ey">ADD EXCLUSION</div><h3>Find Patient</h3><p>Search by MRN, patient name, National ID or mobile.</p></div>
-    <div class="exclusion-lookup-bar"><input id="excludeLookup" placeholder="MRN, name, National ID or mobile" onkeydown="if(event.key==='Enter')findPatientForExclusion()"><button class="copy" onclick="findPatientForExclusion()">Find Patient</button></div>
-    <div id="excludeLookupResult" class="exclusion-lookup-result muted">Enter patient details to search Patient Master.</div>
-   </div>
-   <div class="excluded-kpis"><div><span>Active Exclusions</span><b id="excludedActiveCount">0</b></div><div><span>Specialties</span><b id="excludedSpecialtyCount">0</b></div><div><span>Excluded This Month</span><b id="excludedMonthCount">0</b></div></div>
-   <div class="tablebox"><table><thead><tr><th>Patient</th><th>MRN</th><th>Specialty</th><th>Reason</th><th>Note</th><th>Excluded By</th><th>Date</th><th>Action</th></tr></thead><tbody id="excludedRows"></tbody></table></div>
-  </div>
  </section>
 
  <article class="panel" style="margin-top:14px">
@@ -2057,13 +2063,12 @@ function getPatientField(p,field){
 }
 window.showAdminPane=async pane=>{
  S.adminPane=pane;
- ["vip","master","exclusions"].forEach(x=>{
+ ["vip","master"].forEach(x=>{
   $("#adminPane"+x.charAt(0).toUpperCase()+x.slice(1))?.classList.toggle("active",x===pane);
   $("#adminTab"+x.charAt(0).toUpperCase()+x.slice(1))?.classList.toggle("active",x===pane);
  });
  if(pane==="vip")await loadVipAdmin();
  if(pane==="master")await loadPatientMasterAdmin();
- if(pane==="exclusions"){await loadExclusions();renderExcludedPatients()}
 }
 window.refreshAdminDataCenter=async()=>{
  await Promise.all([loadVipPatients(),loadVipAdmin(true),loadPatientMasterAdmin(true),loadExclusions()]);
@@ -2101,16 +2106,27 @@ window.editVipPatient=encoded=>{
  $("#vipEditMrn").value=mrn;$("#vipEditName").value=r.patient_name||master.patient_name||"";$("#vipEditMobile").value=r.mobile_override||"";$("#vipEditNote").value=r.note||"";$("#vipEditMrn").focus();
 }
 window.matchVipByMobile=async()=>{
- const raw=String($("#vipEditMobile")?.value||"").replace(/\D/g,"");if(!raw)return toast("Enter a mobile number first");
- const norm=x=>String(x||"").replace(/\D/g,"").replace(/^966/,"0");
- const wanted=norm(raw),matches=(S.patientMasterRows||[]).filter(r=>norm(r.mobile)===wanted);
- if(matches.length===1){const r=matches[0];$("#vipEditMrn").value=r.mrn||"";$("#vipEditName").value=r.patient_name||"";toast(`Unique Patient Master match: MRN ${r.mrn}`)}
- else if(matches.length>1)toast(`More than one Patient Master match found (${matches.length}) — review manually`);else toast("No Patient Master match found for this mobile");
+ const raw=String($("#vipEditMobile")?.value||"").replace(/\D/g,"");
+ const box=$("#vipMobileMatches");
+ if(!raw){if(box)box.textContent="Enter a mobile number first.";return toast("Enter a mobile number first")}
+ if(!S.patientMasterAdminLoaded)await loadPatientMasterAdmin();
+ const normMobile=x=>String(x||"").replace(/\D/g,"").replace(/^966/,"0");
+ const wanted=normMobile(raw);
+ const matches=(S.patientMasterRows||[]).filter(r=>normMobile(r.mobile)===wanted);
+ if(!matches.length){if(box)box.innerHTML='<span style="color:var(--o)">No Patient Master record found for this mobile.</span>';return}
+ if(box)box.innerHTML=matches.slice(0,30).map(r=>`<div class="vip-mobile-match"><div><strong>${r.patient_name||"Unknown Patient"}</strong><small>MRN ${r.mrn||"—"} • Mobile ${r.mobile||"—"}${r.national_id?` • National ID ${r.national_id}`:""}</small></div><button onclick="selectVipMobileMatch('${encodeURIComponent(String(r.mrn||""))}','${encodeURIComponent(String(r.patient_name||""))}','${encodeURIComponent(String(r.mobile||raw))}')">Select Patient</button></div>`).join("");
 }
+window.selectVipMobileMatch=(mrn,name,mobile)=>{
+ $("#vipEditMrn").value=decodeURIComponent(mrn);
+ $("#vipEditName").value=decodeURIComponent(name);
+ $("#vipEditMobile").value=decodeURIComponent(mobile);
+ toast("Patient selected — mobile can still be edited before Save VIP");
+}
+
 window.saveVipPatient=async()=>{
  if(!requireAdmin()||!S.sb)return;
  const mrn=normalizeMrn($("#vipEditMrn")?.value),patient_name=$("#vipEditName")?.value.trim()||null,mobile_override=$("#vipEditMobile")?.value.trim()||null,note=$("#vipEditNote")?.value.trim()||null;
- if(!mrn)return toast("MRN is required. Use Find MRN if you only have a mobile number.");
+ if(!mrn)return toast("Select a patient from Find by Mobile or enter the MRN.");
  try{
   const {error}=await S.sb.from("vip_patients").upsert({mrn,patient_name,mobile_override,note,active:true,updated_at:new Date().toISOString()},{onConflict:"mrn"});if(error)throw error;
   $("#vipEditMrn").value="";$("#vipEditName").value="";$("#vipEditMobile").value="";$("#vipEditNote").value="";
@@ -2236,13 +2252,22 @@ function exclusionPatientRecord(mrn){
  return null;
 }
 window.findPatientForExclusion=async()=>{
- if(!S.patientMasterAdminLoaded)await loadPatientMasterAdmin();
- const raw=$("#excludeLookup")?.value?.trim()||"",box=$("#excludeLookupResult");if(!raw){if(box)box.textContent="Enter MRN, name, National ID or mobile.";return}
- const q=raw.toLowerCase(),n=norm(raw);
- const candidates=(S.patientMasterRows||[]).filter(r=>[r.mrn,r.patient_name,r.national_id,r.mobile].some(v=>String(v||"").toLowerCase().includes(q))||norm(r.mobile)===n).slice(0,8);
- if(!candidates.length){if(box)box.innerHTML='<span style="color:var(--o)">No matching patient found in Patient Master.</span>';return}
- if(box)box.innerHTML=candidates.map(r=>`<div class="exclusion-found"><div><strong>${r.patient_name||"Unknown Patient"}</strong><small>MRN ${r.mrn} • Mobile ${r.mobile||"—"} • National ID ${r.national_id||"—"}</small></div><button class="copy" onclick="openExclusion('${encodeURIComponent(String(r.mrn))}',true)">Exclude Patient</button></div>`).join("<div style='height:7px'></div>");
+ if(!S.sb)return toast("Shared database is not connected");
+ const raw=normalizeMrn($("#excludeLookup")?.value||""),box=$("#excludeLookupResult");
+ if(!raw){if(box)box.textContent="Enter MRN.";return}
+ if(box)box.textContent="Searching Patient Master…";
+ try{
+  const {data,error}=await S.sb.from("patient_master")
+   .select("mrn,patient_name,national_id,mobile,short_national_address,full_address")
+   .eq("mrn",raw)
+   .maybeSingle();
+  if(error)throw error;
+  if(!data){if(box)box.innerHTML='<span style="color:var(--o)">MRN not found in Patient Master.</span>';return}
+  applyPatientMasterRows([data]);
+  if(box)box.innerHTML=`<div class="exclusion-found"><div><strong>${data.patient_name||"Unknown Patient"}</strong><small>MRN ${data.mrn} • Mobile ${data.mobile||"—"} • National ID ${data.national_id||"—"}</small></div><button class="copy" onclick="openExclusion('${encodeURIComponent(String(data.mrn))}',true)">Exclude Patient</button></div>`;
+ }catch(e){console.error("Patient exclusion lookup failed",e);if(box)box.innerHTML='<span style="color:var(--r)">Could not search Patient Master. Check SELECT permission/RLS.</span>'}
 }
+
 window.openExclusion=(mrn,encoded=false)=>{
  if(!S.user||!S.profile)return openLogin();
  const raw=encoded?decodeURIComponent(mrn):mrn,p=exclusionPatientRecord(raw);
