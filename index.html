@@ -1125,7 +1125,7 @@
 <script>
 const $=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)],fmt=n=>new Intl.NumberFormat().format(Math.round(n||0));
 const STAFF={bassemah:"Bassemah H. Al Faraj",batool:"Batool S. T. Alfaraj",ghada:"Ghada A. Alqudaihi",rabab:"Rabab Alsheef",team_import:"Today's Team Total"};
-const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||20,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastAction:null,undoTicker:null,legacy:null,demandPatients:null,demandRows:[],view:"home",calMonth:new Date(),calSelected:new Date(),calendarCache:{},precomputedCalendar:null,demandIndex:null,demandDateLoaded:"",settingsChannel:null,otherMrn:"",otherReason:"",teamProfiles:[],closedBefore:{},performanceCache:{},teamPerformanceRows:[],teamDailyRows:[],teamDailyRange:null,myPerformanceRange:"today",teamPerformanceRange:"today",realtimeChannel:null,realtimeTimer:null,teamLivePoll:null,teamRefreshBusy:false,specialtyRoutes:[],myPrioritySpecialties:[],exclusions:{},exclusionMrn:"",exclusionReason:"",inventoryMap:null,inventoryInfo:null,inventoryCheckedAt:null,inventoryLoading:false,patientMasterMap:new Map(),patientMasterRows:[],patientMasterLoaded:false,patientMasterAdminLoaded:false,currentFullAddress:"",vipPatients:{},vipLoaded:false,vipAdminRows:[],vipAdminLoaded:false,masterEditMrn:"",adminPane:"vip"};
+const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||20,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastAction:null,undoTicker:null,legacy:null,demandPatients:null,demandRows:[],view:"home",calMonth:new Date(),calSelected:new Date(),calendarCache:{},precomputedCalendar:null,demandIndex:null,demandDateLoaded:"",settingsChannel:null,otherMrn:"",otherReason:"",teamProfiles:[],closedBefore:{},performanceCache:{},teamPerformanceRows:[],teamDailyRows:[],teamDailyRange:null,myPerformanceRange:"today",teamPerformanceRange:"today",realtimeChannel:null,realtimeTimer:null,teamLivePoll:null,teamRefreshBusy:false,specialtyRoutes:[],myPrioritySpecialties:[],exclusions:{},exclusionMrn:"",exclusionReason:"",inventoryMap:null,inventoryInfo:null,inventoryCheckedAt:null,inventoryLoading:false,patientMasterMap:new Map(),patientMasterRows:[],patientMasterLoaded:false,patientMasterAdminLoaded:false,queueMasterRefreshBusy:false,queueMasterRefreshAt:0,queueMasterRefreshKey:"",currentFullAddress:"",vipPatients:{},vipLoaded:false,vipAdminRows:[],vipAdminLoaded:false,masterEditMrn:"",adminPane:"vip"};
 const iso=d=>{let x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)},
 pd=s=>new Date(s+"T00:00:00"),
 add=(s,n)=>{let d=pd(s);d.setDate(d.getDate()+n);return iso(d)},
@@ -1794,6 +1794,33 @@ async function loadPatientMasterForMedica(){
  if(!S.patientMasterLoaded)toast("Patient Master could not be loaded. Please refresh.");
  return matched;
 }
+async function refreshVisibleQueuePatientMaster(force=false){
+ if(!S.sb||S.queueMasterRefreshBusy)return 0;
+ let visible=[];
+ try{visible=qlist().slice(0,300)}catch(_){visible=(S.p||[]).slice(0,300)}
+ const mrns=[...new Set(visible.map(p=>normalizeMrn(p.id)).filter(Boolean))];
+ if(!mrns.length)return 0;
+ const key=mrns.join("|");
+ const now=Date.now();
+ // Avoid repeated Supabase calls caused by ordinary card re-renders.
+ if(!force&&S.queueMasterRefreshKey===key&&(now-S.queueMasterRefreshAt)<60000)return 0;
+ S.queueMasterRefreshBusy=true;
+ let matched=0;
+ try{
+  for(let i=0;i<mrns.length;i+=75){
+   try{
+    const rows=await fetchPatientMasterBatch(mrns.slice(i,i+75));
+    matched+=applyPatientMasterRows(rows);
+   }catch(e){console.warn("Visible Patient Master refresh batch failed",e)}
+  }
+  S.queueMasterRefreshKey=key;
+  S.queueMasterRefreshAt=Date.now();
+  renderQueue();
+  return matched;
+ }finally{S.queueMasterRefreshBusy=false}
+}
+window.refreshVisibleQueuePatientMaster=refreshVisibleQueuePatientMaster;
+
 async function loadPatientMasterAdmin(force=false){
  if(!requireAdmin()||!S.sb)return;
  if(S.patientMasterAdminLoaded&&!force){renderPatientMasterAdmin();return}
@@ -3115,6 +3142,7 @@ function renderQueue(){
    <div class="btns"><button class="primary" onclick="start('${p.id}')" ${locked||["dispensed","others"].includes(st)?"disabled":""}>${st==="in_progress"&&u===S.staff?"Continue":"Start"}</button><button onclick="finish('${p.id}','dispensed')" ${locked||st==="others"?"disabled":""}>Dispensed</button><button onclick="openOthers('${p.id}')" ${locked||st==="dispensed"?"disabled":""}>Others</button><button class="exclude-btn" title="Exclude patient" onclick="openExclusion('${p.id}')" ${locked?"disabled":""}>⊘</button></div>
   </article>`
  }).join("")
+ setTimeout(()=>refreshVisibleQueuePatientMaster(false).catch(console.warn),0);
 }
 async function start(id){if(!S.user||!S.profile)return openLogin();if(S.profile.is_active===false)return toast("Account disabled");let a=S.a[id];if(a?.status==="in_progress"&&a.staff!==S.staff)return toast("Already in progress");const from=a?.status||"waiting";const startedAt=new Date().toISOString();S.a[id]={...(a||{}),status:"in_progress",staff:S.staff,startedAt,completedAt:"",updatedAt:startedAt};saveLocal();await saveShared(id);await writeAudit(id,"start",from,"in_progress");showUndo("start",id,S.staff,startedAt,from);render();setTimeout(showStartEncouragement,120)}
 window.openOthers=id=>{
@@ -3152,6 +3180,9 @@ async function finish(id,status){
 function saveLocal(){localStorage.setItem("dip-a",JSON.stringify(S.a))}
 function renderRegistry(){let q=$("#qreg").value.toLowerCase(),a=S.p.filter(p=>!q||[p.id,p.name,p.drug_text,p.national_id,p.mobile,p.short_national_address,p.full_address].join(" ").toLowerCase().includes(q)),pages=Math.max(1,Math.ceil(a.length/S.size));S.page=Math.min(S.page,pages);let x=a.slice((S.page-1)*S.size,S.page*S.size);$("#rows").innerHTML=x.map(p=>`<tr><td><button style="border:0;background:transparent;color:inherit;padding:0" onclick="copyValue('${encodeURIComponent(p.name||"Unknown")}','Patient name',event)">${p.name||"Unknown"}</button></td><td><button class="copy" onclick="copy('${p.id}',event)">⧉ ${p.id}</button></td><td>${p.meds}</td><td>${p.base_last}</td><td>${next(p)}</td><td>${label(state(p))}</td></tr>`).join("");$("#count").textContent=fmt(a.length)+" patients";$("#pg").textContent=`${S.page}/${pages}`}
 function page(n){S.page=Math.max(1,S.page+n);renderRegistry()}
+
+window.addEventListener("focus",()=>{if(S.user)refreshVisibleQueuePatientMaster(true).catch(console.warn)});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&S.user)refreshVisibleQueuePatientMaster(true).catch(console.warn)});
 
 window.openLiveOperations=()=>{
   const modal=$("#liveOpsModal");
