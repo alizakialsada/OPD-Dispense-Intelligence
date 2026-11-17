@@ -3730,7 +3730,38 @@ function subscribeSharedSettings(){
 
 async function initShared(){let c=window.SUPABASE_CONFIG;if(!c?.url||c.url.includes("YOUR_"))return;try{if(!S.sb)S.sb=window.supabase.createClient(c.url,c.publishableKey);await loadShared();S.sb.channel("dip-live").on("postgres_changes",{event:"*",schema:"public",table:"dispense_workflow"},p=>{let r=p.new||p.old;if(r.work_date!==iso(S.date))return;if(p.eventType==="DELETE")delete S.a[r.mrn];else S.a[r.mrn]={status:r.status,staff:r.staff_id||"",staffName:r.staff_name||"",startedAt:r.started_at||"",completedAt:r.completed_at||"",reason:r.reason||"",note:r.note||"",updatedAt:r.updated_at||""};saveLocal();render()}).subscribe(x=>{if(x==="SUBSCRIBED"){S.shared=true;$("#live").classList.add("on");$("#sync").textContent="Live on all devices"}})}catch(e){console.error(e)}}
 async function loadClosedHistory(){if(!S.sb)return;const selected=iso(S.date);let {data,error}=await S.sb.from("dispense_workflow").select("mrn,work_date,status").lt("work_date",selected).in("status",["dispensed","others"]).gte("work_date","2026-05-01");if(error){console.warn("Could not load prior completed cycles",error);return}S.closedBefore={};(data||[]).forEach(r=>{if(!S.closedBefore[r.mrn]||r.work_date>S.closedBefore[r.mrn])S.closedBefore[r.mrn]=r.work_date})}
-async function loadShared(){if(!S.sb)return;await loadClosedHistory();let {data}=await S.sb.from("dispense_workflow").select("*").eq("work_date",iso(S.date));if(data){S.a={};data.forEach(r=>S.a[r.mrn]={status:r.status,staff:r.staff_id||"",staffName:r.staff_name||"",startedAt:r.started_at||"",completedAt:r.completed_at||"",reason:r.reason||"",note:r.note||"",updatedAt:r.updated_at||""});saveLocal()}}
+async function loadShared(){
+ if(!S.sb)return;
+ await loadClosedHistory();
+ const selected=iso(S.date);
+ const toState=r=>({status:r.status,staff:r.staff_id||"",staffName:r.staff_name||"",startedAt:r.started_at||"",completedAt:r.completed_at||"",reason:r.reason||"",note:r.note||"",updatedAt:r.updated_at||"",sourceWorkDate:r.work_date||selected});
+ let {data,error}=await S.sb.from("dispense_workflow").select("*").eq("work_date",selected);
+ if(error){console.warn("Could not load workflow",error);return}
+ S.a={};
+ (data||[]).forEach(r=>S.a[r.mrn]=toState(r));
+ // Transition safety for the move from 20 -> 21 days.
+ // Exact-date workflow always wins. If no exact record exists, recover the same MRN's
+ // nearby status from +/- 3 calendar days only, which covers weekend date shifts without
+ // carrying a status from a previous medication cycle (~3 weeks away).
+ if(Number(S.days)===21){
+  const center=pd(selected),from=new Date(center),to=new Date(center);
+  from.setDate(from.getDate()-3);to.setDate(to.getDate()+3);
+  const {data:nearby,error:nearErr}=await S.sb.from("dispense_workflow").select("*").gte("work_date",iso(from)).lte("work_date",iso(to));
+  if(!nearErr&&Array.isArray(nearby)){
+   const dayDistance=d=>Math.abs((pd(d)-center)/86400000);
+   const best={};
+   nearby.forEach(r=>{
+    if(!r?.mrn||S.a[r.mrn]||r.work_date===selected)return;
+    const dist=dayDistance(r.work_date);
+    const closed=(r.status==="dispensed"||r.status==="others")?1:0;
+    const prev=best[r.mrn];
+    if(!prev||closed>prev.closed||(closed===prev.closed&&dist<prev.dist))best[r.mrn]={r,closed,dist};
+   });
+   Object.values(best).forEach(x=>S.a[x.r.mrn]=toState(x.r));
+  }else if(nearErr){console.warn("Could not recover nearby workflow after interval change",nearErr)}
+ }
+ saveLocal();
+}
 async function saveShared(id){if(!S.sb)return;let a=S.a[id];await S.sb.from("dispense_workflow").upsert({work_date:iso(S.date),mrn:id,status:a.status,staff_id:a.staff,staff_name:STAFF[a.staff]||S.profile?.display_name||S.profile?.full_name||a.staff,started_at:a.startedAt||null,completed_at:a.completedAt||null,reason:a.reason||null,note:a.note||null,updated_at:a.updatedAt},{onConflict:"work_date,mrn"})}
 async function migrate(){if(!S.sb)return toast("Connect Supabase first");let n=0;for(let id in S.a){await saveShared(id);n++}toast(n+" records synced")}
 boot();
