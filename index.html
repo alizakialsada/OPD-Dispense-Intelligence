@@ -912,7 +912,7 @@
     <p>Generated: <b id="medicaGeneratedAt">—</b></p>
     <p>Latest dispensing date in file: <b id="medicaLatestDispense">—</b></p>
     <p>Valid dispensing records: <b id="medicaValidRecords">—</b></p>
-    <p>Currently schedulable at 20 days: <b id="medicaSchedulable">—</b></p>
+    <p>Currently schedulable at 21 days: <b id="medicaSchedulable">—</b></p>
    </div>
    <div class="data-update-box">
     <strong>New patient MRNs</strong>
@@ -938,12 +938,13 @@
    <div class="settings" style="grid-template-columns:repeat(2,1fr);margin-top:12px">
     <div class="setting"><h3>15 Days</h3><button class="copy" onclick="setDays(15)">Apply</button></div>
     <div class="setting"><h3>20 Days</h3><button class="copy" onclick="setDays(20)">Apply</button></div>
+    <div class="setting"><h3>21 Days</h3><button class="copy" onclick="setDays(21)">Apply</button></div>
     <div class="setting"><h3>25 Days</h3><button class="copy" onclick="setDays(25)">Apply</button></div>
     <div class="setting"><h3>30 Days</h3><button class="copy" onclick="setDays(30)">Apply</button></div>
    </div>
-   <label>Custom days</label><input id="custom" type="number" min="1" max="365" value="25">
+   <label>Custom days</label><input id="custom" type="number" min="1" max="365" value="21">
    <button class="copy" onclick="setDays(+$('#custom').value)">Save Interval</button>
-   <p class="muted">Current preparation interval: <b id="currentDays">25</b> days</p>
+   <p class="muted">Current preparation interval: <b id="currentDays">21</b> days</p>
   </article>
  </div>
 
@@ -1125,7 +1126,7 @@
 <script>
 const $=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)],fmt=n=>new Intl.NumberFormat().format(Math.round(n||0));
 const STAFF={bassemah:"Bassemah H. Al Faraj",batool:"Batool S. T. Alfaraj",ghada:"Ghada A. Alqudaihi",rabab:"Rabab Alsheef",team_import:"Today's Team Total"};
-const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||20,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastAction:null,undoTicker:null,legacy:null,demandPatients:null,demandRows:[],view:"home",calMonth:new Date(),calSelected:new Date(),calendarCache:{},precomputedCalendar:null,demandIndex:null,demandDateLoaded:"",settingsChannel:null,otherMrn:"",otherReason:"",teamProfiles:[],closedBefore:{},performanceCache:{},teamPerformanceRows:[],teamDailyRows:[],teamDailyRange:null,myPerformanceRange:"today",teamPerformanceRange:"today",realtimeChannel:null,realtimeTimer:null,teamLivePoll:null,teamRefreshBusy:false,specialtyRoutes:[],myPrioritySpecialties:[],exclusions:{},exclusionMrn:"",exclusionReason:"",inventoryMap:null,inventoryInfo:null,inventoryCheckedAt:null,inventoryLoading:false,patientMasterMap:new Map(),patientMasterRows:[],patientMasterLoaded:false,patientMasterAdminLoaded:false,queueMasterRefreshBusy:false,queueMasterRefreshAt:0,queueMasterRefreshKey:"",currentFullAddress:"",vipPatients:{},vipLoaded:false,vipAdminRows:[],vipAdminLoaded:false,masterEditMrn:"",adminPane:"vip"};
+const S={meta:null,p:[],date:new Date(),days:+localStorage.getItem("dip-days")||21,staff:localStorage.getItem("dip-staff")||"",a:JSON.parse(localStorage.getItem("dip-a")||"{}"),page:1,size:40,sb:null,shared:false,user:null,profile:null,lastAction:null,undoTicker:null,legacy:null,demandPatients:null,demandRows:[],view:"home",calMonth:new Date(),calSelected:new Date(),calendarCache:{},precomputedCalendar:null,demandIndex:null,demandDateLoaded:"",settingsChannel:null,otherMrn:"",otherReason:"",teamProfiles:[],closedBefore:{},performanceCache:{},teamPerformanceRows:[],teamDailyRows:[],teamDailyRange:null,myPerformanceRange:"today",teamPerformanceRange:"today",realtimeChannel:null,realtimeTimer:null,teamLivePoll:null,teamRefreshBusy:false,specialtyRoutes:[],myPrioritySpecialties:[],exclusions:{},exclusionMrn:"",exclusionReason:"",inventoryMap:null,inventoryInfo:null,inventoryCheckedAt:null,inventoryLoading:false,patientMasterMap:new Map(),patientMasterRows:[],patientMasterLoaded:false,patientMasterAdminLoaded:false,queueMasterRefreshBusy:false,queueMasterRefreshAt:0,queueMasterRefreshKey:"",currentFullAddress:"",vipPatients:{},vipLoaded:false,vipAdminRows:[],vipAdminLoaded:false,masterEditMrn:"",adminPane:"vip"};
 const iso=d=>{let x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)},
 pd=s=>new Date(s+"T00:00:00"),
 add=(s,n)=>{let d=pd(s);d.setDate(d.getDate()+n);return iso(d)},
@@ -2060,8 +2061,8 @@ async function applyInterval(n,showMessage=true){
 }
 window.setDays=async n=>{
  if(!requireAdmin())return;
- if(![15,20,25,30].includes(Number(n))){
-  toast("Preparation Calendar and Demand support 15, 20, 25, or 30 days");
+ if(![15,20,21,25,30].includes(Number(n))){
+  toast("Preparation Calendar and Demand support 15, 20, 21, 25, or 30 days");
   return;
  }
  if(S.sb){
@@ -3358,7 +3359,7 @@ async function ensurePrecomputedIndexes(){
   S.precomputedCalendar=cal;S.demandIndex=idx;
  }catch(e){
   S.precomputedCalendar={};S.demandIndex={};
-  console.warn("No prepared data for interval",S.days);toast("Drug Demand supports 15, 20, 25, or 30 days");
+  console.warn("No prepared data for interval",S.days);toast("Drug Demand supports 15, 20, 21, 25, or 30 days");
  }
 }
 async function fetchDemandForDate(key){
@@ -3502,7 +3503,7 @@ function renderMedicaUpdateStatus(){
  set("medicaGeneratedAt",saudiDateTime(m.generated_at));
  set("medicaLatestDispense",m.latest_dispense_date||"—");
  set("medicaValidRecords",m.valid_records!=null?fmt(m.valid_records):"—");
- set("medicaSchedulable",m.currently_schedulable_patients_20!=null?fmt(m.currently_schedulable_patients_20):"—");
+ set("medicaSchedulable",m.currently_schedulable_patients_21!=null?fmt(m.currently_schedulable_patients_21):(m.currently_schedulable_patients_20!=null?fmt(m.currently_schedulable_patients_20):"—"));
 
  const ids=Array.isArray(m.new_patient_ids)?m.new_patient_ids:[];
  const box=$("#medicaNewPatientList"),help=$("#newPatientsHelp");

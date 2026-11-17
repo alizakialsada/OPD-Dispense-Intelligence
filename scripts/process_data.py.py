@@ -1,7 +1,6 @@
 from pathlib import Path
 from datetime import datetime, timedelta, date
 from collections import defaultdict, Counter
-from itertools import chain
 import csv, json, re, zipfile, unicodedata, xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -185,86 +184,33 @@ def find_col(headers, names):
     lookup = {clean(h).lower(): h for h in headers}
     return next((lookup[n.lower()] for n in names if n.lower() in lookup), None)
 
-def adjust_weekend(d):
-    """Move non-working preparation dates: Friday -> Thursday, Saturday -> Sunday."""
-    if d.weekday() == 4:   # Friday
-        return d - timedelta(days=1)
-    if d.weekday() == 5:   # Saturday
-        return d + timedelta(days=1)
-    return d
-
 def recurring_dates(last_iso, end_iso, interval):
-    """
-    Historical function name retained for compatibility.
-    Returns ONE preparation date only: latest actual dispense + interval.
-    No recurring cycle is generated until a new actual dispense appears in Medica.
-    """
-    if not last_iso:
-        return []
+    if not last_iso or not end_iso: return []
     try:
-        d = date.fromisoformat(last_iso) + timedelta(days=interval)
-        end = date.fromisoformat(end_iso) if end_iso else None
+        d=date.fromisoformat(last_iso)+timedelta(days=interval)
+        end=date.fromisoformat(end_iso)
     except Exception:
         return []
-
-    if end and d > end:
-        return []
-
-    d = adjust_weekend(d)
-    # Preserve past preparation dates in the calendar after every data refresh.
-    # Overdue cases must remain visible; the interface handles their status.
-    return [d.isoformat()]
-
-def load_previous_patients():
-    """Read the previously generated patient dataset before replacing it."""
-    old = {}
-    meta_path = DATA / "meta.json"
-    if not meta_path.exists():
-        return old
-    try:
-        meta = json.loads(meta_path.read_text(encoding="utf-8"))
-        for name in meta.get("chunks", []):
-            p = DATA / name
-            if not p.exists():
-                continue
-            rows = json.loads(p.read_text(encoding="utf-8"))
-            for row in rows:
-                pid = clean(row.get("id"))
-                if pid:
-                    old[pid] = row
-    except Exception:
-        return {}
-    return old
-
-def patient_compare_signature(p):
-    return {
-        "base_last": p.get("base_last", ""),
-        "latest_order_id": p.get("latest_order_id", ""),
-        "meds": p.get("meds", 0),
-        "speciality": p.get("speciality", ""),
-        "location": p.get("location", ""),
-        "prescription_end": p.get("prescription_end", ""),
-        "drug_text": p.get("drug_text", ""),
-    }
+    out=[]
+    # Keep current/upcoming preparation dates; every new cycle repeats by the selected preparation interval.
+    floor=date.today()-timedelta(days=1)
+    while d <= end:
+        if d >= floor: out.append(d.isoformat())
+        d += timedelta(days=interval)
+    return out
 
 def main():
-    previous_patients = load_previous_patients()
-    cutoff = date(2026, 8, 31)  # New trusted MCC baseline: ignore older historical dispense data
-    # Active scheduling now uses ONLY the new Medica Excel stream.
-    # Historical split CSV parts are intentionally ignored so the old MCC-gap period
-    # cannot repopulate the live calendar.
+    cutoff = date(2026, 6, 4)
     xlsx_files = sorted(IN.glob("*.xlsx"))
-    files = xlsx_files
+    csv_files = sorted(IN.glob("medica-latest-part-*.csv"))
+    files = csv_files + xlsx_files
     if not files:
-        raise SystemExit("No Medica .xlsx report found in incoming/")
+        raise SystemExit("No Medica .xlsx or medica-latest-part-*.csv report found in incoming/")
 
     contacts = load_contact_master(DATA / "Patient_Contact_Master.csv")
     nupco_lookup = load_nupco_codes(DATA / "nupco-codes.json")
     unmatched_drugs = set()
     latest = {}; demographics = dict(contacts); raw = valid = 0
-    # Prevent the same Medica row from being counted twice when duplicate Excel
-    # files are present in incoming/.
-    seen_dispense_rows = set()
 
     for f in files:
         rows = read_csv_rows(f) if f.suffix.lower() == ".csv" else read_xlsx_rows(f)
@@ -276,7 +222,7 @@ def main():
         if not cols["id"] or not cols["drug"] or not cols["disp"]:
             raise ValueError(f"{f.name}: missing required columns")
 
-        for row in chain([first], rows):
+        for row in [first, *rows]:
             raw += 1
             status = clean(row.get(cols["dispense_status"])) if cols.get("dispense_status") else ""
             if status and status.casefold() not in {"dispensed", "صرف", "تم الصرف"}:
@@ -319,23 +265,8 @@ def main():
                 if rec[k] and not demo.get(k):
                     demo[k] = rec[k]
 
-            # Exact duplicate protection across repeated Medica files.
-            # Include quantity in the source-row identity so truly separate rows within
-            # the same order can still be retained, but an identical uploaded copy is ignored.
+            # Same order may contain repeated rows. Order ID prevents duplicate counting.
             identity = rec["order_id"] or rec["last"]
-            source_row_key = (
-                pid,
-                drug.casefold(),
-                identity,
-                rec["last"],
-                rec.get("prescription_no", ""),
-                rec.get("location", ""),
-                float(qty or 0),
-            )
-            if source_row_key in seen_dispense_rows:
-                continue
-            seen_dispense_rows.add(source_row_key)
-
             same = (pid, drug.casefold(), identity)
             if same in latest:
                 latest[same]["qty"] += qty
@@ -435,19 +366,6 @@ def main():
             didx[d] = f"data/precomputed/{interval}/{fn}"
         (pre / "demand-index.json").write_text(json.dumps(didx, separators=(",", ":")), encoding="utf-8")
 
-    current_by_id = {p["id"]: p for p in patients}
-    previous_ids = set(previous_patients)
-    current_ids = set(current_by_id)
-    new_ids = sorted(current_ids - previous_ids)
-    removed_ids = sorted(previous_ids - current_ids)
-    common_ids = current_ids & previous_ids
-    updated_existing = sum(
-        patient_compare_signature(previous_patients[pid]) != patient_compare_signature(current_by_id[pid])
-        for pid in common_ids
-    )
-    latest_dispense_date = max((p.get("base_last", "") for p in patients), default="")
-    schedulable_20 = sum(1 for p in patients if p.get("schedule_dates", {}).get("20"))
-
     unmatched_path = DATA / "unmatched-nupco-medications.json"
     unmatched_path.write_text(json.dumps(sorted(unmatched_drugs), ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -461,16 +379,8 @@ def main():
         "nupco_aliases_loaded": len(nupco_lookup),
         "unmatched_nupco_medications": len(unmatched_drugs),
         "chunks": chunks, "default_interval": 20,
-        "single_cycle_from_latest_actual_dispense": True,
-        "weekend_rule": "Friday -> Thursday; Saturday -> Sunday",
+        "recurring_until_prescription_end": True,
         "dispense_cutoff": cutoff.isoformat(),
-        "previous_unique_patients": len(previous_patients),
-        "new_patients_added": len(new_ids),
-        "new_patient_ids": new_ids[:100],
-        "existing_patients_updated": updated_existing,
-        "patients_removed_since_previous_update": len(removed_ids),
-        "currently_schedulable_patients_20": schedulable_20,
-        "latest_dispense_date": latest_dispense_date,
     }
     (DATA / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print(json.dumps(meta, indent=2))
