@@ -1686,10 +1686,10 @@ window.undoLastAction=async()=>{
  if(current.staff&&current.staff!==S.staff){toast("This action belongs to another pharmacist");return}
  if(u.action==="dispensed"){
   if(current.status!=="dispensed"){toast("Patient is no longer dispensed");return}
-  S.a[u.id]={...current,status:"in_progress",completedAt:"",updatedAt:new Date().toISOString()};
+  S.a[u.id]={...current,status:"waiting",staff:"",staffName:"",startedAt:"",completedAt:"",reason:"",note:"",updatedAt:new Date().toISOString()};
   saveLocal();await saveShared(u.id);
-  await writeAudit(u.id,"undo_dispensed","dispensed","in_progress","Undo within 5 minutes");
-  toast("↩️ Dispense action undone");
+  await writeAudit(u.id,"undo_dispensed","dispensed","waiting","Undo within 5 minutes");
+  toast("↩️ Dispense action undone — patient returned to waiting");
  }else if(u.action==="others"){
   if(current.status!=="others"){toast("Patient is no longer in Others");return}
   const target=u.previousStatus||"waiting";
