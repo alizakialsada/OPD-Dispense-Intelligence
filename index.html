@@ -1699,10 +1699,20 @@ window.undoLastAction=async()=>{
   toast("↩️ Others action undone");
  }else if(u.action==="start"){
   if(current.status!=="in_progress"){toast("Patient is no longer in progress");return}
-  S.a[u.id]={...current,status:u.previousStatus||"waiting",staff:"",startedAt:"",completedAt:"",updatedAt:new Date().toISOString()};
-  saveLocal();await saveShared(u.id);
-  await writeAudit(u.id,"undo_start","in_progress",u.previousStatus||"waiting","Undo within 5 minutes");
-  toast("↩️ Start action undone");
+  const target=u.previousStatus||"waiting";
+  if(target==="waiting"){
+   delete S.a[u.id];
+   saveLocal();
+   if(S.sb){
+    const {error}=await S.sb.from("dispense_workflow").delete().eq("work_date",iso(S.date)).eq("mrn",u.id);
+    if(error)console.error("Undo start delete failed",error);
+   }
+  }else{
+   S.a[u.id]={...current,status:target,staff:"",startedAt:"",completedAt:"",reason:"",note:"",updatedAt:new Date().toISOString()};
+   saveLocal();await saveShared(u.id);
+  }
+  await writeAudit(u.id,"undo_start","in_progress",target,"Undo within 5 minutes");
+  toast("↩️ Start action undone — patient returned to waiting");
  }
  $("#undoBanner").classList.add("hidden");clearInterval(S.undoTicker);S.lastAction=null;
  render();
@@ -1718,10 +1728,15 @@ window.adminReopenPatient=async()=>{
  }
  if(!current){msg.textContent="No workflow record found for this MRN.";return}
  const from=current.status;
- S.a[id]={...current,status:"in_progress",staff:S.staff,completedAt:"",updatedAt:new Date().toISOString()};
- saveLocal();await saveShared(id);await writeAudit(id,"admin_reopen",from,"in_progress",reason);
- msg.textContent="Patient reopened successfully.";$("#reopenMrn").value="";$("#reopenReason").value="";
- render();await loadAuditLog();toast("↩️ Patient reopened");
+ delete S.a[id];
+ saveLocal();
+ if(S.sb){
+  const {error}=await S.sb.from("dispense_workflow").delete().eq("work_date",iso(S.date)).eq("mrn",id);
+  if(error){console.error("Admin reset failed",error);msg.textContent="Could not reset patient workflow.";return}
+ }
+ await writeAudit(id,"admin_reopen",from,"waiting",reason);
+ msg.textContent="Patient reset to Waiting successfully.";$("#reopenMrn").value="";$("#reopenReason").value="";
+ render();await loadAuditLog();toast("↩️ Patient returned to Waiting");
 }
 window.loadAuditLog=async()=>{
  if(!requireAdmin()||!S.sb)return;
@@ -3775,10 +3790,10 @@ async function loadShared(){
    const best={};
    nearby.forEach(r=>{
     if(!r?.mrn||S.a[r.mrn]||r.work_date===selected)return;
+    if(!["dispensed","others"].includes(r.status))return;
     const dist=dayDistance(r.work_date);
-    const closed=(r.status==="dispensed"||r.status==="others")?1:0;
     const prev=best[r.mrn];
-    if(!prev||closed>prev.closed||(closed===prev.closed&&dist<prev.dist))best[r.mrn]={r,closed,dist};
+    if(!prev||dist<prev.dist)best[r.mrn]={r,dist};
    });
    Object.values(best).forEach(x=>S.a[x.r.mrn]=toState(x.r));
   }else if(nearErr){console.warn("Could not recover nearby workflow after interval change",nearErr)}
