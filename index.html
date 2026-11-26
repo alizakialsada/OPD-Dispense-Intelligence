@@ -633,6 +633,29 @@
 .vip-public-result{margin-top:12px}.vip-public-editor{border:1px solid var(--line);background:#081a29;border-radius:17px;padding:16px;margin-top:12px}.vip-public-editor.hidden{display:none}.vip-public-summary{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}.vip-public-summary h3{font-size:18px}.vip-public-summary small{display:block;color:var(--m);margin-top:4px}.vip-public-status{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;font-size:9px;font-weight:1000;border:1px solid var(--line);background:#10263a;color:#b9cddd}.vip-public-status.active{color:#ffe394;border-color:#ffd05c77;background:#ffd05c12}.vip-public-status.inactive{color:var(--o);border-color:#ffb85f55;background:#ffb85f0d}
 .vip-public-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}.vip-public-field label{display:block;color:var(--m);font-size:8px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}.vip-public-field input,.vip-public-field textarea{width:100%;border:1px solid var(--line);background:#0b1f31;color:#fff;border-radius:10px;padding:10px}.vip-public-field textarea{min-height:72px;resize:vertical}.vip-public-field.wide{grid-column:1/-1}.vip-public-help{border:1px solid rgba(88,231,255,.18);background:rgba(88,231,255,.05);border-radius:11px;padding:10px 12px;color:#bcd9e6;font-size:9px;line-height:1.5;margin-top:12px}.vip-public-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}.vip-public-actions button{border:1px solid var(--line);background:#10263a;color:#fff;border-radius:10px;padding:10px 13px;font-weight:900}.vip-public-actions .save{border-color:#58e7ff55;color:var(--c);background:#58e7ff0d}.vip-public-actions .mark{border:0;background:linear-gradient(135deg,#f2b83f,#ffe59a);color:#3a2600}.vip-public-actions .remove{border-color:#ff687f55;color:var(--r);background:#ff687f0d}.vip-public-message{min-height:18px;margin-top:9px;font-size:10px;color:var(--o)}
 @media(max-width:720px){.vip-public-head,.vip-public-summary{flex-direction:column}.vip-public-grid{grid-template-columns:1fr}.vip-public-field.wide{grid-column:auto}.vip-public-search{flex-direction:column}.vip-public-actions{justify-content:stretch}.vip-public-actions button{flex:1}}
+
+/* VIP STATUS VISUAL PRIORITY — status color overrides waiting VIP gold while preserving VIP identity */
+.card.vip-card.dispensed{
+  border-color:rgba(69,230,170,.95);
+  background:linear-gradient(145deg,rgba(8,76,59,.98),rgba(9,49,43,.98) 68%,rgba(72,57,20,.90));
+  box-shadow:0 0 0 1px rgba(255,208,92,.18) inset,0 0 0 2px rgba(69,230,170,.08),0 14px 36px rgba(0,0,0,.22);
+}
+.card.vip-card.dispensed h4{color:#effff8}
+.card.vip-card.dispensed .patient-copy-item{border-color:rgba(69,230,170,.28);background:rgba(5,35,31,.42)}
+.card.vip-card.dispensed .full-address-btn{border-color:rgba(69,230,170,.36);background:rgba(8,45,39,.55)}
+.card.vip-card.dispensed .staff{background:rgba(69,230,170,.10)}
+.card.vip-card.dispensed .badge:first-child{background:rgba(69,230,170,.18);color:#62f0b8;border:1px solid rgba(69,230,170,.32)}
+
+.card.vip-card.others,.card.vip-card.unavailable,.card.vip-card.deferred{
+  border-color:rgba(181,124,255,.92);
+  background:linear-gradient(145deg,rgba(67,35,91,.98),rgba(37,27,61,.98) 68%,rgba(72,57,20,.85));
+  box-shadow:0 0 0 1px rgba(255,208,92,.16) inset,0 14px 36px rgba(0,0,0,.22);
+}
+.card.vip-card.in_progress{
+  border-color:rgba(88,170,255,.95);
+  background:linear-gradient(145deg,rgba(16,55,91,.98),rgba(11,38,66,.98) 68%,rgba(72,57,20,.82));
+}
+
 </style></head><body>
 <div class="shell"><aside class="side"><div class="brand"><div class="logo">DI</div><div><b>Dispense Lite</b><small>Daily Operations</small></div></div>
 <button class="nav active" data-v="home">◈ <span>Overview</span></button><button class="nav" data-v="queue">▷ <span>Dispense Queue</span></button><button class="nav" data-v="viptool">★ <span>VIP Patients</span></button><button class="nav" data-v="excluded">⊘ <span>Exclusions</span><span id="excludedNavCount" class="excluded-nav-count">0</span></button><button class="nav" data-v="registry">◎ <span>Patient Registry</span></button><button class="nav" data-v="calendar">▦ <span>Smart Calendar</span></button><button class="nav" data-v="demand">◆ <span>Drug Demand</span></button><button id="teamNav" class="nav" data-v="team">♟ <span>Team</span></button><button id="adminNav" class="nav hidden" data-v="admin">⚙ <span>Admin</span></button><div class="sidefoot">Created by Automation Supervisor Ali Alsada</div></aside>
