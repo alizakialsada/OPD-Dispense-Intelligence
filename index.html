@@ -3130,7 +3130,7 @@ function qlist(){
  }
  return a;
 }
-function ast(id){return S.a[id]?.status||"waiting"}function au(id){return S.a[id]?.staff||""}
+function ast(id){const r=S.a[id]||{};if(r.status==="in_progress"&&!String(r.staff||"").trim())return "waiting";return r.status||"waiting"}function au(id){return S.a[id]?.staff||""}
 function personalDispensedToday(){
  const user=normStaff(S.profile?.username||S.staff);
  return S.p.filter(p=>next(p)===iso(S.date)&&ast(p.id)==="dispensed"&&normStaff(au(p.id))===user).length;
@@ -3768,7 +3768,7 @@ async function loadShared(){
  if(!S.sb)return;
  await loadClosedHistory();
  const selected=iso(S.date);
- const toState=r=>({status:r.status,staff:r.staff_id||"",staffName:r.staff_name||"",startedAt:r.started_at||"",completedAt:r.completed_at||"",reason:r.reason||"",note:r.note||"",updatedAt:r.updated_at||"",sourceWorkDate:r.work_date||selected});
+ const toState=r=>{const staff=r.staff_id||"";const status=(r.status==="in_progress"&&!String(staff).trim())?"waiting":r.status;return {status,staff,staffName:r.staff_name||"",startedAt:status==="waiting"?"":(r.started_at||""),completedAt:status==="waiting"?"":(r.completed_at||""),reason:status==="waiting"?"":(r.reason||""),note:status==="waiting"?"":(r.note||""),updatedAt:r.updated_at||"",sourceWorkDate:r.work_date||selected}};
  let {data,error}=await S.sb.from("dispense_workflow").select("*").eq("work_date",selected);
  if(error){console.warn("Could not load workflow",error);return}
  S.a={};
