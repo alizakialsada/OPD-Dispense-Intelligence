@@ -1701,14 +1701,10 @@ window.undoLastAction=async()=>{
   if(current.status!=="in_progress"){toast("Patient is no longer in progress");return}
   const target=u.previousStatus||"waiting";
   if(target==="waiting"){
-   delete S.a[u.id];
-   saveLocal();
-   if(S.sb){
-    const {error}=await S.sb.from("dispense_workflow").delete().eq("work_date",iso(S.date)).eq("mrn",u.id);
-    if(error)console.error("Undo start delete failed",error);
-   }
+   S.a[u.id]={...current,status:"waiting",staff:"",staffName:"",startedAt:"",completedAt:"",reason:"",note:"",updatedAt:new Date().toISOString()};
+   saveLocal();await saveShared(u.id);
   }else{
-   S.a[u.id]={...current,status:target,staff:"",startedAt:"",completedAt:"",reason:"",note:"",updatedAt:new Date().toISOString()};
+   S.a[u.id]={...current,status:target,staff:"",staffName:"",startedAt:"",completedAt:"",reason:"",note:"",updatedAt:new Date().toISOString()};
    saveLocal();await saveShared(u.id);
   }
   await writeAudit(u.id,"undo_start","in_progress",target,"Undo within 5 minutes");
