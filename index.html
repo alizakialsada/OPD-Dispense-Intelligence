@@ -843,7 +843,7 @@
 <section id="team" class="view">
  <div class="section">
   <div><div class="ey">TEAM PERFORMANCE</div><h2 id="teamPeriodTitle">Today</h2><p>Live performance from the current saved workflow status. Each patient is counted once.</p><div id="teamLastUpdated" class="performance-note">Live totals matched to Dispense Queue</div></div>
-  <div class="toolbar"><button class="copy" onclick="refreshTeamLiveNow('manual')">Refresh Now</button><button class="copy" onclick="migrate()">Sync Existing Work</button><button class="copy" onclick="exportTeamExcel()">Export Performance</button></div>
+  <div class="toolbar"><button class="copy" onclick="refreshTeamLiveNow('manual')">Refresh Now</button><button class="copy" onclick="migrate()">Sync Existing Work</button><button class="copy" onclick="exportTeamExcel()">Export Excel</button><button class="copy" onclick="exportTeamPDF()">PDF Performance Report</button></div>
  </div>
  <div class="performance-filter">
   <select id="teamPerfRange" onchange="changeTeamPerformanceRange()">
@@ -3059,7 +3059,8 @@ window.loadTeamPerformance=async()=>{
    ${(x.manualDispensed||x.manualOthers)?`<div class="metric-row"><span>Manual adjustment</span><b>+${fmt((x.manualDispensed||0)+(x.manualOthers||0))}</b></div>`:""}
    <div class="metric-row"><span>Closed cases</span><b>${fmt(x.closed)}</b></div>
    <div class="metric-row"><span>Work days</span><b>${fmt(x.workDays)}</b></div>
-   <div class="metric-row"><span>Average / day</span><b>${avg}</b></div></div>`;
+   <div class="metric-row"><span>Average / day</span><b>${avg}</b></div>
+   <div style="margin-top:12px"><button class="copy" style="width:100%;justify-content:center" onclick="exportIndividualEmployeePDF('${encodeURIComponent(String(x.name||''))}')">Individual PDF</button></div></div>`;
  }).join("")||'<div class="panel">No saved performance records in this period.</div>';
  holder?.classList.remove("performance-loading");
 }
@@ -3724,6 +3725,209 @@ window.exportTeamExcel=async()=>{
  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(staffRows),"Staff Performance");
  saveWorkbook(wb,`team-performance-${range.type}-${iso(new Date())}.xlsx`);
 }
+
+async function loadPDFTools(){
+ if(window.jspdf?.jsPDF&&window.jspdf?.jsPDF.API?.autoTable)return;
+ const loadScript=src=>new Promise((resolve,reject)=>{
+  const existing=[...document.scripts].find(x=>x.src===src);
+  if(existing){if(existing.dataset.loaded==="1")return resolve();existing.addEventListener("load",resolve,{once:true});existing.addEventListener("error",reject,{once:true});return}
+  const el=document.createElement("script");el.src=src;el.async=true;
+  el.onload=()=>{el.dataset.loaded="1";resolve()};el.onerror=()=>reject(new Error("Could not load PDF library"));document.head.appendChild(el);
+ });
+ if(!window.jspdf?.jsPDF)await loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js");
+ if(!window.jspdf?.jsPDF?.API?.autoTable)await loadScript("https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js");
+}
+function teamPerformanceCardsForReport(){
+ const summaryRows=S.teamPerformanceRows||[];
+ const profiles=(S.teamProfiles||[]).filter(p=>p.is_active!==false);
+ const cards=profiles.map(profile=>{
+  const name=profile.display_name||profile.full_name||profile.username||"Unknown";
+  const x=summaryRows.find(r=>normStaff(r.key)===normStaff(profile.username)||r.key===profile.id||normStaff(r.name)===normStaff(name)||normStaff(r.name)===normStaff(profile.username))||{dispensed:0,others:0,closed:0,workDays:0};
+  return {...x,name,role:profile.role||"pharmacist"};
+ });
+ // Include any workflow staff not currently present in the profile directory.
+ summaryRows.forEach(x=>{
+  if(!cards.some(c=>normStaff(c.name)===normStaff(x.name)||normStaff(c.key)===normStaff(x.key)))cards.push({...x,name:x.name||x.key||"Unknown",role:"pharmacist"});
+ });
+ return cards.sort((a,b)=>(b.closed||0)-(a.closed||0)||(b.dispensed||0)-(a.dispensed||0)||String(a.name).localeCompare(String(b.name)));
+}
+function pdfAddFooter(doc,pageNo,totalPages){
+ const w=doc.internal.pageSize.getWidth(),h=doc.internal.pageSize.getHeight();
+ doc.setDrawColor(224,230,238);doc.line(12,h-10,w-12,h-10);
+ doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(94,108,126);
+ doc.text("Dispense Intelligence | Team Performance",12,h-5.2);
+ doc.text(`Page ${pageNo} of ${totalPages}`,w/2,h-5.2,{align:"center"});
+ doc.text("Created by Automation Supervisor Ali Alsada",w-12,h-5.2,{align:"right"});
+}
+function pdfEmployeeCard(doc,x,y,w,h,row,index,totalClosed){
+ const disp=Number(row.dispensed||0),others=Number(row.others||0),closed=Number(row.closed||0),days=Number(row.workDays||0);
+ const avg=days?closed/days:0,rate=closed?disp/closed*100:0,share=totalClosed?closed/totalClosed*100:0;
+ doc.setFillColor(249,251,253);doc.setDrawColor(220,226,234);doc.roundedRect(x,y,w,h,3,3,"FD");
+ doc.setFillColor(25,67,109);doc.roundedRect(x,y,5,h,3,3,"F");
+ doc.setTextColor(18,42,68);doc.setFont("helvetica","bold");doc.setFontSize(10.5);
+ const rank=index+1;doc.text(`${rank}. ${String(row.name||"Unknown").slice(0,34)}`,x+9,y+9);
+ doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(105,119,134);
+ doc.text(String(row.role||"pharmacist").toUpperCase(),x+9,y+14);
+ doc.setFont("helvetica","bold");doc.setFontSize(19);doc.setTextColor(25,67,109);doc.text(String(closed),x+9,y+27);
+ doc.setFont("helvetica","normal");doc.setFontSize(7.2);doc.setTextColor(100,111,126);doc.text("TOTAL CLOSED",x+9,y+32);
+ const c1=x+38,c2=x+62,c3=x+86;
+ doc.setFont("helvetica","bold");doc.setFontSize(9);doc.setTextColor(31,43,55);
+ doc.text(String(disp),c1,y+25,{align:"center"});doc.text(String(others),c2,y+25,{align:"center"});doc.text(days?avg.toFixed(1):"0",c3,y+25,{align:"center"});
+ doc.setFont("helvetica","normal");doc.setFontSize(6.5);doc.setTextColor(115,126,139);
+ doc.text("Dispensed",c1,y+31,{align:"center"});doc.text("Others",c2,y+31,{align:"center"});doc.text("Avg / Day",c3,y+31,{align:"center"});
+ const barX=x+9,barY=y+h-15,barW=w-18;
+ doc.setFillColor(229,234,240);doc.roundedRect(barX,barY,barW,3,1.5,1.5,"F");
+ doc.setFillColor(39,111,173);doc.roundedRect(barX,barY,Math.max(0.8,barW*Math.min(100,share)/100),3,1.5,1.5,"F");
+ doc.setFontSize(6.8);doc.setTextColor(88,101,115);doc.text(`Dispense rate ${Math.round(rate)}%`,barX,barY+8);
+ doc.text(`Team share ${share.toFixed(1)}%`,barX+barW,barY+8,{align:"right"});
+}
+window.exportTeamPDF=async()=>{
+ if(!["admin","supervisor"].includes(S.profile?.role))return toast("PDF report is available to Admin / Supervisor only");
+ const range=performanceRange($("#teamPerfRange")?.value||"today","teamPerf");if(!range)return;
+ try{
+  toast("Preparing PDF performance report...");
+  await loadTeamPerformance();
+  await loadPDFTools();
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:"landscape",unit:"mm",format:"a4",compress:true});
+  const pageW=doc.internal.pageSize.getWidth(),pageH=doc.internal.pageSize.getHeight();
+  const cards=teamPerformanceCardsForReport();
+  const totalDisp=cards.reduce((a,b)=>a+Number(b.dispensed||0),0),totalOthers=cards.reduce((a,b)=>a+Number(b.others||0),0),totalClosed=totalDisp+totalOthers;
+  const workDays=Math.max(0,...cards.map(x=>Number(x.workDays||0)),Number($("#teamWorkDays")?.textContent?.replace(/,/g,"")||0));
+  const active=cards.filter(x=>Number(x.closed||0)>0).length,avgDay=workDays?totalClosed/workDays:0,dispRate=totalClosed?totalDisp/totalClosed*100:0;
+  const generated=new Date();
+
+  // Cover / executive summary
+  doc.setFillColor(18,52,86);doc.rect(0,0,pageW,37,"F");
+  doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(20);doc.text("TEAM PERFORMANCE REPORT",14,17);
+  doc.setFont("helvetica","normal");doc.setFontSize(9.5);doc.text("Dispense Intelligence - OPD Pharmacy Operations",14,25);
+  doc.setFontSize(8.5);doc.text(`Period: ${range.label}`,pageW-14,16,{align:"right"});
+  doc.text(`Generated: ${generated.toLocaleString("en-GB")}`,pageW-14,23,{align:"right"});
+  doc.text("Live workflow performance - each patient counted once",pageW-14,30,{align:"right"});
+
+  const kpis=[
+   ["TOTAL DISPENSED",totalDisp],["OTHERS",totalOthers],["TOTAL CLOSED",totalClosed],
+   ["WORK DAYS",workDays],["ACTIVE STAFF",active],["AVG / WORK DAY",avgDay.toFixed(1)]
+  ];
+  const mx=14,gap=4,kw=(pageW-28-gap*5)/6,ky=45,kh=24;
+  kpis.forEach((k,i)=>{const x=mx+i*(kw+gap);doc.setFillColor(247,249,252);doc.setDrawColor(221,227,234);doc.roundedRect(x,ky,kw,kh,2.5,2.5,"FD");doc.setFont("helvetica","normal");doc.setFontSize(6.8);doc.setTextColor(103,116,131);doc.text(k[0],x+3,ky+7);doc.setFont("helvetica","bold");doc.setFontSize(14);doc.setTextColor(18,52,86);doc.text(String(k[1]),x+3,ky+18)});
+
+  doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(25,49,74);doc.text("Staff Performance Ranking",14,79);
+  const body=cards.map((x,i)=>{
+   const closed=Number(x.closed||0),disp=Number(x.dispensed||0),others=Number(x.others||0),days=Number(x.workDays||0);
+   return [i+1,x.name||"Unknown",String(x.role||"pharmacist"),disp,others,closed,days,days?(closed/days).toFixed(1):"0",closed?Math.round(disp/closed*100)+"%":"0%",totalClosed?(closed/totalClosed*100).toFixed(1)+"%":"0%"];
+  });
+  doc.autoTable({
+   startY:84,margin:{left:14,right:14},head:[["#","Employee","Role","Dispensed","Others","Closed","Work Days","Avg/Day","Dispense Rate","Team Share"]],body,
+   theme:"grid",styles:{font:"helvetica",fontSize:7.2,cellPadding:2.1,textColor:[45,58,71],lineColor:[225,230,236],lineWidth:0.15},
+   headStyles:{fillColor:[25,67,109],textColor:[255,255,255],fontStyle:"bold",halign:"center"},
+   columnStyles:{0:{halign:"center",cellWidth:8},1:{cellWidth:47},2:{cellWidth:25},3:{halign:"center"},4:{halign:"center"},5:{halign:"center"},6:{halign:"center"},7:{halign:"center"},8:{halign:"center"},9:{halign:"center"}},
+   didParseCell:data=>{if(data.section==="body"&&data.row.index<3){data.cell.styles.fillColor=data.row.index===0?[244,249,255]:data.row.index===1?[248,250,253]:[251,252,254]}}
+  });
+  doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(93,105,119);
+  doc.text(`Overall dispense rate: ${Math.round(dispRate)}% | Ranking is based on total closed cases.`,14,pageH-16);
+
+  // Individual cards pages
+  const perPage=6,cardGapX=5,cardGapY=7,marginX=14,top=31,cardW=(pageW-marginX*2-cardGapX*2)/3,cardH=66;
+  for(let start=0;start<cards.length;start+=perPage){
+   doc.addPage("a4","landscape");
+   doc.setFillColor(18,52,86);doc.rect(0,0,pageW,23,"F");doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(15);doc.text("INDIVIDUAL EMPLOYEE PERFORMANCE",14,14);
+   doc.setFont("helvetica","normal");doc.setFontSize(8);doc.text(range.label,pageW-14,14,{align:"right"});
+   cards.slice(start,start+perPage).forEach((row,j)=>{
+    const col=j%3,rowNo=Math.floor(j/3),x=marginX+col*(cardW+cardGapX),y=top+rowNo*(cardH+cardGapY);
+    pdfEmployeeCard(doc,x,y,cardW,cardH,row,start+j,totalClosed);
+   });
+  }
+
+  // Daily operations appendix when available
+  if(Array.isArray(S.teamDailyRows)&&S.teamDailyRows.length){
+   doc.addPage("a4","landscape");
+   doc.setFillColor(18,52,86);doc.rect(0,0,pageW,23,"F");doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(15);doc.text("DAILY OPERATIONS APPENDIX",14,14);
+   doc.setFont("helvetica","normal");doc.setFontSize(8);doc.text(range.label,pageW-14,14,{align:"right"});
+   const dailyBody=S.teamDailyRows.map(x=>{const c=Number(x.closed||0),d=Number(x.dispensed||0);return [x.day,pd(x.day).toLocaleDateString("en-GB",{weekday:"long"}),d,Number(x.others||0),c,c?Math.round(d/c*100)+"%":"0%"]});
+   doc.autoTable({startY:31,margin:{left:14,right:14},head:[["Date","Day","Dispensed","Others","Total Closed","Dispense Rate"]],body:dailyBody,theme:"striped",styles:{font:"helvetica",fontSize:8,cellPadding:2.3},headStyles:{fillColor:[25,67,109],textColor:[255,255,255]},columnStyles:{2:{halign:"center"},3:{halign:"center"},4:{halign:"center"},5:{halign:"center"}}});
+  }
+
+  const pages=doc.getNumberOfPages();for(let i=1;i<=pages;i++){doc.setPage(i);pdfAddFooter(doc,i,pages)}
+  const safe=String(range.type||"period").replace(/[^a-z0-9_-]+/gi,"-");
+  doc.save(`team-performance-report-${safe}-${iso(new Date())}.pdf`);
+  toast("PDF performance report downloaded ✓");
+ }catch(e){console.error("PDF export failed",e);toast("Could not create PDF report. Check internet access and try again.")}
+}
+
+function employeeMatchesWorkflow(row,employee){
+ const ek=normStaff(employee?.key),en=normStaff(employee?.name);
+ const rid=normStaff(row?.staff_id),rn=normStaff(row?.staff_name);
+ return (!!ek&&(rid===ek||rn===ek))||(!!en&&(rid===en||rn===en));
+}
+function employeeMatchesAdjustment(row,employee){
+ const ek=normStaff(employee?.key),en=normStaff(employee?.name);
+ const uid=normStaff(row?.user_id),un=normStaff(row?.username),dn=normStaff(row?.display_name);
+ return (!!ek&&(uid===ek||un===ek||dn===ek))||(!!en&&(uid===en||un===en||dn===en));
+}
+function buildEmployeeDailyReport(rows,adjustments,employee){
+ const days={};
+ const ensure=day=>days[day]||(days[day]={day,dispensed:0,others:0,closed:0});
+ (rows||[]).forEach(r=>{
+  if(!employeeMatchesWorkflow(r,employee)||!["dispensed","others"].includes(r.status))return;
+  const day=r.work_date||String(r.completed_at||r.updated_at||"").slice(0,10);if(!day)return;
+  const d=ensure(day);if(r.status==="dispensed")d.dispensed++;else d.others++;d.closed=d.dispensed+d.others;
+ });
+ (adjustments||[]).forEach(a=>{
+  if(!employeeMatchesAdjustment(a,employee)||!a.work_date)return;
+  const d=ensure(a.work_date);d.dispensed+=Number(a.dispensed_adjustment||0);d.others+=Number(a.others_adjustment||0);d.closed=d.dispensed+d.others;
+ });
+ return Object.values(days).sort((a,b)=>String(a.day).localeCompare(String(b.day)));
+}
+window.exportIndividualEmployeePDF=async encodedName=>{
+ if(!["admin","supervisor"].includes(S.profile?.role))return toast("Individual PDF is available to Admin / Supervisor only");
+ const wanted=decodeURIComponent(encodedName||"");
+ const range=performanceRange($("#teamPerfRange")?.value||"today","teamPerf");if(!range)return;
+ try{
+  toast("Preparing individual performance PDF...");
+  await loadTeamPerformance();await loadPDFTools();
+  const cards=teamPerformanceCardsForReport();
+  const employee=cards.find(x=>normStaff(x.name)===normStaff(wanted));
+  if(!employee)return toast("Employee performance record not found");
+  const [rows,adjustments]=await Promise.all([fetchWorkflowRange(range),fetchPerformanceAdjustments(range)]);
+  const daily=buildEmployeeDailyReport(rows,adjustments,employee);
+  const totalClosed=cards.reduce((a,b)=>a+Number(b.closed||0),0);
+  const active=cards.filter(x=>Number(x.closed||0)>0).sort((a,b)=>Number(b.closed||0)-Number(a.closed||0));
+  const rank=Math.max(1,active.findIndex(x=>normStaff(x.name)===normStaff(employee.name))+1);
+  const disp=Number(employee.dispensed||0),others=Number(employee.others||0),closed=Number(employee.closed||0),workDays=Number(employee.workDays||0);
+  const avg=workDays?closed/workDays:0,rate=closed?disp/closed*100:0,share=totalClosed?closed/totalClosed*100:0;
+  const avgActive=active.length?totalClosed/active.length:0;
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:"portrait",unit:"mm",format:"a4",compress:true});
+  const w=doc.internal.pageSize.getWidth(),h=doc.internal.pageSize.getHeight();
+  doc.setFillColor(18,52,86);doc.rect(0,0,w,42,"F");
+  doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(19);doc.text("INDIVIDUAL PERFORMANCE REPORT",14,16);
+  doc.setFont("helvetica","normal");doc.setFontSize(9);doc.text("Dispense Intelligence - OPD Pharmacy Operations",14,24);
+  doc.text(`Period: ${range.label}`,14,32);doc.text(`Generated: ${new Date().toLocaleString("en-GB")}`,w-14,32,{align:"right"});
+  doc.setTextColor(18,52,86);doc.setFont("helvetica","bold");doc.setFontSize(17);doc.text(String(employee.name||"Unknown"),14,57);
+  doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(93,105,119);doc.text(String(employee.role||"pharmacist").toUpperCase(),14,64);
+  doc.setFillColor(239,245,251);doc.roundedRect(w-56,49,42,19,3,3,"F");doc.setFont("helvetica","bold");doc.setFontSize(14);doc.setTextColor(25,67,109);doc.text(`#${rank}`,w-35,58,{align:"center"});doc.setFontSize(7);doc.setFont("helvetica","normal");doc.text("TEAM RANK",w-35,64,{align:"center"});
+  const kpis=[["DISPENSED",disp],["OTHERS",others],["TOTAL CLOSED",closed],["WORK DAYS",workDays],["AVG / DAY",avg.toFixed(1)],["DISPENSE RATE",Math.round(rate)+"%"]];
+  const gap=3,kw=(w-28-gap*2)/3,kh=24;
+  kpis.forEach((k,i)=>{const row=Math.floor(i/3),col=i%3,x=14+col*(kw+gap),y=76+row*(kh+4);doc.setFillColor(248,250,253);doc.setDrawColor(222,228,235);doc.roundedRect(x,y,kw,kh,2.5,2.5,"FD");doc.setFont("helvetica","normal");doc.setFontSize(6.7);doc.setTextColor(100,113,127);doc.text(k[0],x+3,y+7);doc.setFont("helvetica","bold");doc.setFontSize(14);doc.setTextColor(18,52,86);doc.text(String(k[1]),x+3,y+18)});
+  const cy=135;doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(25,49,74);doc.text("Team Comparison",14,cy);
+  const comparisons=[["Team share",share.toFixed(1)+"%"],["Average closed / active staff",avgActive.toFixed(1)],["Employee closed cases",closed],["Rank among active staff",`${rank} of ${Math.max(1,active.length)}`]];
+  doc.autoTable({startY:cy+5,margin:{left:14,right:14},body:comparisons,theme:"grid",styles:{font:"helvetica",fontSize:8.5,cellPadding:3,lineColor:[228,232,238]},columnStyles:{0:{fontStyle:"bold",textColor:[70,83,98],cellWidth:90},1:{halign:"right",fontStyle:"bold",textColor:[25,67,109]}}});
+  let y=doc.lastAutoTable.finalY+10;
+  doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(25,49,74);doc.text("Daily Activity",14,y);
+  if(daily.length){
+   const body=daily.map(d=>[d.day,pd(d.day).toLocaleDateString("en-GB",{weekday:"short"}),d.dispensed,d.others,d.closed,d.closed?Math.round(d.dispensed/d.closed*100)+"%":"0%"]);
+   doc.autoTable({startY:y+5,margin:{left:14,right:14},head:[["Date","Day","Dispensed","Others","Closed","Dispense Rate"]],body,theme:"striped",styles:{font:"helvetica",fontSize:7.7,cellPadding:2.2},headStyles:{fillColor:[25,67,109],textColor:[255,255,255]},columnStyles:{2:{halign:"center"},3:{halign:"center"},4:{halign:"center"},5:{halign:"center"}}});
+  }else{doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(110,120,132);doc.text("No daily closed-case activity in the selected period.",14,y+12)}
+  if(Number(employee.manualDispensed||0)||Number(employee.manualOthers||0)){
+   const fy=(doc.lastAutoTable?.finalY||y+18)+8;doc.setFont("helvetica","italic");doc.setFontSize(7.5);doc.setTextColor(105,115,126);doc.text(`Includes manual adjustments: Dispensed +${Number(employee.manualDispensed||0)}, Others +${Number(employee.manualOthers||0)}.`,14,fy);
+  }
+  const pages=doc.getNumberOfPages();for(let i=1;i<=pages;i++){doc.setPage(i);pdfAddFooter(doc,i,pages)}
+  const safeName=String(employee.name||"employee").replace(/[^a-z0-9_-]+/gi,"-").replace(/^-+|-+$/g,"").slice(0,55)||"employee";
+  doc.save(`individual-performance-${safeName}-${iso(new Date())}.pdf`);toast("Individual PDF downloaded ✓");
+ }catch(e){console.error("Individual PDF export failed",e);toast("Could not create individual PDF report. Check internet access and try again.")}
+}
+
 window.exportTeamDailyExcel=async()=>{
  await loadXLSX();
  const range=S.teamDailyRange||performanceRange($("#teamPerfRange")?.value||"today","teamPerf");if(!range)return;
